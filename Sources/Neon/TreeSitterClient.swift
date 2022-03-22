@@ -7,6 +7,7 @@ public enum TreeSitterClientError: Error {
     case parseStateNotUpToDate
     case parseStateInvalid
     case unableToTransformRange(NSRange)
+    case unableToTransformByteRange(Range<UInt32>)
     case staleContent
 }
 
@@ -245,13 +246,15 @@ extension TreeSitterClient {
 }
 
 extension TreeSitterClient {
-    public func executeQuery(_ query: Query, in range: NSRange, textProvider: @escaping PredicateTextProvider, completionHandler: @escaping (Result<QueryCursor, TreeSitterClientError>) -> Void) {
+    public typealias ContentProvider = (NSRange) -> Result<String, Error>
+
+    public func executeQuery(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider, completionHandler: @escaping (Result<QueryCursor, TreeSitterClientError>) -> Void) {
         let largeRange = exceedsSynchronousThreshold(range.length)
 
         let shouldEnqueue = hasQueuedEdits || largeRange || range.max >= maximumProcessedLocation
 
         if shouldEnqueue == false {
-            completionHandler(executeQuerySynchronously(query, in: range, textProvider: textProvider))
+            completionHandler(executeQuerySynchronously(query, in: range, contentProvider: contentProvider))
             return
         }
 
@@ -267,7 +270,7 @@ extension TreeSitterClient {
 
                 assert(range.max <= self.maximumProcessedLocation)
 
-                let result = self.executeQuerySynchronously(query, in: range, textProvider: textProvider)
+                let result = self.executeQuerySynchronously(query, in: range, contentProvider: contentProvider)
 
                 opCompletion(result)
             }
@@ -278,7 +281,7 @@ extension TreeSitterClient {
         parseQueue.addOperation(op)
     }
 
-    public func executeQuerySynchronously(_ query: Query, in range: NSRange, textProvider: @escaping PredicateTextProvider) -> Result<QueryCursor, TreeSitterClientError> {
+    public func executeQuerySynchronously(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider) -> Result<QueryCursor, TreeSitterClientError> {
         let shouldEnqueue = hasQueuedEdits || range.max >= maximumProcessedLocation
 
         if shouldEnqueue {
@@ -287,6 +290,14 @@ extension TreeSitterClient {
 
         guard let node = parseState.tree?.rootNode else {
             return .failure(.parseStateInvalid)
+        }
+
+        let textProvider: PredicateTextProvider = { (byteRange, _) -> Result<String, Error> in
+            guard let range = self.transformer.computeRange(from: byteRange) else {
+                return .failure(TreeSitterClientError.unableToTransformByteRange(byteRange))
+            }
+
+            return contentProvider(range)
         }
 
         guard let byteRange = transformer.computeByteRange(from: range) else {
