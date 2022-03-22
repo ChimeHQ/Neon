@@ -1,0 +1,34 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "OperationPlus",
+        "repositoryURL": "https://github.com/ChimeHQ/OperationPlus",
+        "state": {
+          "branch": null,
+          "revision": "f5d2899e113943d7ea8f73462639217acc6b92b9",
+          "version": "1.5.4"
+        }
+      },
+      {
+        "package": "Rearrange",
+        "repositoryURL": "https://github.com/ChimeHQ/Rearrange",
+        "state": {
+          "branch": "main",
+          "revision": "c3f6b51b23c0ce26fc6a489439047ecc7a86094b",
+          "version": null
+        }
+      },
+      {
+        "package": "SwiftTreeSitter",
+        "repositoryURL": "https://github.com/ChimeHQ/SwiftTreeSitter",
+        "state": {
+          "branch": "main",
+          "revision": "6c8bd31cc0aa1f4a974a097c60fdf5943817ec6d",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}
