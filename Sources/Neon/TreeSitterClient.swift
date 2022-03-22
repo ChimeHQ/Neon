@@ -40,9 +40,9 @@ public final class TreeSitterClient {
     private var outstandingEdits: [ContentEdit]
     private var version: Int
     private let parseQueue: OperationQueue
-    private let transformer: TreeSitterCoordinateTransformer
     private var maximumProcessedLocation: Int
 
+    public let transformer: TreeSitterCoordinateTransformer
     public let synchronousLengthThreshold: Int?
     public var computeInvalidations: Bool
     public var invalidationHandler: (IndexSet) -> Void

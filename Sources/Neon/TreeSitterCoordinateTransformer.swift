@@ -14,7 +14,7 @@ public struct TreeSitterCoordinateTransformer {
     }
 }
 
-extension TreeSitterCoordinateTransformer {
+public extension TreeSitterCoordinateTransformer {
     func computeRange(from byteRange: Range<UInt32>) -> NSRange? {
         guard
             let start = byteOffsetToLocation(byteRange.lowerBound),
@@ -36,7 +36,9 @@ extension TreeSitterCoordinateTransformer {
 
         return start..<end
     }
+}
 
+extension TreeSitterCoordinateTransformer {
     func inputEdit(for range: NSRange, delta: Int, oldEndPoint: Point) -> InputEdit? {
         let startLocation = range.location
         let newEndLocation = range.max + delta
