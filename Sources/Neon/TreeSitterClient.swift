@@ -53,7 +53,7 @@ public final class TreeSitterClient {
         self.computeInvalidations = true
         self.version = 0
         self.maximumProcessedLocation = 0
-        self.parseQueue = OperationQueue.serialQueue(named: "com.chimehq.TreeSitterClient")
+        self.parseQueue = OperationQueue.serialQueue(named: "com.chimehq.Neon.TreeSitterClient")
 
         try parser.setLanguage(language)
 
