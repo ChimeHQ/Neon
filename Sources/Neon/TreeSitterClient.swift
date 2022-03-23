@@ -311,3 +311,69 @@ extension TreeSitterClient {
         return .success(cursor)
     }
 }
+
+extension QueryCursor {
+    func enumerateMatches(_ block: (Result<QueryMatch, Error>) -> Void) {
+        while true {
+            do {
+                guard let result = try nextMatch() else {
+                    break
+                }
+
+                block(.success(result))
+            } catch {
+                block(.failure(error))
+            }
+        }
+    }
+
+    func enumerateSuccessfulMatches(_ block: (QueryMatch) -> Void) {
+        enumerateMatches { result in
+            switch result {
+            case .failure:
+                break
+            case .success(let match):
+                block(match)
+            }
+        }
+    }
+}
+
+extension TreeSitterClient {
+    public struct HighlightMatch {
+        public var name: String
+        public var range: NSRange
+    }
+
+    private func findHighlightMatches(with cursor: QueryCursor) -> [HighlightMatch] {
+        var pairs = [HighlightMatch]()
+
+        cursor.enumerateSuccessfulMatches { match in
+            for capture in match.captures {
+                guard let name = capture.name else { continue }
+                let byteRange = capture.node.byteRange
+
+                guard let range = transformer.computeRange(from: byteRange) else {
+                    continue
+                }
+
+                pairs.append(HighlightMatch(name: name, range: range))
+            }
+        }
+
+        return pairs
+    }
+
+    public func executeHighlightQuery(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider, completionHandler: @escaping (Result<[HighlightMatch], TreeSitterClientError>) -> Void) {
+        executeQuery(query, in: range, contentProvider: contentProvider) { result in
+            switch result {
+            case .failure(let error):
+                completionHandler(.failure(error))
+            case .success(let cursor):
+                let highlights = self.findHighlightMatches(with: cursor)
+
+                completionHandler(.success(highlights))
+            }
+        }
+    }
+}
