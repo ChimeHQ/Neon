@@ -182,9 +182,9 @@ extension TreeSitterClient {
     private func processEditAsync(_ edit: ContentEdit, withInvalidations doInvalidations: Bool, readHandler: @escaping Parser.ReadBlock, completionHandler: @escaping () -> Void) {
         outstandingEdits.append(edit)
 
-        parseQueue.addAsyncOperation { opCompletion in
-            let state = self.parseState
+        let state = self.parseState.copy()
 
+        parseQueue.addAsyncOperation { opCompletion in
             state.applyEdit(edit.inputEdit)
             let newState = self.parser.parse(state: state, readHandler: readHandler)
             let set = doInvalidations ? self.computeInvalidatedSet(from: state, to: newState, with: edit) : IndexSet()
@@ -270,7 +270,7 @@ extension TreeSitterClient {
 
                 assert(range.max <= self.maximumProcessedLocation)
 
-                let result = self.executeQuerySynchronously(query, in: range, contentProvider: contentProvider)
+                let result = self.executeQuerySynchronouslyWithoutCheck(query, in: range, contentProvider: contentProvider)
 
                 opCompletion(result)
             }
@@ -288,6 +288,10 @@ extension TreeSitterClient {
             return .failure(.parseStateNotUpToDate)
         }
 
+        return executeQuerySynchronouslyWithoutCheck(query, in: range, contentProvider: contentProvider)
+    }
+
+    private func executeQuerySynchronouslyWithoutCheck(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider) -> Result<QueryCursor, TreeSitterClientError> {
         guard let node = parseState.tree?.rootNode else {
             return .failure(.parseStateInvalid)
         }
@@ -312,33 +316,6 @@ extension TreeSitterClient {
     }
 }
 
-extension QueryCursor {
-    func enumerateMatches(_ block: (Result<QueryMatch, Error>) -> Void) {
-        while true {
-            do {
-                guard let result = try nextMatch() else {
-                    break
-                }
-
-                block(.success(result))
-            } catch {
-                block(.failure(error))
-            }
-        }
-    }
-
-    func enumerateSuccessfulMatches(_ block: (QueryMatch) -> Void) {
-        enumerateMatches { result in
-            switch result {
-            case .failure:
-                break
-            case .success(let match):
-                block(match)
-            }
-        }
-    }
-}
-
 extension TreeSitterClient {
     public struct HighlightMatch {
         public var name: String
@@ -348,7 +325,7 @@ extension TreeSitterClient {
     private func findHighlightMatches(with cursor: QueryCursor) -> [HighlightMatch] {
         var pairs = [HighlightMatch]()
 
-        cursor.enumerateSuccessfulMatches { match in
+        while let match = try? cursor.nextMatch() {
             for capture in match.captures {
                 guard let name = capture.name else { continue }
                 let byteRange = capture.node.byteRange
