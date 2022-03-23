@@ -45,6 +45,15 @@ public final class TreeSitterClient {
     public let transformer: TreeSitterCoordinateTransformer
     public let synchronousLengthThreshold: Int?
     public var computeInvalidations: Bool
+
+    /// Invoked when parts of the text content have changed
+    ///
+    /// This function always returns values that represent
+    /// the current state of the content, even if the
+    /// system is working in the background.
+    ///
+    /// This function will only be invoked if `computeInvalidations`
+    /// was true at the time an edit was applied.
     public var invalidationHandler: (IndexSet) -> Void
 
     init(language: Language, transformer: TreeSitterCoordinateTransformer, synchronousLengthThreshold: Int? = 1024) throws {
