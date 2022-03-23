@@ -36,7 +36,10 @@ let locationToPoint = { Int -> Point? in ... }
 let client = TreeSitterClient(language: language, locationToPoint: locationToPoint)
 
 // this function will be called with a minimal set of text ranges
-// that have become invalidated due to edits
+// that have become invalidated due to edits. These ranges
+// always coorespond to the *current* state of the text content,
+// even if TreeSitterClient is currently processing edits in the
+// background.
 client.invalidationHandler = { set in ... }
 
 // step 3: inform it about content changes
