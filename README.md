@@ -7,6 +7,21 @@ Neon aims to provide facilities for highlighting, indenting, and querying the st
 
 The library is being extracted from the [Chime](https://www.chimehq.com) editor. It's a pretty complex system, and pulling it out is something we intend to do over time.
 
+## Why is this so complicated?
+
+Working with small, static, and syntactically correct documents is one thing. Achieving both high performance and high quality behavior for an editor is totally different. Work needs to be done on every keystroke, and minimizing that work requires an enormous amount of infrastructure and careful design. Before starting, it's worth seriously evaluating your performance and quality needs. You may be able to get away with a much simpler system. A lot of this boils down to size of the document. Remember: most files are small, and small files can make even the most naive implementation feel acceptable.
+
+Some things to consider:
+
+- Latency to open a file
+- Latency to visible elements highlight
+- Latency to end-of-document highlight
+- Latency on keystroke
+- Precise invalidation on keystrokes
+- Precise invalidation on inter-file changes
+- Highlight quality in the face of invalid syntax
+- Ability to apply progressively higher-quality highlighting
+
 ## TreeSitterClient
 
 This class is an asynchronous interface to tree-sitter. It provides an UTF16 code-point (NSString-compatible) API for edits, invalidations, and queries. It can process edits of String objects, or raw bytes for even greater flexibility and performance. Invalidations are translated to the current content state, even if a queue of edits are still being processed.
@@ -37,7 +52,7 @@ let client = TreeSitterClient(language: language, locationToPoint: locationToPoi
 
 // this function will be called with a minimal set of text ranges
 // that have become invalidated due to edits. These ranges
-// always coorespond to the *current* state of the text content,
+// always correspond to the *current* state of the text content,
 // even if TreeSitterClient is currently processing edits in the
 // background.
 client.invalidationHandler = { set in ... }
