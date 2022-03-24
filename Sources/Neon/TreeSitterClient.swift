@@ -108,7 +108,7 @@ extension TreeSitterClient {
     ///
     /// - Parameter range: the range that was affected by the edit
     /// - Parameter delta: the change in length of the content
-    /// - Parameter limit: the total length of the content
+    /// - Parameter limit: the current length of the content
     /// - Parameter readerHandler: a function that returns the text data
     /// - Parameter completionHandler: invoked when the edit has been fully processed
     public func didChangeContent(in range: NSRange,
@@ -128,7 +128,11 @@ extension TreeSitterClient {
             return
         }
 
-        let mutation = RangeMutation(range: range, delta: delta, limit: limit)
+        // This is subtle. We are allowing the caller to define the maximum size of our
+        // content. And, on top of that, RangeMutation's limit checks only make sense
+        // for a contant view of the text. So, we have to omit the limit parameter here.
+        // That's why it's optional!
+        let mutation = RangeMutation(range: range, delta: delta)
         let edit = ContentEdit(rangeMutation: mutation, inputEdit: inputEdit)
 
         processEdit(edit, readHandler: readHandler, completionHandler: completionHandler)
@@ -144,7 +148,7 @@ extension TreeSitterClient {
     /// - Parameter string: the text content with the change applied
     /// - Parameter range: the range that was affected by the edit
     /// - Parameter delta: the change in length of the content
-    /// - Parameter limit: the total length of the content
+    /// - Parameter limit: the current length of the content
     /// - Parameter completionHandler: invoked when the edit has been fully processed
     public func didChangeContent(to string: String, in range: NSRange, delta: Int, limit: Int, completionHandler: @escaping () -> Void = {}) {
         let readFunction = Parser.readFunction(for: string, limit: limit)
