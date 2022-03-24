@@ -7,6 +7,10 @@ Neon aims to provide facilities for highlighting, indenting, and querying the st
 
 The library is being extracted from the [Chime](https://www.chimehq.com) editor. It's a pretty complex system, and pulling it out is something we intend to do over time.
 
+## Language Parsers
+
+Tree-sitter uses a seperate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes query definitions for those languages. This system is compatible with parsers that aren't bundled, but its a lot more work to use them.
+
 ## Why is this so complicated?
 
 Working with small, static, and syntactically correct documents is one thing. Achieving both high performance and high quality behavior for an editor is totally different. Work needs to be done on every keystroke, and minimizing that work requires an enormous amount of infrastructure and careful design. Before starting, it's worth seriously evaluating your performance and quality needs. You may be able to get away with a much simpler system. A lot of this boils down to size of the document. Remember: most files are small, and small files can make even the most naive implementation feel acceptable.
@@ -30,17 +34,22 @@ TreeSitterClient requires a function that can translate UTF16 code points (ie `N
 
 ```swift
 import SwiftTreeSitter
+import tree_sitter_language_resources
 import Neon
 
 // step 1: setup
 
 // construct the tree-sitter grammar for the language you are interested
-// in working with
-let language = Language(language: my_tree_sitter_grammar())
+// in working with manually
+let unbundledLanguage = Language(language: my_tree_sitter_grammar())
+
+// .. or grab one from tree-sitter-xcframework
+let swift = LanguageResource.swift
+let language = Language(language: swift.parser)
 
 // construct your highlighting query
 // this is a one-time cost, but can be expensive
-let url = URL(fileURLWithPath: "/path/to/language/highlights.scm")!
+let url = swift.highlightQueryURL!
 let query = try! language.query(contentsOf: url)
 
 // step 2: configure the client
