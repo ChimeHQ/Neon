@@ -14,9 +14,9 @@
         "package": "Rearrange",
         "repositoryURL": "https://github.com/ChimeHQ/Rearrange",
         "state": {
-          "branch": "main",
+          "branch": null,
           "revision": "c3f6b51b23c0ce26fc6a489439047ecc7a86094b",
-          "version": null
+          "version": "1.5.1"
         }
       },
       {
