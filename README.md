@@ -9,7 +9,7 @@ The library is being extracted from the [Chime](https://www.chimehq.com) editor.
 
 ## Language Parsers
 
-Tree-sitter uses a seperate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes query definitions for those languages. This system is compatible with parsers that aren't bundled, but its a lot more work to use them.
+Tree-sitter uses seperate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes query definitions for those languages. This system is compatible with parsers that aren't bundled, but it's a lot more work to use them.
 
 ## Why is this so complicated?
 
