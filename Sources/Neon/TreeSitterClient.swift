@@ -260,8 +260,9 @@ extension TreeSitterClient {
 
 extension TreeSitterClient {
     public typealias ContentProvider = (NSRange) -> Result<String, Error>
+    public typealias QueryCursorResult = Result<QueryCursor, TreeSitterClientError>
 
-    public func executeQuery(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider, completionHandler: @escaping (Result<QueryCursor, TreeSitterClientError>) -> Void) {
+    public func executeQuery(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider, completionHandler: @escaping (QueryCursorResult) -> Void) {
         let largeRange = exceedsSynchronousThreshold(range.length)
 
         let shouldEnqueue = hasQueuedEdits || largeRange || range.max >= maximumProcessedLocation
@@ -273,7 +274,7 @@ extension TreeSitterClient {
 
         let startedVersion = version
 
-        let op = AsyncBlockProducerOperation<Result<QueryCursor, TreeSitterClientError>> { opCompletion in
+        let op = AsyncBlockProducerOperation<QueryCursorResult> { opCompletion in
             OperationQueue.main.addOperation {
                 guard startedVersion == self.version else {
                     opCompletion(.failure(.staleContent))
@@ -294,7 +295,7 @@ extension TreeSitterClient {
         parseQueue.addOperation(op)
     }
 
-    public func executeQuerySynchronously(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider) -> Result<QueryCursor, TreeSitterClientError> {
+    public func executeQuerySynchronously(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider) -> QueryCursorResult {
         let shouldEnqueue = hasQueuedEdits || range.max >= maximumProcessedLocation
 
         if shouldEnqueue {
@@ -304,7 +305,7 @@ extension TreeSitterClient {
         return executeQuerySynchronouslyWithoutCheck(query, in: range, contentProvider: contentProvider)
     }
 
-    private func executeQuerySynchronouslyWithoutCheck(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider) -> Result<QueryCursor, TreeSitterClientError> {
+    private func executeQuerySynchronouslyWithoutCheck(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider) -> QueryCursorResult {
         guard let node = parseState.tree?.rootNode else {
             return .failure(.parseStateInvalid)
         }
