@@ -15,10 +15,7 @@ public final class TreeSitterClient {
     struct ContentEdit {
         var rangeMutation: RangeMutation
         var inputEdit: InputEdit
-
-        var postApplyLimit: Int {
-            return rangeMutation.postApplyLimit
-        }
+        var limit: Int
 
         var size: Int {
             return max(abs(rangeMutation.delta), rangeMutation.range.length)
@@ -30,7 +27,7 @@ public final class TreeSitterClient {
             // deletes make it possible to have no affected range
             let affectedLength = max(range.length, range.length + rangeMutation.delta)
 
-            return NSRange(location: range.location, length: affectedLength).clamped(to: postApplyLimit)
+            return NSRange(location: range.location, length: affectedLength).clamped(to: limit)
         }
     }
     
@@ -128,12 +125,14 @@ extension TreeSitterClient {
             return
         }
 
-        // This is subtle. We are allowing the caller to define the maximum size of our
-        // content. And, on top of that, RangeMutation's limit checks only make sense
-        // for a contant view of the text. So, we have to omit the limit parameter here.
-        // That's why it's optional!
+        // RangeMutation has a "limit" concept, used for bounds checking. However,
+        // they are treated as pre-application of the mutation. Here, the content
+        // has already changed. That's why it's optional!
+        //
+        // So, why use RangeMutation at all? Because we want to make use of its
+        // tranformation capabilities for invalidations.
         let mutation = RangeMutation(range: range, delta: delta)
-        let edit = ContentEdit(rangeMutation: mutation, inputEdit: inputEdit)
+        let edit = ContentEdit(rangeMutation: mutation, inputEdit: inputEdit, limit: limit)
 
         processEdit(edit, readHandler: readHandler, completionHandler: completionHandler)
     }
@@ -185,7 +184,7 @@ extension TreeSitterClient {
         let newState = self.parser.parse(state: state, readHandler: readHandler)
         let set = doInvalidations ? self.computeInvalidatedSet(from: state, to: newState, with: edit) : IndexSet()
 
-        updateState(newState, limit: edit.postApplyLimit)
+        updateState(newState, limit: edit.limit)
 
         completionHandler()
 
@@ -203,7 +202,7 @@ extension TreeSitterClient {
             let set = doInvalidations ? self.computeInvalidatedSet(from: state, to: newState, with: edit) : IndexSet()
 
             OperationQueue.main.addOperation {
-                self.updateState(newState, limit: edit.postApplyLimit)
+                self.updateState(newState, limit: edit.limit)
 
                 let completedEdit = self.outstandingEdits.removeFirst()
 
@@ -222,7 +221,7 @@ extension TreeSitterClient {
         let changedRanges = changedByteRanges.compactMap({ transformer.computeRange(from: $0) })
 
         // we have to ensure that any invalidated ranges don't fall outside of limit
-        let clampedRanges = changedRanges.compactMap({ $0.clamped(to: edit.postApplyLimit) })
+        let clampedRanges = changedRanges.compactMap({ $0.clamped(to: edit.limit) })
 
         var set = IndexSet(integersIn: edit.affectedRange)
 
