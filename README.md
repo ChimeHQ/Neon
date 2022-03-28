@@ -3,7 +3,7 @@
 [![Platforms][platforms badge]][platforms]
 
 # Neon
-A system for working with language syntax.
+A Swift library for highlighting, indenting, and querying the structure of language syntax.
 
 Neon aims to provide facilities for highlighting, indenting, and querying the structure of language text in a performant way. It is based on [tree-sitter](https://tree-sitter.github.io/tree-sitter/), via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter).
 
@@ -12,6 +12,10 @@ The library is being extracted from the [Chime](https://www.chimehq.com) editor.
 ## Language Parsers
 
 Tree-sitter uses seperate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes query definitions for those languages. This system is compatible with parsers that aren't bundled, but it's a lot more work to use them.
+
+## Why isn't this wrapped in a View?
+
+I realize that many people are looking for a view they can just drop into their app to get highlighting. But, as you start to develop more sophisticated features, packaging all of your syntax handling into a view can become pretty unweidly. A single view would now need its own theme system, LSP integration for semantic tokens, a user preference system for indenation behavior, and that's just what's coming to me off the top of my head. It isn't at all that I'm opposed to such a view. But, I think keeping things separate will help to make this library more generally useful to more applications.
 
 ## Why is this so complicated?
 
@@ -27,10 +31,11 @@ Some things to consider:
 - Precise invalidation on inter-file changes
 - Highlight quality in the face of invalid syntax
 - Ability to apply progressively higher-quality highlighting
+- Precise indentation information
 
 ## TreeSitterClient
 
-This class is an asynchronous interface to tree-sitter. It provides an UTF16 code-point (NSString-compatible) API for edits, invalidations, and queries. It can process edits of String objects, or raw bytes for even greater flexibility and performance. Invalidations are translated to the current content state, even if a queue of edits are still being processed.
+This class is an asynchronous interface to tree-sitter. It provides an UTF-16 code-point (`NSString`-compatible) API for edits, invalidations, and queries. It can process edits of `String` objects, or raw bytes for even greater flexibility and performance. Invalidations are translated to the current content state, even if a queue of edits are still being processed.
 
 TreeSitterClient requires a function that can translate UTF16 code points (ie `NSRange`.location) to a tree-sitter `Point` (line + offset).
 
