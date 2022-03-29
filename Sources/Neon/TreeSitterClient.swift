@@ -30,6 +30,11 @@ public final class TreeSitterClient {
             return NSRange(location: range.location, length: affectedLength).clamped(to: limit)
         }
     }
+
+    private struct Thresholds {
+        let maxDelta = 1024
+        let maxTotal = 150000
+    }
     
     private var oldEndPoint: Point?
     private let parser: Parser
@@ -38,9 +43,9 @@ public final class TreeSitterClient {
     private var version: Int
     private let parseQueue: OperationQueue
     private var maximumProcessedLocation: Int
+    private let thresholds: Thresholds
 
     public let transformer: TreeSitterCoordinateTransformer
-    public let synchronousLengthThreshold: Int?
     public var computeInvalidations: Bool
 
     /// Invoked when parts of the text content have changed
@@ -66,7 +71,7 @@ public final class TreeSitterClient {
 
         self.invalidationHandler = { _ in }
         self.transformer = transformer
-        self.synchronousLengthThreshold = synchronousLengthThreshold
+        self.thresholds = Thresholds()
     }
 
     public convenience init(language: Language, locationToPoint: @escaping (Int) -> Point?) throws {
@@ -75,13 +80,17 @@ public final class TreeSitterClient {
         try self.init(language: language, transformer: transformer)
     }
 
-    public var hasQueuedEdits: Bool {
+    private var hasQueuedEdits: Bool {
         return outstandingEdits.count > 0
     }
 
-    public func exceedsSynchronousThreshold(_ value: Int) -> Bool {
-        return synchronousLengthThreshold.map { value >= $0 } ?? false
+    private var mustRunAsync: Bool {
+        return hasQueuedEdits || maximumProcessedLocation > thresholds.maxTotal
     }
+
+//    public func exceedsSynchronousThreshold(_ value: Int) -> Bool {
+//        return synchronousLengthThreshold.map { value >= $0 } ?? false
+//    }
 }
 
 extension TreeSitterClient {
@@ -158,8 +167,8 @@ extension TreeSitterClient {
 
 extension TreeSitterClient {
     func processEdit(_ edit: ContentEdit, readHandler: @escaping Parser.ReadBlock, completionHandler: @escaping () -> Void) {
-        let largeEdit = exceedsSynchronousThreshold(edit.size)
-        let shouldEnqueue = hasQueuedEdits || largeEdit
+        let largeEdit = edit.size > thresholds.maxDelta
+        let shouldEnqueue = mustRunAsync || largeEdit
         let doInvalidations = computeInvalidations
 
         self.version += 1
@@ -262,9 +271,10 @@ extension TreeSitterClient {
     public typealias QueryCursorResult = Result<QueryCursor, TreeSitterClientError>
 
     public func executeQuery(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider, completionHandler: @escaping (QueryCursorResult) -> Void) {
-        let largeRange = exceedsSynchronousThreshold(range.length)
+        let largeRange = range.length > thresholds.maxDelta
+        let pending = range.max > maximumProcessedLocation
 
-        let shouldEnqueue = hasQueuedEdits || largeRange || range.max >= maximumProcessedLocation
+        let shouldEnqueue = mustRunAsync || largeRange || pending
 
         if shouldEnqueue == false {
             completionHandler(executeQuerySynchronously(query, in: range, contentProvider: contentProvider))
@@ -295,7 +305,7 @@ extension TreeSitterClient {
     }
 
     public func executeQuerySynchronously(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider) -> QueryCursorResult {
-        let shouldEnqueue = hasQueuedEdits || range.max >= maximumProcessedLocation
+        let shouldEnqueue = hasQueuedEdits || range.max > maximumProcessedLocation
 
         if shouldEnqueue {
             return .failure(.parseStateNotUpToDate)
