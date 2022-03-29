@@ -5,7 +5,7 @@
 # Neon
 A Swift library for highlighting, indenting, and querying the structure of language syntax.
 
-Neon aims to provide facilities for highlighting, indenting, and querying the structure of language text in a performant way. It is based on [tree-sitter](https://tree-sitter.github.io/tree-sitter/), via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter).
+Neon is based on [tree-sitter](https://tree-sitter.github.io/tree-sitter/), via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter).
 
 The library is being extracted from the [Chime](https://www.chimehq.com) editor. It's a pretty complex system, and pulling it out is something we intend to do over time.
 
