@@ -20,7 +20,7 @@ struct TreeSitterParseState {
         tree?.edit(edit)
     }
 
-    func changedRanges(for otherState: TreeSitterParseState) -> [Range<UInt32>] {
+    func changedByteRanges(for otherState: TreeSitterParseState) -> [Range<UInt32>] {
         let otherTree = otherState.tree
 
         switch (tree, otherTree) {

@@ -1,13 +1,10 @@
 import Foundation
 import SwiftTreeSitter
 import Rearrange
-import OperationPlus
 
 public enum TreeSitterClientError: Error {
-    case parseStateNotUpToDate
-    case parseStateInvalid
-    case unableToTransformRange(NSRange)
-    case unableToTransformByteRange(Range<UInt32>)
+    case staleState
+    case stateInvalid
     case staleContent
 }
 
@@ -31,21 +28,21 @@ public final class TreeSitterClient {
         }
     }
 
-    private struct Thresholds {
-        let maxDelta = 1024
-        let maxTotal = 150000
-    }
-    
     private var oldEndPoint: Point?
     private let parser: Parser
     private var parseState: TreeSitterParseState
     private var outstandingEdits: [ContentEdit]
     private var version: Int
-    private let parseQueue: OperationQueue
-    private var maximumProcessedLocation: Int
-    private let thresholds: Thresholds
+    private let queue: DispatchQueue
+    private let semaphore: DispatchSemaphore
+    private let synchronousLengthThreshold: Int
 
-    public let transformer: TreeSitterCoordinateTransformer
+    // This was roughly determined to be the limit in characters
+    // before it's likely that tree-sitter edit processing
+    // and tree-diffing will start to become noticibly laggy
+    private let synchronousContentLengthThreshold: Int = 1_000_000
+
+    public let locationTransformer: Point.LocationTransformer
     public var computeInvalidations: Bool
 
     /// Invoked when parts of the text content have changed
@@ -58,39 +55,25 @@ public final class TreeSitterClient {
     /// was true at the time an edit was applied.
     public var invalidationHandler: (IndexSet) -> Void
 
-    init(language: Language, transformer: TreeSitterCoordinateTransformer, synchronousLengthThreshold: Int? = 1024) throws {
+    public init(language: Language, transformer: @escaping Point.LocationTransformer, synchronousLengthThreshold: Int = 1024) throws {
         self.parser = Parser()
         self.parseState = TreeSitterParseState(tree: nil)
         self.outstandingEdits = []
         self.computeInvalidations = true
         self.version = 0
-        self.maximumProcessedLocation = 0
-        self.parseQueue = OperationQueue.serialQueue(named: "com.chimehq.Neon.TreeSitterClient")
+        self.queue = DispatchQueue(label: "com.chimehq.Neon.TreeSitterClient")
+        self.semaphore = DispatchSemaphore(value: 1)
 
         try parser.setLanguage(language)
 
         self.invalidationHandler = { _ in }
-        self.transformer = transformer
-        self.thresholds = Thresholds()
+        self.locationTransformer = transformer
+        self.synchronousLengthThreshold = synchronousLengthThreshold
     }
 
-    public convenience init(language: Language, locationToPoint: @escaping (Int) -> Point?) throws {
-        let transformer = TreeSitterCoordinateTransformer(locationToPoint: locationToPoint)
-
-        try self.init(language: language, transformer: transformer)
-    }
-
-    private var hasQueuedEdits: Bool {
+    private var hasQueuedWork: Bool {
         return outstandingEdits.count > 0
     }
-
-    private var mustRunAsync: Bool {
-        return hasQueuedEdits || maximumProcessedLocation > thresholds.maxTotal
-    }
-
-//    public func exceedsSynchronousThreshold(_ value: Int) -> Bool {
-//        return synchronousLengthThreshold.map { value >= $0 } ?? false
-//    }
 }
 
 extension TreeSitterClient {
@@ -101,7 +84,7 @@ extension TreeSitterClient {
     ///
     /// - Parameter range: the range of content that will be affected by an edit
     public func willChangeContent(in range: NSRange) {
-        oldEndPoint = transformer.locationToPoint(range.max)
+        oldEndPoint = locationTransformer(range.max)
     }
 
     /// Process a change in the underlying text content.
@@ -129,7 +112,7 @@ extension TreeSitterClient {
 
         self.oldEndPoint = nil
 
-        guard let inputEdit = transformer.inputEdit(for: range, delta: delta, oldEndPoint: oldEndPoint) else {
+        guard let inputEdit = InputEdit(range: range, delta: delta, oldEndPoint: oldEndPoint, transformer: locationTransformer) else {
             assertionFailure("unable to build InputEdit")
             return
         }
@@ -167,33 +150,40 @@ extension TreeSitterClient {
 
 extension TreeSitterClient {
     func processEdit(_ edit: ContentEdit, readHandler: @escaping Parser.ReadBlock, completionHandler: @escaping () -> Void) {
-        let largeEdit = edit.size > thresholds.maxDelta
-        let shouldEnqueue = mustRunAsync || largeEdit
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        let largeEdit = edit.size > synchronousLengthThreshold
+        let largeDocument = edit.limit > synchronousContentLengthThreshold
+        let runAsync = hasQueuedWork || largeEdit || largeDocument
         let doInvalidations = computeInvalidations
 
-        self.version += 1
-
-        guard shouldEnqueue else {
+        if runAsync == false {
             processEditSync(edit, withInvalidations: doInvalidations, readHandler: readHandler, completionHandler: completionHandler)
             return
         }
 
-        self.processEditAsync(edit, withInvalidations: doInvalidations, readHandler: readHandler, completionHandler: completionHandler)
+        processEditAsync(edit, withInvalidations: doInvalidations, readHandler: readHandler, completionHandler: completionHandler)
     }
 
-    private func updateState(_ newState: TreeSitterParseState, limit: Int) {
-        self.parseState = newState
-        self.maximumProcessedLocation = limit
-    }
-
-    private func processEditSync(_ edit: ContentEdit, withInvalidations doInvalidations: Bool, readHandler: @escaping Parser.ReadBlock, completionHandler: () -> Void) {
+    private func applyEdit(_ edit: ContentEdit, readHandler: @escaping Parser.ReadBlock) -> (TreeSitterParseState, TreeSitterParseState) {
+        self.semaphore.wait()
         let state = self.parseState
 
         state.applyEdit(edit.inputEdit)
-        let newState = self.parser.parse(state: state, readHandler: readHandler)
-        let set = doInvalidations ? self.computeInvalidatedSet(from: state, to: newState, with: edit) : IndexSet()
+        self.parseState = self.parser.parse(state: state, readHandler: readHandler)
 
-        updateState(newState, limit: edit.limit)
+        let oldState = state.copy()
+        let newState = parseState.copy()
+
+        self.semaphore.signal()
+
+        return (oldState, newState)
+    }
+
+    private func processEditSync(_ edit: ContentEdit, withInvalidations doInvalidations: Bool, readHandler: @escaping Parser.ReadBlock, completionHandler: () -> Void) {
+        let (oldState, newState) = applyEdit(edit, readHandler: readHandler)
+
+        let set = doInvalidations ? self.computeInvalidatedSet(from: oldState, to: newState, with: edit) : IndexSet()
 
         completionHandler()
 
@@ -203,31 +193,28 @@ extension TreeSitterClient {
     private func processEditAsync(_ edit: ContentEdit, withInvalidations doInvalidations: Bool, readHandler: @escaping Parser.ReadBlock, completionHandler: @escaping () -> Void) {
         outstandingEdits.append(edit)
 
-        let state = self.parseState.copy()
+        queue.async {
+            let (oldState, newState) = self.applyEdit(edit, readHandler: readHandler)
 
-        parseQueue.addAsyncOperation { opCompletion in
-            state.applyEdit(edit.inputEdit)
-            let newState = self.parser.parse(state: state, readHandler: readHandler)
-            let set = doInvalidations ? self.computeInvalidatedSet(from: state, to: newState, with: edit) : IndexSet()
+            DispatchQueue.global().async {
+                // we can safely compute the invalidations on another queue
+                let set = doInvalidations ? self.computeInvalidatedSet(from: oldState, to: newState, with: edit) : IndexSet()
 
-            OperationQueue.main.addOperation {
-                self.updateState(newState, limit: edit.limit)
+                OperationQueue.main.addOperation {
+                    let completedEdit = self.outstandingEdits.removeFirst()
 
-                let completedEdit = self.outstandingEdits.removeFirst()
+                    assert(completedEdit.inputEdit == edit.inputEdit)
 
-                assert(completedEdit.inputEdit == edit.inputEdit)
+                    self.dispatchInvalidatedSet(set)
 
-                self.dispatchInvalidatedSet(set)
-
-                opCompletion()
-                completionHandler()
+                    completionHandler()
+                }
             }
         }
     }
 
     func computeInvalidatedSet(from oldState: TreeSitterParseState, to newState: TreeSitterParseState, with edit: ContentEdit) -> IndexSet {
-        let changedByteRanges = oldState.changedRanges(for: newState)
-        let changedRanges = changedByteRanges.compactMap({ transformer.computeRange(from: $0) })
+        let changedRanges = oldState.changedByteRanges(for: newState).map({ $0.range })
 
         // we have to ensure that any invalidated ranges don't fall outside of limit
         let clampedRanges = changedRanges.compactMap({ $0.clamped(to: edit.limit) })
@@ -267,112 +254,171 @@ extension TreeSitterClient {
 }
 
 extension TreeSitterClient {
-    public typealias ContentProvider = (NSRange) -> Result<String, Error>
     public typealias QueryCursorResult = Result<QueryCursor, TreeSitterClientError>
+    public typealias ResolvingQueryCursorResult = Result<ResolvingQueryCursor, TreeSitterClientError>
 
-    public func executeQuery(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider, completionHandler: @escaping (QueryCursorResult) -> Void) {
-        let largeRange = range.length > thresholds.maxDelta
-        let pending = range.max > maximumProcessedLocation
+    /// Determine if it is likely that a synchronous query will execute quickly
+    public func canAttemptSynchronousQuery(in range: NSRange) -> Bool {
+        let largeRange = range.length > synchronousLengthThreshold
 
-        let shouldEnqueue = mustRunAsync || largeRange || pending
+        return hasQueuedWork == false && largeRange == false
+    }
 
-        if shouldEnqueue == false {
-            completionHandler(executeQuerySynchronously(query, in: range, contentProvider: contentProvider))
+    /// Executes a query and returns a ResolvingQueryCursor
+    ///
+    /// This method runs a query on the current state of the content. It guarantees
+    /// that a successful result corresponds to that state. It must be invoked from
+    /// the main thread and will always call `completionHandler` on the main thread as well.
+    ///
+    /// Note that if you set `preferSynchronous` to true, `prefetchMatches` is ignored,
+    /// since it will only incur additional overhead.
+    ///
+    /// - Parameter query: the query to execute
+    /// - Parameter range: constrain the query to this range
+    /// - Parameter preferSynchronous: attempt to run the query synchronously if possible
+    /// - Parameter prefetchMatches: prefetch matches in the background
+    /// - Parameter completionHandler: returns the result
+    public func executeResolvingQuery(_ query: Query,
+                                      in range: NSRange,
+                                      preferSynchronous: Bool = false,
+                                      prefetchMatches: Bool = true,
+                                      completionHandler: @escaping (ResolvingQueryCursorResult) -> Void) {
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        if preferSynchronous && canAttemptSynchronousQuery(in: range) {
+            let result = executeResolvingQuerySynchronously(query, in: range)
+
+            completionHandler(result)
             return
         }
 
+        // We only want to produce results that match the *current* state
+        // of the content...
         let startedVersion = version
 
-        let op = AsyncBlockProducerOperation<QueryCursorResult> { opCompletion in
-            OperationQueue.main.addOperation {
-                guard startedVersion == self.version else {
-                    opCompletion(.failure(.staleContent))
+        queue.async {
+            // .. so at the state could be mutated at at any point. But,
+            // let's be optimistic and only check once at the end.
 
-                    return
+            self.semaphore.wait()
+            let state = self.parseState.copy()
+            self.semaphore.signal()
+
+            DispatchQueue.global().async {
+                let result = self.executeResolvingQuerySynchronouslyWithoutCheck(query,
+                                                                                 in: range,
+                                                                                 with: state)
+
+                if case .success(let cursor) = result, prefetchMatches {
+                    cursor.prefetchMatches()
                 }
 
-                assert(range.max <= self.maximumProcessedLocation)
+                OperationQueue.main.addOperation {
+                    guard startedVersion == self.version else {
+                        completionHandler(.failure(.staleContent))
 
-                let result = self.executeQuerySynchronouslyWithoutCheck(query, in: range, contentProvider: contentProvider)
+                        return
+                    }
 
-                opCompletion(result)
+                    completionHandler(result)
+                }
             }
         }
-
-        op.resultCompletionBlock = completionHandler
-
-        parseQueue.addOperation(op)
     }
 
-    public func executeQuerySynchronously(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider) -> QueryCursorResult {
-        let shouldEnqueue = hasQueuedEdits || range.max > maximumProcessedLocation
-
-        if shouldEnqueue {
-            return .failure(.parseStateNotUpToDate)
-        }
-
-        return executeQuerySynchronouslyWithoutCheck(query, in: range, contentProvider: contentProvider)
-    }
-
-    private func executeQuerySynchronouslyWithoutCheck(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider) -> QueryCursorResult {
-        guard let node = parseState.tree?.rootNode else {
-            return .failure(.parseStateInvalid)
-        }
-
-        let textProvider: PredicateTextProvider = { (byteRange, _) -> Result<String, Error> in
-            guard let range = self.transformer.computeRange(from: byteRange) else {
-                return .failure(TreeSitterClientError.unableToTransformByteRange(byteRange))
+    /// Executes a query and returns a ResolvingQueryCursor
+    ///
+    /// This is the async version of executeResolvingQuery(:in:preferSynchronous:prefetchMatches:completionHandler:)
+    @available(macOS 10.15, iOS 13.0, *)
+    public func resolvingQueryCursor(with query: Query, in range: NSRange, preferSynchronous: Bool = false, prefetchMatches: Bool = true) async throws -> ResolvingQueryCursor {
+        try await withCheckedThrowingContinuation { continuation in
+            self.executeResolvingQuery(query, in: range, preferSynchronous: preferSynchronous) { result in
+                continuation.resume(with: result)
             }
+        }
+    }
+}
 
-            return contentProvider(range)
+extension TreeSitterClient {
+    public func executeResolvingQuerySynchronously(_ query: Query, in range: NSRange) -> ResolvingQueryCursorResult {
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        if hasQueuedWork {
+            return .failure(.staleState)
         }
 
-        guard let byteRange = transformer.computeByteRange(from: range) else {
-            return .failure(.unableToTransformRange(range))
+        return executeResolvingQuerySynchronouslyWithoutCheck(query, in: range, with: parseState)
+    }
+
+    private func executeResolvingQuerySynchronouslyWithoutCheck(_ query: Query, in range: NSRange, with state: TreeSitterParseState) -> ResolvingQueryCursorResult {
+        return executeQuerySynchronouslyWithoutCheck(query, in: range, with: state)
+            .map({ ResolvingQueryCursor(cursor: $0) })
+    }
+}
+
+extension TreeSitterClient {
+    public func executeQuerySynchronously(_ query: Query, in range: NSRange) -> QueryCursorResult {
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        if hasQueuedWork {
+            return .failure(.staleState)
         }
 
-        let cursor = query.execute(node: node, textProvider: textProvider)
+        return executeQuerySynchronouslyWithoutCheck(query, in: range, with: parseState)
+    }
 
-        cursor.setByteRange(range: byteRange)
+    private func executeQuerySynchronouslyWithoutCheck(_ query: Query, in range: NSRange, with state: TreeSitterParseState) -> QueryCursorResult {
+        guard let node = state.tree?.rootNode else {
+            return .failure(.stateInvalid)
+        }
+
+        // critical to keep a reference to the tree, so it survives as long as the query
+        let cursor = query.execute(node: node, in: state.tree)
+
+        cursor.setRange(range)
 
         return .success(cursor)
     }
 }
 
 extension TreeSitterClient {
-    public struct HighlightMatch {
-        public var name: String
-        public var range: NSRange
-    }
+    public typealias TextProvider = ResolvingQueryCursor.TextProvider
 
-    private func findHighlightMatches(with cursor: QueryCursor) -> [HighlightMatch] {
-        var pairs = [HighlightMatch]()
-
-        while let match = try? cursor.nextMatch() {
-            for capture in match.captures {
-                guard let name = capture.name else { continue }
-                let byteRange = capture.node.byteRange
-
-                guard let range = transformer.computeRange(from: byteRange) else {
-                    continue
-                }
-
-                pairs.append(HighlightMatch(name: name, range: range))
-            }
+    private func tokensFromCursor(_ cursor: ResolvingQueryCursor, textProvider: TextProvider?) -> [Token] {
+        if let textProvider = textProvider {
+            cursor.prepare(with: textProvider)
         }
 
-        return pairs
+        return cursor
+            .map({ $0.captures })
+            .flatMap({ $0 })
+            .compactMap { capture -> Token? in
+                guard let name = capture.name else { return nil }
+
+                return Token(name: name, range: capture.node.range)
+            }
     }
 
-    public func executeHighlightQuery(_ query: Query, in range: NSRange, contentProvider: @escaping ContentProvider, completionHandler: @escaping (Result<[HighlightMatch], TreeSitterClientError>) -> Void) {
-        executeQuery(query, in: range, contentProvider: contentProvider) { result in
-            switch result {
-            case .failure(let error):
-                completionHandler(.failure(error))
-            case .success(let cursor):
-                let highlights = self.findHighlightMatches(with: cursor)
+    public func executeHighlightsQuery(_ query: Query,
+                                       in range: NSRange,
+                                       preferSynchronous: Bool = false,
+                                       textProvider: TextProvider? = nil,
+                                       completionHandler: @escaping (Result<[Token], TreeSitterClientError>) -> Void) {
+        executeResolvingQuery(query, in: range, preferSynchronous: preferSynchronous) { cursorResult in
+            let result = cursorResult.map({ self.tokensFromCursor($0, textProvider: textProvider) })
 
-                completionHandler(.success(highlights))
+            completionHandler(result)
+        }
+    }
+
+    @available(macOS 10.15, iOS 13.0, *)
+    public func highlights(with query: Query,
+                           in range: NSRange,
+                           preferSynchronous: Bool = false,
+                           textProvider: TextProvider? = nil) async throws -> [Token] {
+        try await withCheckedThrowingContinuation { continuation in
+            self.executeHighlightsQuery(query, in: range, preferSynchronous: preferSynchronous, textProvider: textProvider) { result in
+                continuation.resume(with: result)
             }
         }
     }

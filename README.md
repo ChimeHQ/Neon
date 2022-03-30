@@ -35,7 +35,9 @@ Some things to consider:
 
 ## TreeSitterClient
 
-This class is an asynchronous interface to tree-sitter. It provides an UTF-16 code-point (`NSString`-compatible) API for edits, invalidations, and queries. It can process edits of `String` objects, or raw bytes for even greater flexibility and performance. Invalidations are translated to the current content state, even if a queue of edits are still being processed.
+This class is an asynchronous interface to tree-sitter. It provides an UTF-16 code-point (`NSString`-compatible) API for edits, invalidations, and queries. It can process edits of `String` objects, or raw bytes. Invalidations are translated to the current content state, even if a queue of edits are still being processed.
+
+It goes through great lengths to provide APIs that can be both synchronous, asynchronous, or both depending on the state of the system. This kind of interface can be critical for prividing a flicker-free highlighting and live typing interactions.
 
 TreeSitterClient requires a function that can translate UTF16 code points (ie `NSRange`.location) to a tree-sitter `Point` (line + offset).
 
@@ -84,14 +86,17 @@ client.willChangeContent(in: range)
 client.didChangeContent(to: string, in: range, delta: delta, limit: limit)
 
 // step 4: run queries
-// you can execute these queries in the invalidationHandler
+// you can execute these queries directly in the invalidationHandler, if desired
 
-// produce a function that can read your text content
-let provider = { contentRange -> Result<String, Error> in ... }
+// Many tree-sitter highlight queries contain predicates. These are both expensive
+// and complex to resolve. This is an optional feature - you can just skip it. Doing
+// so makes the process both faster and simpler, but could result in lower-quality
+// and even incorrect highlighting.
 
-client.executeHighlightQuery(query, in: range, contentProvider: provider) { result in
-    // TreeSitterClient.HighlightMatch objects will tell you about the
-    // highlights.scm name and range in your text
+let provider: TreeSitterClient.TextProvider = { (range, _) -> String? in ... }
+
+client.executeHighlightsQuery(query, in: range, textProvider: provider) { result in
+    // Token values will tell you the highlights.scm name and range in your text
 }
 ```
 
