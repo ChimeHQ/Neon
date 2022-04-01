@@ -1,5 +1,7 @@
 import Foundation
 
+public typealias TokenProvider = (NSRange, @escaping (Result<[Token], Error>) -> Void) -> Void
+
 public struct Token {
     public let name: String
     public let range: NSRange
