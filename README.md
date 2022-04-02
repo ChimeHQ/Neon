@@ -30,14 +30,12 @@ Not all of these might matter you. Neon's components are fairly loosely-coupled,
 
 Neon is built around the idea that there can be multiple sources of information about the semantic meaning of the text, all with varying latencies and quality.
 
-- Language Server Protocol has semantic tokens, which is high quality, but also high latency.
-- tree-sitter](https://tree-sitter.github.io/tree-sitter/) is very good quality, and **can** be low-latency
+- [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) has [semantic tokens](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens), which is high quality, but also high latency.
+- [tree-sitter](https://tree-sitter.github.io/tree-sitter/) is very good quality, and **can** be low-latency
 - Regex-based systems can have ok quality and low-latency
 - Simpler pattern-matching systems generally have poor quality, but have very low latency
 
 Neon includes built-in suport for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter also uses separate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes the needed query definitions for those languages. This system is compatible with parsers that aren't bundled, but it's a lot more work to use them.
-
-## High-Level Architecture
 
 ## Integration
 
@@ -64,6 +62,8 @@ Achieving guaranteed flicker-free highlighting is more challenging. You need to 
 - `LazyTextStoringMonitor` allows for lazy content reading, which is essential to quickly open large documents
 
 You can definitely use Neon without TextStory. But, I think it may be reasonable to just make Neon depend on TextStory to help simplify usage.
+
+## Components
 
 ### Highligher
 
