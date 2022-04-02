@@ -3,19 +3,11 @@
 [![Platforms][platforms badge]][platforms]
 
 # Neon
-A Swift library for highlighting, indenting, and querying the structure of language syntax.
+A Swift library for efficient highlighting, indenting, and querying the structure of language syntax.
 
-Neon is based on [tree-sitter](https://tree-sitter.github.io/tree-sitter/), via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter).
+Neon has a strong focus on efficiency and flexibility. These qualities bring some serious complexity. Right now, Neon is a collection of components that can be assembled together as part of a larger text system. It does not include a single component that ties everything together. I also realize that many people are looking for exactly that. But, as you start to develop more sophisticated features, packaging all of your syntax handling into a monolithic object becomes untenable. It isn't at all that I'm opposed to doing it. It's just difficult to achieve without sacrificing flexibility that keeps Neon generally useful to more types of projets.
 
-The library is being extracted from the [Chime](https://www.chimehq.com) editor. It's a pretty complex system, and pulling it out is something we intend to do over time.
-
-## Language Parsers
-
-Tree-sitter uses seperate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes query definitions for those languages. This system is compatible with parsers that aren't bundled, but it's a lot more work to use them.
-
-## Why isn't this wrapped in a View?
-
-I realize that many people are looking for a view they can just drop into their app to get highlighting. But, as you start to develop more sophisticated features, packaging all of your syntax handling into a view can become pretty unweidly. A single view would now need its own theme system, LSP integration for semantic tokens, a user preference system for indenation behavior, and that's just what's coming to me off the top of my head. It isn't at all that I'm opposed to such a view. But, I think keeping things separate will help to make this library more generally useful to more applications.
+The library is being extracted from the [Chime](https://www.chimehq.com) editor. It's a big system, and pulling it out is something we intend to do over time.
 
 ## Why is this so complicated?
 
@@ -27,19 +19,79 @@ Some things to consider:
 - Latency to visible elements highlight
 - Latency to end-of-document highlight
 - Latency on keystroke
-- Precise invalidation on keystrokes
-- Precise invalidation on inter-file changes
+- Precise invalidation on keystroke
 - Highlight quality in the face of invalid syntax
 - Ability to apply progressively higher-quality highlighting
-- Precise indentation information
+- Precise indentation calculation
 
-## TreeSitterClient
+Not all of these might matter you. Neon's components are fairly loosely-coupled, so maybe just one or two parts might be usable without the whole thing.
 
-This class is an asynchronous interface to tree-sitter. It provides an UTF-16 code-point (`NSString`-compatible) API for edits, invalidations, and queries. It can process edits of `String` objects, or raw bytes. Invalidations are translated to the current content state, even if a queue of edits are still being processed.
+## Language Support
 
-It goes through great lengths to provide APIs that can be both synchronous, asynchronous, or both depending on the state of the system. This kind of interface can be critical for prividing a flicker-free highlighting and live typing interactions.
+Neon is built around the idea that there can be multiple sources of information about the semantic meaning of the text, all with varying latencies and quality.
 
-TreeSitterClient requires a function that can translate UTF16 code points (ie `NSRange`.location) to a tree-sitter `Point` (line + offset).
+- Language Server Protocol has semantic tokens, which is high quality, but also high latency.
+- tree-sitter](https://tree-sitter.github.io/tree-sitter/) is very good quality, and **can** be low-latency
+- Regex-based systems can have ok quality and low-latency
+- Simpler pattern-matching systems generally have poor quality, but have very low latency
+
+Neon includes built-in suport for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter also uses separate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes the needed query definitions for those languages. This system is compatible with parsers that aren't bundled, but it's a lot more work to use them.
+
+## High-Level Architecture
+
+## Integration
+
+Neon's components need to react to various events:
+
+- the text is about to change
+- the text has changed
+- a text change has been processed and is now ready to accept styling
+- the visible text has changed
+- the styling has become invalid (ex: the theme has changed)
+
+How and where they come from depends on your text setup. And, not every components needs to know about all of these, so you may be able to get away with less.
+
+A very minimum setup could be produced with just an `NSTextStorageDelegate`. Monitoring the visible rect of the `NSTextView` will improve performance.
+
+Achieving guaranteed flicker-free highlighting is more challenging. You need to know when a text change has been processing by enough of the system that styling is possible. This point in the text change lifecycle is not natively supported by `NSTextStorage` or `NSLayoutManager`. It requires an `NSTextStorage` subclass. But, even that isn't quite enough unfortunately, as you still need to precisely control the timing of invalidation and styling. This is where `HighlighterInvalidationBuffer` comes in. I warned you this was complicated.
+
+## Relationship to TextStory
+
+[TextStory](https://github.com/ChimeHQ/TextStory) is a library that contains three very useful components when working with Neon.
+
+- `TSYTextStorage` gets you all the text change life cycle hooks without falling into the `NSString`/`String` bridging performance traps
+- `TextMutationEventRouter` makes it easier to route events to the components
+- `LazyTextStoringMonitor` allows for lazy content reading, which is essential to quickly open large documents
+
+You can definitely use Neon without TextStory. But, I think it may be reasonable to just make Neon depend on TextStory to help simplify usage.
+
+### Highligher
+
+This is the main component that coordinates the styling and invalidation of text.
+
+- Connects to a text view via `TextSystemInterface`
+- Monitors text changes and view visible state
+- Gets token-level information from a `TokenProvider`
+
+### HighlighterInvalidationBuffer
+
+In a traditional `NSTextStorage`/`NSLayoutManager` system (TextKit 1), it can be challenging to achieve flicker-free on-keypress highlighting. This class offers a mechanism for buffering invalidations, so you can precisely control how and when actual text style updates occur.
+
+### TextContainerSystemInterface (macOS only)
+
+An implementation of the `TextSystemInterface` protocol for an `NSTextContainer`-backed `NSTextView`. This takes care of the interface to `NSTextView` and `NSLayoutManager`, but defers `Token`-style translation (themes) to an external `AttributeProvider`.
+
+### TreeSitterClient
+
+This class is an asynchronous interface to tree-sitter. It provides an UTF-16 code-point (`NSString`-compatible) API for edits, invalidations, and queries. It can process edits of `String` objects, or raw bytes. Invalidations are translated to the current content state, even if a queue of edits are still being processed. It is fully-compatible with reading the document content lazily.
+
+- Monitors text changes
+- Can be used to build a `TokenProvider`
+- Requires a function that can translate UTF-16 code points to a tree-sitter `Point` (line + offset)
+
+`TreeSitterClient` provides APIs that can be both synchronous, asynchronous, or both depending on the state of the system. This kind of interface can be important when optimizing for flicker-free, low-latency highlighting live typing interactions like indenting.
+
+Using it is quite involved - here's a little example:
 
 ```swift
 import SwiftTreeSitter
