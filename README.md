@@ -5,6 +5,21 @@
 # Neon
 A Swift library for efficient highlighting, indenting, and querying the structure of language syntax.
 
+It features:
+
+- Minimal text invalidation
+- Support for multiple token sources
+- A hybrid synch/async system for targeting flicker-free styling on keystrokes
+- [tree-sitter](https://tree-sitter.github.io/tree-sitter/) integration
+- Compatibility with lazy text data reading
+- Flexibility when integrating with a larger text system
+
+It does not feature:
+
+- A theme system
+- A single View subclass
+- Low complexity
+
 Neon has a strong focus on efficiency and flexibility. These qualities bring some serious complexity. Right now, Neon is a collection of components that can be assembled together as part of a larger text system. It does not include a single component that ties everything together.
 
 I realize that many people are looking for exactly that. But, it's deceptively difficult, as text systems can be phenomenally complicated. I'd love to make easier-to-use parts, and that's a goal. But, it has to be done in a way that does not sacrifice flexibility.
