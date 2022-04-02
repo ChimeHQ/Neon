@@ -5,7 +5,9 @@
 # Neon
 A Swift library for efficient highlighting, indenting, and querying the structure of language syntax.
 
-Neon has a strong focus on efficiency and flexibility. These qualities bring some serious complexity. Right now, Neon is a collection of components that can be assembled together as part of a larger text system. It does not include a single component that ties everything together. I also realize that many people are looking for exactly that. But, as you start to develop more sophisticated features, packaging all of your syntax handling into a monolithic object becomes untenable. It isn't at all that I'm opposed to doing it. It's just difficult to achieve without sacrificing flexibility that keeps Neon generally useful to more types of projets.
+Neon has a strong focus on efficiency and flexibility. These qualities bring some serious complexity. Right now, Neon is a collection of components that can be assembled together as part of a larger text system. It does not include a single component that ties everything together.
+
+I realize that many people are looking for exactly that. But, it's deceptively difficult, as text systems can be phenomenally complicated. I'd love to make easier-to-use parts, and that's a goal. But, it has to be done in a way that does not sacrifice flexibility.
 
 The library is being extracted from the [Chime](https://www.chimehq.com) editor. It's a big system, and pulling it out is something we intend to do over time.
 
