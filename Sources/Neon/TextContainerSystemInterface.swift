@@ -28,7 +28,7 @@ extension NSTextView {
 }
 
 public struct TextContainerSystemInterface {
-    public typealias AttributeProvider = (Token) -> [NSAttributedString.Key: Any]
+    public typealias AttributeProvider = (Token) -> [NSAttributedString.Key: Any]?
 
     public let textContainer: NSTextContainer
     public let attributeProvider: AttributeProvider
@@ -49,7 +49,7 @@ extension TextContainerSystemInterface: TextSystemInterface {
     }
 
     public func applyStyle(to token: Token) {
-        let attrs = attributeProvider(token)
+        guard let attrs = attributeProvider(token) else { return }
 
         layoutManager?.setTemporaryAttributes(attrs, forCharacterRange: token.range)
     }
