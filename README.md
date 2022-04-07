@@ -9,7 +9,7 @@ It features:
 
 - Minimal text invalidation
 - Support for multiple token sources
-- A hybrid synch/async system for targeting flicker-free styling on keystrokes
+- A hybrid sync/async system for targeting flicker-free styling on keystrokes
 - [tree-sitter](https://tree-sitter.github.io/tree-sitter/) integration
 - Compatibility with lazy text data reading
 - Flexibility when integrating with a larger text system
@@ -48,11 +48,11 @@ Not all of these might matter you. Neon's components are fairly loosely-coupled,
 Neon is built around the idea that there can be multiple sources of information about the semantic meaning of the text, all with varying latencies and quality.
 
 - [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) has [semantic tokens](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens), which is high quality, but also high latency.
-- [tree-sitter](https://tree-sitter.github.io/tree-sitter/) is very good quality, and **can** be low-latency
+- [tree-sitter](https://tree-sitter.github.io/tree-sitter/) is very good quality, and can potentially be low-latency
 - Regex-based systems can have ok quality and low-latency
 - Simpler pattern-matching systems generally have poor quality, but have very low latency
 
-Neon includes built-in suport for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter also uses separate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes the needed query definitions for those languages. This system is compatible with parsers that aren't bundled, but it's a lot more work to use them.
+Neon includes built-in suport for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter also uses separate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes the needed query definitions for those languages. This system is compatible with parsers that aren't bundled, but it's definitely more work to use them.
 
 ## Integration
 
@@ -60,7 +60,7 @@ Neon's components need to react to various events:
 
 - the text is about to change
 - the text has changed
-- a text change has been processed and is now ready to accept styling
+- a text change has been processed and is now ready to be styled
 - the visible text has changed
 - the styling has become invalid (ex: the theme has changed)
 
@@ -89,6 +89,8 @@ This is the main component that coordinates the styling and invalidation of text
 - Connects to a text view via `TextSystemInterface`
 - Monitors text changes and view visible state
 - Gets token-level information from a `TokenProvider`
+
+Note that Highlighter is built to handle a `TokenProvider` calling its completion block more than one time, potentially replacing or merging with existing styling.
 
 ### HighlighterInvalidationBuffer
 
