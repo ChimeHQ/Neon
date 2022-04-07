@@ -17,14 +17,16 @@ public class Highlighter {
     private var pendingSet: IndexSet
     private var log: OSLog
     public var tokenProvider: TokenProvider
+    private var failed: Bool
 
     public init(textInterface: TextSystemInterface, tokenProvider: TokenProvider? = nil) {
         self.textInterface = textInterface
         self.validSet = IndexSet()
         self.pendingSet = IndexSet()
-        self.tokenProvider = tokenProvider ?? { _, block in block(.success([])) }
+        self.tokenProvider = tokenProvider ?? { _, block in block(.success([]))}
+        self.failed = false
 
-        self.log = OSLog(subsystem: "com.chimehq.Neon", category: "TextStateTracker")
+        self.log = OSLog(subsystem: "com.chimehq.Neon", category: "Highlighter")
     }
 }
 
@@ -32,7 +34,9 @@ extension Highlighter {
     public func invalidate(_ set: IndexSet) {
         dispatchPrecondition(condition: .onQueue(.main))
 
+        self.failed = false
         validSet.subtract(set)
+        pendingSet.subtract(set)
 
         makeNextTokenRequest()
     }
@@ -119,6 +123,8 @@ extension Highlighter {
     }
 
     private func makeNextTokenRequest() {
+        guard failed == false else { return }
+
         guard let range = nextNeededTokenRange() else { return }
 
         self.pendingSet.insert(range: range)
@@ -129,8 +135,8 @@ extension Highlighter {
                 os_log("failed to get tokens: %{public}@", log: self.log, type: .error, String(describing: error))
 
                 DispatchQueue.main.async {
+                    self.failed = true
                     self.pendingSet.remove(integersIn: range)
-                    self.invalidate(range)
                 }
             case .success(let tokens):
                 self.handleTokens(tokens, for: range)
@@ -140,26 +146,29 @@ extension Highlighter {
                 }
             }
         }
+
     }
 }
 
 extension Highlighter {
-    private func handleTokens(_ tokens: [Token], for range: NSRange) {
+    private func handleTokens(_ tokenApplication: TokenApplication, for range: NSRange) {
         self.pendingSet.remove(integersIn: range)
 
         let receivedSet = IndexSet(integersIn: range)
 
-        applyStyle(to: tokens, in: receivedSet)
+        applyStyle(with: tokenApplication, in: receivedSet)
     }
 
-    private func applyStyle(to tokens: [Token], in set: IndexSet) {
+    private func applyStyle(with tokenApplication: TokenApplication, in set: IndexSet) {
         precondition(set.isEmpty == false)
 
-        for range in set.nsRangeView {
-            textInterface.clearStyle(in: range)
+        if tokenApplication.action == .replace {
+            for range in set.nsRangeView {
+                textInterface.clearStyle(in: range)
+            }
         }
 
-        for token in tokens {
+        for token in tokenApplication.tokens {
             textInterface.applyStyle(to: token)
         }
 
