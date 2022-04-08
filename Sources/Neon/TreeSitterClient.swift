@@ -260,8 +260,9 @@ extension TreeSitterClient {
     /// Determine if it is likely that a synchronous query will execute quickly
     public func canAttemptSynchronousQuery(in range: NSRange) -> Bool {
         let largeRange = range.length > synchronousLengthThreshold
+        let largeLocation = range.max > synchronousContentLengthThreshold
 
-        return hasQueuedWork == false && largeRange == false
+        return (hasQueuedWork || largeRange || largeLocation) == false
     }
 
     /// Executes a query and returns a ResolvingQueryCursor

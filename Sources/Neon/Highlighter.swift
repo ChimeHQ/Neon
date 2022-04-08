@@ -2,13 +2,6 @@ import Foundation
 import Rearrange
 import os.log
 
-public protocol TextSystemInterface {
-    func clearStyle(in range: NSRange)
-    func applyStyle(to token: Token)
-
-    var length: Int { get }
-    var visibleRange: NSRange { get }
-}
 
 public class Highlighter {
     public var textInterface: TextSystemInterface
@@ -17,14 +10,12 @@ public class Highlighter {
     private var pendingSet: IndexSet
     private var log: OSLog
     public var tokenProvider: TokenProvider
-    private var failed: Bool
 
     public init(textInterface: TextSystemInterface, tokenProvider: TokenProvider? = nil) {
         self.textInterface = textInterface
         self.validSet = IndexSet()
         self.pendingSet = IndexSet()
         self.tokenProvider = tokenProvider ?? { _, block in block(.success([]))}
-        self.failed = false
 
         self.log = OSLog(subsystem: "com.chimehq.Neon", category: "Highlighter")
     }
@@ -34,7 +25,10 @@ extension Highlighter {
     public func invalidate(_ set: IndexSet) {
         dispatchPrecondition(condition: .onQueue(.main))
 
-        self.failed = false
+        if set.isEmpty {
+            return
+        }
+
         validSet.subtract(set)
         pendingSet.subtract(set)
 
@@ -123,19 +117,19 @@ extension Highlighter {
     }
 
     private func makeNextTokenRequest() {
-        guard failed == false else { return }
-
         guard let range = nextNeededTokenRange() else { return }
 
         self.pendingSet.insert(range: range)
 
+        // this can be called 0 or more times
         tokenProvider(range) { result in
+            dispatchPrecondition(condition: .onQueue(.main))
+            
             switch result {
             case .failure(let error):
                 os_log("failed to get tokens: %{public}@", log: self.log, type: .error, String(describing: error))
 
                 DispatchQueue.main.async {
-                    self.failed = true
                     self.pendingSet.remove(integersIn: range)
                 }
             case .success(let tokens):
@@ -156,22 +150,8 @@ extension Highlighter {
 
         let receivedSet = IndexSet(integersIn: range)
 
-        applyStyle(with: tokenApplication, in: receivedSet)
-    }
+        textInterface.apply(tokenApplication, to: receivedSet)
 
-    private func applyStyle(with tokenApplication: TokenApplication, in set: IndexSet) {
-        precondition(set.isEmpty == false)
-
-        if tokenApplication.action == .replace {
-            for range in set.nsRangeView {
-                textInterface.clearStyle(in: range)
-            }
-        }
-
-        for token in tokenApplication.tokens {
-            textInterface.applyStyle(to: token)
-        }
-
-        validSet.formUnion(set)
+        validSet.formUnion(receivedSet)
     }
 }
