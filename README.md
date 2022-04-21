@@ -52,7 +52,7 @@ Neon is built around the idea that there can be multiple sources of information 
 - Regex-based systems can have ok quality and low-latency
 - Simpler pattern-matching systems generally have poor quality, but have very low latency
 
-Neon includes built-in suport for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter also uses separate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes the needed query definitions for those languages. This system is compatible with parsers that aren't bundled, but it's definitely more work to use them.
+Neon includes built-in support for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter also uses separate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes the needed query definitions for those languages. This system is compatible with parsers that aren't bundled, but it's definitely more work to use them.
 
 ## Integration
 
