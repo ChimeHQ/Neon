@@ -1,6 +1,6 @@
 import Foundation
 
-public class HighlighterInvalidationBuffer {
+public final class HighlighterInvalidationBuffer {
     private enum State: Hashable {
         case idle
         case buffering
@@ -15,10 +15,12 @@ public class HighlighterInvalidationBuffer {
         self.highlighter = highlighter
     }
 
-    public func invalidate(_ set: IndexSet) {
+    public func invalidate(_ target: TextTarget = .all) {
+        let set = target.indexSet(with: highlighter.fullTextSet)
+
         switch state {
         case .idle:
-            highlighter.invalidate(set)
+            highlighter.invalidate(target)
         case .buffering:
             self.state = .pendingInvalidation(set)
         case .pendingInvalidation(let oldSet):
@@ -26,14 +28,6 @@ public class HighlighterInvalidationBuffer {
 
             self.state = .pendingInvalidation(newSet)
         }
-    }
-
-    public func invalidate(_ range: NSRange) {
-        invalidate(IndexSet(integersIn: range))
-    }
-
-    public func invalidate() {
-        invalidate(highlighter.fullTextSet)
     }
 }
 
@@ -48,7 +42,7 @@ extension HighlighterInvalidationBuffer {
         switch state {
         case .pendingInvalidation(let set):
             self.state = .idle
-            highlighter.invalidate(set)
+            highlighter.invalidate(.set(set))
         case .buffering:
             self.state = .idle
         case .idle:

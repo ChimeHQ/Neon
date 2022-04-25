@@ -15,6 +15,10 @@ public extension TextSystemInterface {
         }
     }
 
+    func clearAllStyles() {
+        clearStyle(in: NSRange(0..<length))
+    }
+
     func applyStyles(to tokens: [Token]) {
         for token in tokens {
             applyStyle(to: token)

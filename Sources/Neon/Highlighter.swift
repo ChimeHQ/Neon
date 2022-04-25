@@ -2,6 +2,26 @@ import Foundation
 import Rearrange
 import os.log
 
+public enum TextTarget {
+    case set(IndexSet)
+    case range(NSRange)
+    case all
+
+    public func indexSet(with fullSet: IndexSet) -> IndexSet {
+        let set: IndexSet
+
+        switch self {
+        case .set(let indexSet):
+            set = indexSet
+        case .range(let range):
+            set = IndexSet(integersIn: range)
+        case .all:
+            set = fullSet
+        }
+
+        return set
+    }
+}
 
 public class Highlighter {
     public var textInterface: TextSystemInterface
@@ -22,8 +42,10 @@ public class Highlighter {
 }
 
 extension Highlighter {
-    public func invalidate(_ set: IndexSet) {
+    public func invalidate(_ target: TextTarget = .all) {
         dispatchPrecondition(condition: .onQueue(.main))
+
+        let set = target.indexSet(with: fullTextSet)
 
         if set.isEmpty {
             return
@@ -34,21 +56,13 @@ extension Highlighter {
 
         makeNextTokenRequest()
     }
-
-    public func invalidate(_ range: NSRange) {
-        invalidate(IndexSet(integersIn: range))
-    }
-
-    public func invalidate() {
-        invalidate(fullTextSet)
-    }
 }
 
 extension Highlighter {
     public func visibleContentDidChange() {
         let set = invalidSet.intersection(visibleSet)
 
-        invalidate(set)
+        invalidate(.set(set))
     }
 
     public func didChangeContent(in range: NSRange, delta: Int, limit: Int) {
