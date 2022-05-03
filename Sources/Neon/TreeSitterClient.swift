@@ -6,9 +6,18 @@ public enum TreeSitterClientError: Error {
     case staleState
     case stateInvalid
     case staleContent
+    case queryFailed(Error)
+    case asyncronousExecutionRequired
 }
 
 public final class TreeSitterClient {
+    public enum ExecutionMode: Hashable {
+        case synchronous
+        case synchronousPreferred
+        case failIfAsynchronous
+        case asynchronous(prefetch: Bool = true)
+    }
+
     struct ContentEdit {
         var rangeMutation: RangeMutation
         var inputEdit: InputEdit
@@ -271,26 +280,42 @@ extension TreeSitterClient {
     /// that a successful result corresponds to that state. It must be invoked from
     /// the main thread and will always call `completionHandler` on the main thread as well.
     ///
-    /// Note that if you set `preferSynchronous` to true, `prefetchMatches` is ignored,
-    /// since it will only incur additional overhead.
-    ///
     /// - Parameter query: the query to execute
     /// - Parameter range: constrain the query to this range
-    /// - Parameter preferSynchronous: attempt to run the query synchronously if possible
-    /// - Parameter prefetchMatches: prefetch matches in the background
+    /// - Parameter executionMode: determine if a background query should be used
     /// - Parameter completionHandler: returns the result
     public func executeResolvingQuery(_ query: Query,
                                       in range: NSRange,
-                                      preferSynchronous: Bool = false,
-                                      prefetchMatches: Bool = true,
+                                      executionMode: ExecutionMode = .asynchronous(prefetch: true),
                                       completionHandler: @escaping (ResolvingQueryCursorResult) -> Void) {
         dispatchPrecondition(condition: .onQueue(.main))
 
-        if preferSynchronous && canAttemptSynchronousQuery(in: range) {
-            let result = executeResolvingQuerySynchronously(query, in: range)
+        let prefetchMatches: Bool
 
+        switch executionMode {
+        case .synchronous:
+            let result = executeResolvingQuerySynchronously(query, in: range)
             completionHandler(result)
             return
+        case .failIfAsynchronous:
+            if canAttemptSynchronousQuery(in: range) == false {
+                completionHandler(.failure(.asyncronousExecutionRequired))
+            } else {
+                let result = executeResolvingQuerySynchronously(query, in: range)
+                completionHandler(result)
+            }
+
+            return
+        case .synchronousPreferred:
+            if canAttemptSynchronousQuery(in: range) {
+                let result = executeResolvingQuerySynchronously(query, in: range)
+                completionHandler(result)
+                return
+            }
+
+            prefetchMatches = true
+        case .asynchronous(let prefetch):
+            prefetchMatches = prefetch
         }
 
         // We only want to produce results that match the *current* state
@@ -331,9 +356,11 @@ extension TreeSitterClient {
     ///
     /// This is the async version of executeResolvingQuery(:in:preferSynchronous:prefetchMatches:completionHandler:)
     @available(macOS 10.15, iOS 13.0, *)
-    public func resolvingQueryCursor(with query: Query, in range: NSRange, preferSynchronous: Bool = false, prefetchMatches: Bool = true) async throws -> ResolvingQueryCursor {
+    public func resolvingQueryCursor(with query: Query,
+                                     in range: NSRange,
+                                     executionMode: ExecutionMode = .asynchronous(prefetch: true)) async throws -> ResolvingQueryCursor {
         try await withCheckedThrowingContinuation { continuation in
-            self.executeResolvingQuery(query, in: range, preferSynchronous: preferSynchronous) { result in
+            self.executeResolvingQuery(query, in: range, executionMode: executionMode) { result in
                 continuation.resume(with: result)
             }
         }
@@ -402,10 +429,10 @@ extension TreeSitterClient {
 
     public func executeHighlightsQuery(_ query: Query,
                                        in range: NSRange,
-                                       preferSynchronous: Bool = false,
+                                       executionMode: ExecutionMode = .asynchronous(prefetch: true),
                                        textProvider: TextProvider? = nil,
                                        completionHandler: @escaping (Result<[Token], TreeSitterClientError>) -> Void) {
-        executeResolvingQuery(query, in: range, preferSynchronous: preferSynchronous) { cursorResult in
+        executeResolvingQuery(query, in: range, executionMode: executionMode) { cursorResult in
             let result = cursorResult.map({ self.tokensFromCursor($0, textProvider: textProvider) })
 
             completionHandler(result)
@@ -415,10 +442,10 @@ extension TreeSitterClient {
     @available(macOS 10.15, iOS 13.0, *)
     public func highlights(with query: Query,
                            in range: NSRange,
-                           preferSynchronous: Bool = false,
+                           executionMode: ExecutionMode = .asynchronous(prefetch: true),
                            textProvider: TextProvider? = nil) async throws -> [Token] {
         try await withCheckedThrowingContinuation { continuation in
-            self.executeHighlightsQuery(query, in: range, preferSynchronous: preferSynchronous, textProvider: textProvider) { result in
+            self.executeHighlightsQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { result in
                 continuation.resume(with: result)
             }
         }
