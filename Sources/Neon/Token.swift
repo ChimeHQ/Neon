@@ -40,10 +40,13 @@ extension TokenApplication: ExpressibleByArrayLiteral {
 
 /// A source of `Token` information
 ///
-/// The callback argument of this function is a little funny. It is ok
-/// to invoke it 0 to N times. Always invoke it on the main queue.
+/// This is a function that takes a target range to be styled and invokes
+/// the callback with token data. The callback argument is a little special,
+/// so here are some things to keep in mind:
 ///
-/// Note: failures are always assumed to be transient. The
-/// best way to indicate a permenant failure is to just return
-/// `TokenApplication.noChange`.
+/// - It must be invoked on the main queue.
+/// - Its argument applies to the entire range parameter.
+/// - It is safe to invoke 0 or more times.
+/// - Minimizing the number of invocations will improve efficiency.
+/// - Failures are always assumed to be transient.
 public typealias TokenProvider = (NSRange, @escaping (Result<TokenApplication, Error>) -> Void) -> Void
