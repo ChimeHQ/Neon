@@ -72,13 +72,13 @@ A minimal integration can be achieved by configuring a `Highlighter` to interfac
 
 ```swift
 func applicationDidFinishLaunching(_ aNotification: Notification) {
-	guard let textContainer = textView.textContainer, let textStorage = textView.textStorage else {
-		preconditionFailure()
-	}
-	let textInterface = TextContainerSystemInterface(textContainer: textContainer, attributeProvider: self.attributeProvider)
-	self.highlighter = Highlighter(textInterface: textInterface, tokenProvider: self.tokenProvider)
-	textStorage.delegate = self
-	self.highlighter.invalidate()
+   guard let textContainer = textView.textContainer, let textStorage = textView.textStorage else {
+      preconditionFailure()
+   }
+   let textInterface = TextContainerSystemInterface(textContainer: textContainer, attributeProvider: self.attributeProvider)
+   self.highlighter = Highlighter(textInterface: textInterface, tokenProvider: self.tokenProvider)
+   textStorage.delegate = self
+   self.highlighter.invalidate()
 }
 ```
 
@@ -87,13 +87,13 @@ Attaching the highlighter to a text view interface tells it _what_ to update, bu
 ```swift
 func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
 
-	// Map NSTextStorageDelegate editedRange to Neon's style of editedRange
-	let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
-	self.highlighter.didChangeContent(in: adjustedRange, delta: delta)
+   // Map NSTextStorageDelegate editedRange to Neon's style of editedRange
+   let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
+   self.highlighter.didChangeContent(in: adjustedRange, delta: delta)
 
-	DispatchQueue.main.async {
-		self.highlighter.invalidate()
-	}
+   DispatchQueue.main.async {
+      self.highlighter.invalidate()
+   }
 }
 ```
 
@@ -105,21 +105,21 @@ The initial configuration of `highlighter` included references to `self.tokenPro
 let paintItBlackTokenName = "paintItBlack"
 
 func tokenProvider(_ range: NSRange, completionHandler: @escaping (Result<TokenApplication, Error>) -> Void) {
-	var tokens: [Token] = []
+   var tokens: [Token] = []
 
-	if let searchString = self.textView.textStorage?.string {
-		if let nonWhitespaceRegex = try? NSRegularExpression(pattern: "[^\\s]+\\s{0,1}") {
-			nonWhitespaceRegex.enumerateMatches(in: searchString, range: range) { regexResult, _, _ in
-				guard let result = regexResult else { return }
-				for rangeIndex in 0..<result.numberOfRanges {
-					let tokenRange = result.range(at: rangeIndex)
-					tokens.append(Token(name: paintItBlackTokenName, range: tokenRange))
-				}
-			}
-		}
-	}
+   if let searchString = self.textView.textStorage?.string {
+      if let nonWhitespaceRegex = try? NSRegularExpression(pattern: "[^\\s]+\\s{0,1}") {
+         nonWhitespaceRegex.enumerateMatches(in: searchString, range: range) { regexResult, _, _ in
+            guard let result = regexResult else { return }
+            for rangeIndex in 0..<result.numberOfRanges {
+               let tokenRange = result.range(at: rangeIndex)
+               tokens.append(Token(name: paintItBlackTokenName, range: tokenRange))
+            }
+         }
+      }
+   }
 
-	completionHandler(.success(TokenApplication(tokens: tokens, action: .replace)))
+   completionHandler(.success(TokenApplication(tokens: tokens, action: .replace)))
 }
 ```
 
@@ -127,10 +127,10 @@ In this trivial example, the "paint it black" token is unilaterally applied to e
 
 ```swift
 func attributeProvider(_ token: Token) -> [NSAttributedString.Key: Any]? {
-	if token.name == paintItBlackTokenName {
-		return [.foregroundColor: NSColor.red, .backgroundColor: NSColor.black]
-	}
-	return nil
+   if token.name == paintItBlackTokenName {
+      return [.foregroundColor: NSColor.red, .backgroundColor: NSColor.black]
+   }
+   return nil
 }
 ```
 
