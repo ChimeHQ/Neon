@@ -105,15 +105,18 @@ let paintItBlackTokenName = "paintItBlack"
 
 func tokenProvider(_ range: NSRange, completionHandler: @escaping (Result<TokenApplication, Error>) -> Void) {
    var tokens: [Token] = []
+   guard let searchString = self.textView.textStorage?.string else {
+      // Could also complete with .failure(...) here
+      completionHandler(.success(TokenApplication(tokens: tokens, action: .replace)))
+      return
+   }
 
-   if let searchString = self.textView.textStorage?.string {
-      if let nonWhitespaceRegex = try? NSRegularExpression(pattern: "[^\\s]+\\s{0,1}") {
-         nonWhitespaceRegex.enumerateMatches(in: searchString, range: range) { regexResult, _, _ in
-            guard let result = regexResult else { return }
-            for rangeIndex in 0..<result.numberOfRanges {
-               let tokenRange = result.range(at: rangeIndex)
-               tokens.append(Token(name: paintItBlackTokenName, range: tokenRange))
-            }
+   if let regex = try? NSRegularExpression(pattern: "[^\\s]+\\s{0,1}") {
+      regex.enumerateMatches(in: searchString, range: range) { regexResult, _, _ in
+         guard let result = regexResult else { return }
+         for rangeIndex in 0..<result.numberOfRanges {
+            let tokenRange = result.range(at: rangeIndex)
+            tokens.append(Token(name: paintItBlackTokenName, range: tokenRange))
          }
       }
    }
