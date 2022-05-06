@@ -136,8 +136,7 @@ func attributeProvider(_ token: Token) -> [NSAttributedString.Key: Any]? {
 
 Now our example achieves its goal of "painting black" any runs of non-whitespace characters, along with single whitespace characters between them:
 
-![Screenshot of "Paint it Black" text window showing text with a black background and red text.](https://github.com/danielpunkass/Neon/blob/readme-examples/PaintItBlack.png?raw=true)
-
+<img src="https://github.com/danielpunkass/Neon/blob/readme-examples/PaintItBlack.png?raw=true" width="582" alt="Screenshot of 'Paint it Black' text window showing text with a black background and red text." />
 
 Using this basic structure you can annotate the text with tokens while separately determining the appropriate styling for those tokens.
 
