@@ -98,7 +98,7 @@ func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NST
 
 Notice that the `invalidate` method is dispatched asynchronously to ensure the styles are not updated until after the underlying text storage is done being edited.
 
-The initial configuration of `highlighter` included references to `self.tokenProvider` and `self.attributeProvider`, which are responsibility for providing the logic behind _what_ gets highlighted, and _how_ it should be done. At a minimum, the `TokenProvider` generates and supplies named tokens that correspond to ranges of text:
+The initial configuration of `highlighter` included references to `self.tokenProvider` and `self.attributeProvider`, which are responsibile for providing the logic behind _what_ gets highlighted, and _how_ it should be done. At a minimum, the `TokenProvider` generates and supplies named tokens that correspond to ranges of text:
 
 ```swift
 let paintItBlackTokenName = "paintItBlack"
