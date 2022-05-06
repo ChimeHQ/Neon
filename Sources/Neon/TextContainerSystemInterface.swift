@@ -45,10 +45,14 @@ public struct TextContainerSystemInterface {
 
 extension TextContainerSystemInterface: TextSystemInterface {
     public func clearStyle(in range: NSRange) {
+        assert(range.max <= length, "range is out of bounds, is the text state being updated correctly?")
+
         layoutManager?.setTemporaryAttributes([:], forCharacterRange: range)
     }
 
     public func applyStyle(to token: Token) {
+        assert(token.range.max <= length, "range is out of bounds, is the text state being updated correctly?")
+
         guard let attrs = attributeProvider(token) else { return }
 
         layoutManager?.setTemporaryAttributes(attrs, forCharacterRange: token.range)

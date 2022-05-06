@@ -59,13 +59,34 @@ extension Highlighter {
 }
 
 extension Highlighter {
+    /// Calculates any newly-visible text that is invalid
+    ///
+    /// You should invoke this method when the visible text
+    /// in your system changes.
     public func visibleContentDidChange() {
         let set = invalidSet.intersection(visibleSet)
 
         invalidate(.set(set))
     }
 
-    public func didChangeContent(in range: NSRange, delta: Int, limit: Int) {
+    /// Update internal state in response to an edit.
+    ///
+    /// This method must be invoked on every text change. The `range`
+    /// parameter must refer to the range of text that **was** changed.
+    /// Consider the example text `"abc"`.
+    ///
+    /// Inserting a "d" at the end:
+    ///
+    ///     range = NSRange(3..<3)
+    ///     delta = 1
+    ///
+    /// Deleting the middle "b":
+    ///
+    ///     range = NSRange(1..<2)
+    ///     delta = -1
+    public func didChangeContent(in range: NSRange, delta: Int) {
+        let limit = textLength - delta
+
         let mutation = RangeMutation(range: range, delta: delta, limit: limit)
 
         self.validSet = mutation.transform(set: validSet)
