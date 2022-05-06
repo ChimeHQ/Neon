@@ -86,7 +86,6 @@ Attaching the highlighter to a text view interface tells it _what_ to update, bu
 
 ```swift
 func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
-
    // Map NSTextStorageDelegate editedRange to Neon's style of editedRange
    let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
    self.highlighter.didChangeContent(in: adjustedRange, delta: delta)
