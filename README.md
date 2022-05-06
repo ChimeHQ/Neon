@@ -210,10 +210,10 @@ let query = try! language.query(contentsOf: url)
 
 // step 2: configure the client
 
-// produce a function that can map UTF16 code points to Point (Line, Offset) structs
-let locationToPoint = { Int -> Point? in ... }
+// produce a transformer function that can map UTF16 code point indexes to Point (Line, Offset) structs
+let transformer = { Int -> Point? in ... }
 
-let client = TreeSitterClient(language: language, locationToPoint: locationToPoint)
+let client = TreeSitterClient(language: language, transformer: transformer)
 
 // this function will be called with a minimal set of text ranges
 // that have become invalidated due to edits. These ranges
