@@ -108,7 +108,7 @@ func tokenProvider(_ range: NSRange, completionHandler: @escaping (Result<TokenA
 	var tokens: [Token] = []
 
 	if let searchString = self.textView.textStorage?.string {
-		if let nonWhitespaceRegex = try? NSRegularExpression(pattern: "[^\\s]+") {
+		if let nonWhitespaceRegex = try? NSRegularExpression(pattern: "[^\\s]+\\s{0,1}") {
 			nonWhitespaceRegex.enumerateMatches(in: searchString, range: range) { regexResult, _, _ in
 				guard let result = regexResult else { return }
 				for rangeIndex in 0..<result.numberOfRanges {
@@ -133,6 +133,11 @@ func attributeProvider(_ token: Token) -> [NSAttributedString.Key: Any]? {
 	return nil
 }
 ```
+
+Now our example achieves its goal of "painting black" any runs of non-whitespace characters, along with single whitespace characters between them:
+
+![Screenshot of "Paint it Black" text window showing text with a black background and red text.](https://github.com/danielpunkass/Neon/blob/readme-examples/PaintItBlack.png?raw=true)
+
 
 Using this basic structure you can annotate the text with tokens while separately determining the appropriate styling for those tokens.
 
