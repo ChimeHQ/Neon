@@ -71,15 +71,15 @@ How and where they come from depends on your text setup. And, not every componen
 A minimal integration can be achieved by configuring a `Highlighter` to interface with an `NSTextView`'s text container:
 
 ```swift
-	func applicationDidFinishLaunching(_ aNotification: Notification) {
-		guard let textContainer = textView.textContainer, let textStorage = textView.textStorage else {
-			preconditionFailure()
-		}
-		let textInterface = TextContainerSystemInterface(textContainer: textContainer, attributeProvider: self.attributeProvider)
-		self.highlighter = Highlighter(textInterface: textInterface, tokenProvider: self.tokenProvider)
-		textStorage.delegate = self
-		self.highlighter.invalidate()
+func applicationDidFinishLaunching(_ aNotification: Notification) {
+	guard let textContainer = textView.textContainer, let textStorage = textView.textStorage else {
+		preconditionFailure()
 	}
+	let textInterface = TextContainerSystemInterface(textContainer: textContainer, attributeProvider: self.attributeProvider)
+	self.highlighter = Highlighter(textInterface: textInterface, tokenProvider: self.tokenProvider)
+	textStorage.delegate = self
+	self.highlighter.invalidate()
+}
 ```
 
 Attaching the highlighter to a text view interface tells it _what_ to update, but not _when_. You have to notify the highlighter whenever the text view's content changes, and invalidate existing highlighting as needed. Such notifications can be conveyed by making yourself the delegate of your text view's `textStorage`, and implementing this delegate method:
