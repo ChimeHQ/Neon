@@ -64,11 +64,87 @@ Neon's components need to react to various events:
 - the visible text has changed
 - the styling has become invalid (ex: the theme has changed)
 
-How and where they come from depends on your text setup. And, not every components needs to know about all of these, so you may be able to get away with less.
+How and where they come from depends on your text setup. And, not every component needs to know about all of these, so you may be able to get away with less.
 
-A very minimum setup could be produced with just an `NSTextStorageDelegate`. Monitoring the visible rect of the `NSTextView` will improve performance.
+## Simple Integration
 
-Achieving guaranteed flicker-free highlighting is more challenging. You need to know when a text change has been processing by enough of the system that styling is possible. This point in the text change lifecycle is not natively supported by `NSTextStorage` or `NSLayoutManager`. It requires an `NSTextStorage` subclass. But, even that isn't quite enough unfortunately, as you still need to precisely control the timing of invalidation and styling. This is where `HighlighterInvalidationBuffer` comes in. I warned you this was complicated.
+A minimal integration can be achieved by configuring a `Highlighter` to interface with an `NSTextView`'s text container:
+
+```swift
+func applicationDidFinishLaunching(_ aNotification: Notification) {
+   guard let textContainer = textView.textContainer, let textStorage = textView.textStorage else {
+      preconditionFailure()
+   }
+   let textInterface = TextContainerSystemInterface(textContainer: textContainer, attributeProvider: self.attributeProvider)
+   self.highlighter = Highlighter(textInterface: textInterface, tokenProvider: self.tokenProvider)
+   textStorage.delegate = self
+   self.highlighter.invalidate()
+}
+```
+
+Attaching the highlighter to a text view interface tells it _what_ to update, but not _when_. You have to notify the highlighter whenever the text view's content changes, and invalidate existing highlighting as needed. Such notifications can be conveyed by making yourself the delegate of your text view's `textStorage`, and implementing this delegate method:
+
+```swift
+func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
+   // Map NSTextStorageDelegate editedRange to Neon's style of editedRange
+   let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
+   self.highlighter.didChangeContent(in: adjustedRange, delta: delta)
+
+   DispatchQueue.main.async {
+      self.highlighter.invalidate()
+   }
+}
+```
+
+Notice that the `invalidate` method is dispatched asynchronously to ensure the styles are not updated until after the underlying text storage is done being edited.
+
+The initial configuration of `highlighter` included references to `self.tokenProvider` and `self.attributeProvider`, which are responsible for providing the logic behind _what_ gets highlighted, and _how_ it should be done. At a minimum, the `TokenProvider` generates and supplies named tokens that correspond to ranges of text:
+
+```swift
+let paintItBlackTokenName = "paintItBlack"
+
+func tokenProvider(_ range: NSRange, completionHandler: @escaping (Result<TokenApplication, Error>) -> Void) {
+   var tokens: [Token] = []
+   guard let searchString = self.textView.textStorage?.string else {
+      // Could also complete with .failure(...) here
+      completionHandler(.success(TokenApplication(tokens: tokens, action: .replace)))
+      return
+   }
+
+   if let regex = try? NSRegularExpression(pattern: "[^\\s]+\\s{0,1}") {
+      regex.enumerateMatches(in: searchString, range: range) { regexResult, _, _ in
+         guard let result = regexResult else { return }
+         for rangeIndex in 0..<result.numberOfRanges {
+            let tokenRange = result.range(at: rangeIndex)
+            tokens.append(Token(name: paintItBlackTokenName, range: tokenRange))
+         }
+      }
+   }
+
+   completionHandler(.success(TokenApplication(tokens: tokens, action: .replace)))
+}
+```
+
+In this trivial example, the "paint it black" token is unilaterally applied to every non-whitespace range of the text. It demonstrates how you use a token provider to associate named tokens with arbitrary ranges of text. It's important to understand though that supplying the token doesn't change anything about the appearance of the corresponding text. In order to achieve that, you need to implement the _attribute provider_, which effectively translates named tokens in to suitable attributes:
+
+```swift
+func attributeProvider(_ token: Token) -> [NSAttributedString.Key: Any]? {
+   if token.name == paintItBlackTokenName {
+      return [.foregroundColor: NSColor.red, .backgroundColor: NSColor.black]
+   }
+   return nil
+}
+```
+
+Now our example achieves its goal of "painting black" any runs of non-whitespace characters, along with single whitespace characters between them:
+
+<img src="https://github.com/danielpunkass/Neon/blob/readme-examples/PaintItBlack.png?raw=true" width="582" alt="Screenshot of 'Paint it Black' text window showing text with a black background and red text." />
+
+Using this basic structure you can annotate the text with tokens while separately determining the appropriate styling for those tokens.
+
+## Advanced Integration
+
+Achieving better performance and guaranteed flicker-free highlighting is more challenging. Monitoring the visible rect of the `NSTextView` will improve performance. You need to know when a text change has been processing by enough of the system that styling is possible. This point in the text change lifecycle is not natively supported by `NSTextStorage` or `NSLayoutManager`. It requires an `NSTextStorage` subclass. But, even that isn't quite enough unfortunately, as you still need to precisely control the timing of invalidation and styling. This is where `HighlighterInvalidationBuffer` comes in. I warned you this was complicated.
 
 ## Relationship to TextStory
 
@@ -82,7 +158,7 @@ You can definitely use Neon without TextStory. But, I think it may be reasonable
 
 ## Components
 
-### Highligher
+### Highlighter
 
 This is the main component that coordinates the styling and invalidation of text.
 
@@ -134,10 +210,10 @@ let query = try! language.query(contentsOf: url)
 
 // step 2: configure the client
 
-// produce a function that can map UTF16 code points to Point (Line, Offset) structs
-let locationToPoint = { Int -> Point? in ... }
+// produce a transformer function that can map UTF16 code point indexes to Point (Line, Offset) structs
+let transformer = { Int -> Point? in ... }
 
-let client = TreeSitterClient(language: language, locationToPoint: locationToPoint)
+let client = TreeSitterClient(language: language, transformer: transformer)
 
 // this function will be called with a minimal set of text ranges
 // that have become invalidated due to edits. These ranges
