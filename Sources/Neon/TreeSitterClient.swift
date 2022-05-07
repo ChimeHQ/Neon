@@ -89,7 +89,7 @@ extension TreeSitterClient {
     /// Prepare for a content change.
     ///
     /// This method must be called before any content changes have been applied that
-    /// would affect how the `transformer`paramter will behave.
+    /// would affect how the `transformer`parameter will behave.
     ///
     /// - Parameter range: the range of content that will be affected by an edit
     public func willChangeContent(in range: NSRange) {
@@ -141,7 +141,7 @@ extension TreeSitterClient {
     /// Process a string representing text content.
     ///
     /// This method is similar to `didChangeContent(in:delta:limit:readHandler:completionHandler:)`,
-    /// but it makse use of the immutability of String to meet the content
+    /// but it makes use of the immutability of String to meet the content
     /// requirements. This makes it much easier to use. However,
     /// this approach may not be able to acheive the same level of performance.
     ///
