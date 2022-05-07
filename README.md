@@ -212,9 +212,9 @@ let query = try! language.query(contentsOf: url)
 
 // produce a transformer function that can map UTF16 code point indexes to Point (Line, Offset) structs
 let transformer: Point.LocationTransformer = { codePointIndex in 
-	return nil // Should return "Point" in text layout
+   return nil // Should return "Point" in text layout
 }
-		
+      
 let client = TreeSitterClient(language: language, transformer: transformer)
 
 // this function will be called with a minimal set of text ranges
@@ -223,7 +223,7 @@ let client = TreeSitterClient(language: language, transformer: transformer)
 // even if TreeSitterClient is currently processing edits in the
 // background.
 client.invalidationHandler = { textTarget in
-	// TextTarget is a set, range, or .all
+   // TextTarget is a set, range, or .all
 }
 
 // step 3: inform it about content changes
@@ -245,12 +245,12 @@ client.didChangeContent(to: string, in: range, delta: delta, limit: limit)
 // and even incorrect highlighting.
 
 let provider: TreeSitterClient.TextProvider = { (range, _) -> String? in
-	return nil
+   return nil
 }
 
 let range = NSMakeRange(0, 10) // for example
 client.executeHighlightsQuery(query, in: range, textProvider: provider) { result in
-	// Token values will tell you the highlights.scm name and range in your text
+   // Token values will tell you the highlights.scm name and range in your text
 }
 ```
 
