@@ -141,7 +141,7 @@ extension TreeSitterClient {
     /// Process a string representing text content.
     ///
     /// This method is similar to `didChangeContent(in:delta:limit:readHandler:completionHandler:)`,
-    /// but it makse use of the immutability of String to meet the content
+    /// but it makesd use of the immutability of String to meet the content
     /// requirements. This makes it much easier to use. However,
     /// this approach may not be able to acheive the same level of performance.
     ///
