@@ -89,7 +89,7 @@ extension TreeSitterClient {
     /// Prepare for a content change.
     ///
     /// This method must be called before any content changes have been applied that
-    /// would affect how the `transformer`paramter will behave.
+    /// would affect how the `transformer`parameter will behave.
     ///
     /// - Parameter range: the range of content that will be affected by an edit
     public func willChangeContent(in range: NSRange) {
