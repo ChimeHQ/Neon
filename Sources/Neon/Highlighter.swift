@@ -183,7 +183,11 @@ extension Highlighter {
     private func handleTokens(_ tokenApplication: TokenApplication, for range: NSRange) {
         self.pendingSet.remove(integersIn: range)
 
-        let receivedSet = IndexSet(integersIn: range)
+        var receivedSet = IndexSet(integersIn: range)
+
+        let tokenRanges = tokenApplication.tokens.map({ $0.range })
+
+        receivedSet.insert(ranges: tokenRanges)
 
         textInterface.apply(tokenApplication, to: receivedSet)
 
