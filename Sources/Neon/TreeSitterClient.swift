@@ -30,10 +30,13 @@ public final class TreeSitterClient {
         var affectedRange: NSRange {
             let range = rangeMutation.range
 
-            // deletes make it possible to have no affected range
-            let affectedLength = max(range.length, range.length + rangeMutation.delta)
+            // we want to expand our affected range just slightly, so that
+            // changes to immediately-adjacent tokens are included in the range checks
+            // for the cursor.
+            let start = max(range.location - 1, 0)
+            let end = min(max(range.max, range.max + rangeMutation.delta) + 1, limit)
 
-            return NSRange(location: range.location, length: affectedLength).clamped(to: limit)
+            return NSRange(start..<end)
         }
     }
 
