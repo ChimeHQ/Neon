@@ -1,6 +1,5 @@
 import Foundation
 import Rearrange
-import os.log
 
 public enum TextTarget {
     case set(IndexSet)
@@ -28,7 +27,6 @@ public class Highlighter {
 
     private var validSet: IndexSet
     private var pendingSet: IndexSet
-    private var log: OSLog
     public var tokenProvider: TokenProvider
 
     public init(textInterface: TextSystemInterface, tokenProvider: TokenProvider? = nil) {
@@ -36,14 +34,12 @@ public class Highlighter {
         self.validSet = IndexSet()
         self.pendingSet = IndexSet()
         self.tokenProvider = tokenProvider ?? { _, block in block(.success([]))}
-
-        self.log = OSLog(subsystem: "com.chimehq.Neon", category: "Highlighter")
     }
 }
 
 extension Highlighter {
     public func invalidate(_ target: TextTarget = .all) {
-        dispatchPrecondition(condition: .onQueue(.main))
+        preconditionOnMainQueue()
 
         let set = target.indexSet(with: fullTextSet)
 
@@ -158,11 +154,11 @@ extension Highlighter {
 
         // this can be called 0 or more times
         tokenProvider(range) { result in
-            dispatchPrecondition(condition: .onQueue(.main))
+            preconditionOnMainQueue()
             
             switch result {
             case .failure(let error):
-                os_log("failed to get tokens: %{public}@", log: self.log, type: .error, String(describing: error))
+                print("failed to get tokens: ", error)
 
                 DispatchQueue.main.async {
                     self.pendingSet.remove(integersIn: range)

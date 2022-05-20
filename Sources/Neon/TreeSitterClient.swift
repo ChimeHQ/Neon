@@ -162,7 +162,7 @@ extension TreeSitterClient {
 
 extension TreeSitterClient {
     func processEdit(_ edit: ContentEdit, readHandler: @escaping Parser.ReadBlock, completionHandler: @escaping () -> Void) {
-        dispatchPrecondition(condition: .onQueue(.main))
+        preconditionOnMainQueue()
 
         let largeEdit = edit.size > synchronousLengthThreshold
         let largeDocument = edit.limit > synchronousContentLengthThreshold
@@ -291,7 +291,7 @@ extension TreeSitterClient {
                                       in range: NSRange,
                                       executionMode: ExecutionMode = .asynchronous(prefetch: true),
                                       completionHandler: @escaping (ResolvingQueryCursorResult) -> Void) {
-        dispatchPrecondition(condition: .onQueue(.main))
+        preconditionOnMainQueue()
 
         let prefetchMatches: Bool
 
@@ -358,7 +358,7 @@ extension TreeSitterClient {
     /// Executes a query and returns a ResolvingQueryCursor
     ///
     /// This is the async version of executeResolvingQuery(:in:preferSynchronous:prefetchMatches:completionHandler:)
-    @available(macOS 10.15, iOS 13.0, *)
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
     public func resolvingQueryCursor(with query: Query,
                                      in range: NSRange,
                                      executionMode: ExecutionMode = .asynchronous(prefetch: true)) async throws -> ResolvingQueryCursor {
@@ -372,7 +372,7 @@ extension TreeSitterClient {
 
 extension TreeSitterClient {
     public func executeResolvingQuerySynchronously(_ query: Query, in range: NSRange) -> ResolvingQueryCursorResult {
-        dispatchPrecondition(condition: .onQueue(.main))
+        preconditionOnMainQueue()
 
         if hasQueuedWork {
             return .failure(.staleState)
@@ -389,7 +389,7 @@ extension TreeSitterClient {
 
 extension TreeSitterClient {
     public func executeQuerySynchronously(_ query: Query, in range: NSRange) -> QueryCursorResult {
-        dispatchPrecondition(condition: .onQueue(.main))
+        preconditionOnMainQueue()
 
         if hasQueuedWork {
             return .failure(.staleState)
@@ -442,7 +442,7 @@ extension TreeSitterClient {
         }
     }
 
-    @available(macOS 10.15, iOS 13.0, *)
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
     public func highlights(with query: Query,
                            in range: NSRange,
                            executionMode: ExecutionMode = .asynchronous(prefetch: true),

@@ -15,17 +15,8 @@
         "repositoryURL": "https://github.com/ChimeHQ/SwiftTreeSitter",
         "state": {
           "branch": null,
-          "revision": "cee5275563e94d4ee70b07557308c58a187848b5",
-          "version": "0.5.1"
-        }
-      },
-      {
-        "package": "tree-sitter-xcframework",
-        "repositoryURL": "https://github.com/krzyzanowskim/tree-sitter-xcframework",
-        "state": {
-          "branch": null,
-          "revision": "668fc0bae9ff3152b458d13007ec9af7806d0655",
-          "version": "0.206.9"
+          "revision": "f3a571e67545b8a0aa00addcc17c70b7106c36aa",
+          "version": "0.6.0"
         }
       }
     ]
