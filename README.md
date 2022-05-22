@@ -47,12 +47,12 @@ Not all of these might matter you. Neon's components are fairly loosely-coupled,
 
 Neon is built around the idea that there can be multiple sources of information about the semantic meaning of the text, all with varying latencies and quality.
 
-- [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) has [semantic tokens](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens), which is high quality, but also high latency.
+- [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) has [semantic tokens](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens), which is high quality, high latency, and typically used in combination with other sources.
 - [tree-sitter](https://tree-sitter.github.io/tree-sitter/) is very good quality, and can potentially be low-latency
 - Regex-based systems can have ok quality and low-latency
 - Simpler pattern-matching systems generally have poor quality, but have very low latency
 
-Neon includes built-in support for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter also uses separate compiled parsers for each language. Thanks to [tree-sitter-xcframework](https://github.com/krzyzanowskim/tree-sitter-xcframework), you can get access to pre-built binaries for the runtime and **some** parsers. It also includes the needed query definitions for those languages. This system is compatible with parsers that aren't bundled, but it's definitely more work to use them.
+Neon includes built-in support for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter also uses separate compiled parsers for each language. There are a variety of ways to use tree-sitter parsers with SwiftTreeSitter. Check out that project for details.
 
 ## Integration
 
@@ -190,22 +190,20 @@ Using it is quite involved - here's a little example:
 
 ```swift
 import SwiftTreeSitter
-import tree_sitter_language_resources
+import TreeSitterSwift // this parser is available via SPM (see SwiftTreeSitter's README.md)
 import Neon
 
 // step 1: setup
 
-// construct the tree-sitter grammar for the language you are interested
-// in working with manually
-let unbundledLanguage = Language(language: my_tree_sitter_grammar())
-
-// .. or grab one from tree-sitter-xcframework
-let swift = LanguageResource.swift
-let language = Language(language: swift.parser)
+// construct the tree-sitter parser for the language you are interested in
+let language = Language(language: tree_sitter_swift())
 
 // construct your highlighting query
-// this is a one-time cost, but can be expensive
-let url = swift.highlightQueryURL!
+// remember, this is a one-time cost but can be expensive
+let url = Bundle.main
+              .resourceURL
+              .appendingPathComponent("TreeSitterSwift_TreeSitterSwift.bundle")
+              .appendingPathComponent("queries/highlights.scm")
 let query = try! language.query(contentsOf: url)
 
 // step 2: configure the client
@@ -214,7 +212,7 @@ let query = try! language.query(contentsOf: url)
 let transformer: Point.LocationTransformer = { codePointIndex in 
    return nil // Should return "Point" in text layout
 }
-      
+
 let client = TreeSitterClient(language: language, transformer: transformer)
 
 // this function will be called with a minimal set of text ranges
