@@ -423,6 +423,7 @@ extension TreeSitterClient {
         return cursor
             .map({ $0.captures })
             .flatMap({ $0 })
+            .sorted()
             .compactMap { capture -> Token? in
                 guard let name = capture.name else { return nil }
 
