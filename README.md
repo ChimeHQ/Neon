@@ -3,7 +3,7 @@
 [![Platforms][platforms badge]][platforms]
 
 # Neon
-A Swift library for efficient highlighting, indenting, and querying the structure of language syntax.
+A Swift library for efficient highlighting, indenting, and querying structured syntax.
 
 It features:
 
