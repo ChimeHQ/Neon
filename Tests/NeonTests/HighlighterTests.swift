@@ -1,5 +1,6 @@
 import XCTest
 import Neon
+import TreeSitterClient
 
 class MockInterface: TextSystemInterface {
     var length: Int

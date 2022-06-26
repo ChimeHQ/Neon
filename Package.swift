@@ -15,6 +15,6 @@ let package = Package(
     targets: [
         .target(name: "Neon", dependencies: ["SwiftTreeSitter", "Rearrange", "TreeSitterClient"]),
         .target(name: "TreeSitterClient", dependencies: ["Rearrange", "SwiftTreeSitter"]),
-        .testTarget(name: "NeonTests", dependencies: ["Neon"]),
+        .testTarget(name: "NeonTests", dependencies: ["Neon", "TreeSitterClient"]),
     ]
 )
