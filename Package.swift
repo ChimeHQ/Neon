@@ -11,10 +11,10 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.6.1"),
         .package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.5.1"),
-        .package(path: "../TreeSitterClient")
     ],
     targets: [
         .target(name: "Neon", dependencies: ["SwiftTreeSitter", "Rearrange", "TreeSitterClient"]),
+        .target(name: "TreeSitterClient", dependencies: ["Rearrange", "SwiftTreeSitter"]),
         .testTarget(name: "NeonTests", dependencies: ["Neon"]),
     ]
 )
