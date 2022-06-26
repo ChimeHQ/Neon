@@ -1,5 +1,4 @@
 import Foundation
-import TreeSitterClient
 
 public struct TokenApplication {
     public enum Action {

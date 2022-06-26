@@ -1,5 +1,4 @@
 import Foundation
-import TreeSitterClient
 
 public protocol TextSystemInterface {
     func clearStyle(in range: NSRange)

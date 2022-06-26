@@ -1,5 +1,4 @@
 import Foundation
-import TreeSitterClient
 #if os(macOS)
 import AppKit
 
