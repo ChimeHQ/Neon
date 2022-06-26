@@ -1,4 +1,5 @@
 import Foundation
+import TreeSitterClient
 
 public final class HighlighterInvalidationBuffer {
     private enum State: Hashable {
