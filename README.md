@@ -220,8 +220,8 @@ let client = TreeSitterClient(language: language, transformer: transformer)
 // always correspond to the *current* state of the text content,
 // even if TreeSitterClient is currently processing edits in the
 // background.
-client.invalidationHandler = { textTarget in
-   // TextTarget is a set, range, or .all
+client.invalidationHandler = { indexSet in
+    // highlighter.invalidate(.set(indexSet))
 }
 
 // step 3: inform it about content changes

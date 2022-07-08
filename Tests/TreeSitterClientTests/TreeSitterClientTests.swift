@@ -1,7 +1,7 @@
 import XCTest
 import Rearrange
 import SwiftTreeSitter
-@testable import Neon
+@testable import TreeSitterClient
 
 final class NeonTests: XCTestCase {
     func testInsertAffectedRange() {

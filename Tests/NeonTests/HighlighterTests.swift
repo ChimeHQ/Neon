@@ -1,5 +1,5 @@
 import XCTest
-import Neon
+@testable import Neon
 
 class MockInterface: TextSystemInterface {
     var length: Int
