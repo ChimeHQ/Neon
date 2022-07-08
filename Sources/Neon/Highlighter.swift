@@ -1,6 +1,5 @@
 import Foundation
 import Rearrange
-import TreeSitterClient
 
 public class Highlighter {
     public var textInterface: TextSystemInterface

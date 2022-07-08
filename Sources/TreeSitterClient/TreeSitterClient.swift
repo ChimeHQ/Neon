@@ -65,7 +65,7 @@ public final class TreeSitterClient {
     ///
     /// This function will only be invoked if `computeInvalidations`
     /// was true at the time an edit was applied.
-    public var invalidationHandler: (TextTarget) -> Void
+    public var invalidationHandler: (IndexSet) -> Void
 
     public init(language: Language, transformer: @escaping Point.LocationTransformer, synchronousLengthThreshold: Int = 1024) throws {
         self.parser = Parser()
@@ -261,7 +261,7 @@ extension TreeSitterClient {
             return
         }
 
-        self.invalidationHandler(.set(transformedSet))
+        self.invalidationHandler(transformedSet)
     }
 }
 
