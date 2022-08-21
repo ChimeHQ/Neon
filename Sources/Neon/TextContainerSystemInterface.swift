@@ -15,7 +15,7 @@ extension NSTextView {
         }
 
         let origin = textContainerOrigin
-        let offsetRect = rect.offsetBy(dx: origin.x, dy: origin.y)
+        let offsetRect = rect.offsetBy(dx: -origin.x, dy: -origin.y)
 
         let glyphRange = layoutManager.glyphRange(forBoundingRect: offsetRect, in: container)
 
