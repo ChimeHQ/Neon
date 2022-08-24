@@ -2,6 +2,8 @@ import Foundation
 #if os(macOS)
 import AppKit
 
+import Rearrange
+
 extension NSTextView {
     func textRange(for rect: CGRect) -> NSRange {
         let length = self.textStorage?.length ?? 0
@@ -41,13 +43,33 @@ public struct TextContainerSystemInterface {
     public var layoutManager: NSLayoutManager? {
         return textContainer.layoutManager
     }
+
+	@available(macOS 12.0, iOS 15.0, tvOS 15.0, *)
+	public var textLayoutManager: NSTextLayoutManager? {
+		return textContainer.textLayoutManager
+	}
 }
 
 extension TextContainerSystemInterface: TextSystemInterface {
-    public func clearStyle(in range: NSRange) {
-        assert(range.max <= length, "range is out of bounds, is the text state being updated correctly?")
+	private func setAttributes(_ attrs: [NSAttributedString.Key : Any], in range: NSRange) {
+		assert(range.max <= length, "range is out of bounds, is the text state being updated correctly?")
 
-        layoutManager?.setTemporaryAttributes([:], forCharacterRange: range)
+		layoutManager?.setTemporaryAttributes(attrs, forCharacterRange: range)
+
+		guard
+			#available(macOS 12, iOS 15.0, tvOS 15.0, *),
+			let textLayoutManager = textLayoutManager,
+			let contentManager = textLayoutManager.textContentManager,
+			let textRange = NSTextRange(range, provider: contentManager)
+		else {
+			return
+		}
+
+		textLayoutManager.setRenderingAttributes(attrs, for: textRange)
+	}
+
+    public func clearStyle(in range: NSRange) {
+		setAttributes([:], in: range)
     }
 
     public func applyStyle(to token: Token) {
@@ -55,7 +77,7 @@ extension TextContainerSystemInterface: TextSystemInterface {
 
         guard let attrs = attributeProvider(token) else { return }
 
-        layoutManager?.setTemporaryAttributes(attrs, forCharacterRange: token.range)
+		setAttributes(attrs, in: token.range)
     }
 
     public var length: Int {
