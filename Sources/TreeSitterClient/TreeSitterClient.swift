@@ -83,6 +83,10 @@ public final class TreeSitterClient {
         self.synchronousLengthThreshold = synchronousLengthThreshold
     }
 
+    public var tree: Tree? {
+        parseState.tree
+    }
+
     private var hasQueuedWork: Bool {
         return outstandingEdits.count > 0
     }
