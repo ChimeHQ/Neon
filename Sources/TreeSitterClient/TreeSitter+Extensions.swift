@@ -6,7 +6,7 @@ extension Point {
 }
 
 extension InputEdit {
-    init?(range: NSRange, delta: Int, oldEndPoint: Point, transformer: Point.LocationTransformer) {
+    init?(range: NSRange, delta: Int, oldEndPoint: Point = .zero, transformer: Point.LocationTransformer? = nil) {
         let startLocation = range.location
         let newEndLocation = range.max + delta
 
@@ -15,12 +15,8 @@ extension InputEdit {
             return nil
         }
 
-        guard
-            let startPoint = transformer(startLocation),
-            let newEndPoint = transformer(newEndLocation)
-        else {
-            return nil
-        }
+        let startPoint = transformer?(startLocation) ?? .zero
+        let newEndPoint = transformer?(newEndLocation) ?? .zero
 
         self.init(startByte: UInt32(range.location * 2),
                   oldEndByte: UInt32(range.max * 2),
