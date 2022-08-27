@@ -117,7 +117,11 @@ extension TreeSitterClient {
                                  limit: Int,
                                  readHandler: @escaping Parser.ReadBlock,
                                  completionHandler: @escaping () -> Void) {
-        let oldEndPoint = oldEndPoint ?? .zero
+        if locationTransformer != nil && oldEndPoint == nil {
+            assertionFailure("oldEndPoint unavailable")
+            return
+        }
+        let oldEndPoint = self.oldEndPoint ?? .zero
         self.oldEndPoint = nil
 
         guard let inputEdit = InputEdit(range: range, delta: delta, oldEndPoint: oldEndPoint, transformer: locationTransformer) else {
