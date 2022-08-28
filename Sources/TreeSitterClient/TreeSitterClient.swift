@@ -83,10 +83,6 @@ public final class TreeSitterClient {
         self.synchronousLengthThreshold = synchronousLengthThreshold
     }
 
-    public var tree: Tree? {
-        parseState.tree
-    }
-
     private var hasQueuedWork: Bool {
         return outstandingEdits.count > 0
     }
@@ -370,6 +366,27 @@ extension TreeSitterClient {
         try await withCheckedThrowingContinuation { continuation in
             self.executeResolvingQuery(query, in: range, executionMode: executionMode) { result in
                 continuation.resume(with: result)
+            }
+        }
+    }
+
+    /// Fetches the current stable version of Tree
+    ///
+    /// This function always fetches tree that represents the current state of the content, even if the
+    /// system is working in the background.
+    public func currentTree(completionHandler: @escaping (Result<Tree?, TreeSitterClientError>) -> Void) {
+        let startedVersion = version
+        queue.async {
+            self.semaphore.wait()
+            let state = self.parseState.copy()
+            self.semaphore.signal()
+
+            OperationQueue.main.addOperation {
+                guard startedVersion == self.version else {
+                    completionHandler(.failure(.staleContent))
+                    return
+                }
+                completionHandler(.success(state.tree))
             }
         }
     }
