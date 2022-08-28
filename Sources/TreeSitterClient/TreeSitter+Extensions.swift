@@ -15,25 +15,19 @@ extension InputEdit {
             return nil
         }
 
-        let startPoint, newEndPoint: Point?
-        if let transformer = transformer {
-            startPoint = transformer(startLocation)
-            newEndPoint = transformer(newEndLocation)
-            if startPoint == nil || newEndPoint == nil {
-                return nil
-            }
-        } else {
-            startPoint = .zero
-            newEndPoint = .zero
+        let startPoint = transformer?(startLocation)
+        let newEndPoint = transformer?(newEndLocation)
+
+        if transformer != nil {
+            assert(startPoint != nil)
+            assert(newEndPoint != nil)
         }
 
-        assert(startPoint != nil, "startPoint should not be nil")
-        assert(newEndPoint != nil, "newEndPoint should not be nil")
         self.init(startByte: UInt32(range.location * 2),
                   oldEndByte: UInt32(range.max * 2),
                   newEndByte: UInt32(newEndLocation * 2),
-                  startPoint: startPoint!,
+                  startPoint: startPoint ?? .zero,
                   oldEndPoint: oldEndPoint,
-                  newEndPoint: newEndPoint!)
+                  newEndPoint: newEndPoint ?? .zero)
     }
 }
