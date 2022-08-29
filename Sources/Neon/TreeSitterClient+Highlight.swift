@@ -46,3 +46,24 @@ extension TreeSitterClient {
         }
     }
 }
+
+extension TreeSitterClient {
+	public func tokenProvider(with query: Query,
+							  executionMode: ExecutionMode = .asynchronous(prefetch: true),
+							  textProvider: TextProvider? = nil) -> TokenProvider {
+		return { [weak self] range, completionHandler in
+			guard let self = self else {
+				completionHandler(.failure(TreeSitterClientError.stateInvalid))
+				return
+			}
+
+			self.executeHighlightsQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { result in
+				let tokenApp = result
+					.map({ TokenApplication(tokens: $0) })
+					.mapError({ $0 as Error })
+
+				completionHandler(tokenApp)
+			}
+		}
+	}
+}
