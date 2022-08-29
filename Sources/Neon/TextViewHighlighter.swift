@@ -9,6 +9,11 @@ public enum TextViewHighlighterError: Error {
 	case noTextStorage
 }
 
+/// A class that can connect `NSTextView` to `TreeSitterClient`
+///
+/// This class is a minimal implemenation that can help perform highlighting
+/// for an `NSTextView`. The created instance will become the delegate of the
+/// view's `NSTextStorage`.
 @available(macOS 10.11, *)
 public final class TextViewHighlighter: NSObject {
 	public let textView: NSTextView

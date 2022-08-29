@@ -176,6 +176,10 @@ In a traditional `NSTextStorage`/`NSLayoutManager` system (TextKit 1), it can be
 
 An implementation of the `TextSystemInterface` protocol for an `NSTextContainer`-backed `NSTextView`. This takes care of the interface to `NSTextView` and `NSLayoutManager`, but defers `Token`-style translation (themes) to an external `AttributeProvider`.
 
+### TextViewHighlighter (macOS only)
+
+A pretty minimal implemenation that makes it easy to connect an `NSTextView` with a `TreeSitterClient`. This could be a a good way to get going quickly, or just to see how the parts fit together.
+
 ### TreeSitterClient
 
 This class is an asynchronous interface to tree-sitter. It provides an UTF-16 code-point (`NSString`-compatible) API for edits, invalidations, and queries. It can process edits of `String` objects, or raw bytes. Invalidations are translated to the current content state, even if a queue of edits are still being processed. It is fully-compatible with reading the document content lazily.
