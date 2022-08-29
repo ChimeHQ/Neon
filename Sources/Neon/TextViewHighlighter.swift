@@ -9,10 +9,7 @@ public enum TextViewHighlighterError: Error {
 	case noTextStorage
 }
 
-extension TreeSitterClient {
-	
-}
-
+@available(macOS 10.11, *)
 public final class TextViewHighlighter: NSObject {
 	public let textView: NSTextView
 	private let highlighter: Highlighter
@@ -74,7 +71,9 @@ public final class TextViewHighlighter: NSObject {
 	}
 }
 
+@available(macOS 10.11, *)
 extension TextViewHighlighter: NSTextStorageDelegate {
+
 	public func textStorage(_ textStorage: NSTextStorage, willProcessEditing editedMask: NSTextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
 		treeSitterClient.willChangeContent(in: editedRange)
 	}
