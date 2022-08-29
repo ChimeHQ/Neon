@@ -182,7 +182,6 @@ This class is an asynchronous interface to tree-sitter. It provides an UTF-16 co
 
 - Monitors text changes
 - Can be used to build a `TokenProvider`
-- Requires a function that can translate UTF-16 code points to a tree-sitter `Point` (line + offset)
 
 `TreeSitterClient` provides APIs that can be both synchronous, asynchronous, or both depending on the state of the system. This kind of interface can be important when optimizing for flicker-free, low-latency highlighting live typing interactions like indenting.
 
@@ -208,12 +207,7 @@ let query = try! language.query(contentsOf: url)
 
 // step 2: configure the client
 
-// produce a transformer function that can map UTF16 code point indexes to Point (Line, Offset) structs
-let transformer: Point.LocationTransformer = { codePointIndex in 
-   return nil // Should return "Point" in text layout
-}
-
-let client = TreeSitterClient(language: language, transformer: transformer)
+let client = TreeSitterClient(language: language)
 
 // this function will be called with a minimal set of text ranges
 // that have become invalidated due to edits. These ranges
