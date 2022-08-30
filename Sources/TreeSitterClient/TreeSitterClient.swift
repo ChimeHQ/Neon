@@ -374,7 +374,7 @@ extension TreeSitterClient {
     ///
     /// This function always fetches tree that represents the current state of the content, even if the
     /// system is working in the background.
-    public func currentTree(completionHandler: @escaping (Result<Tree?, TreeSitterClientError>) -> Void) {
+    public func currentTree(completionHandler: @escaping (Result<Tree, TreeSitterClientError>) -> Void) {
         let startedVersion = version
         queue.async {
             self.semaphore.wait()
@@ -386,7 +386,11 @@ extension TreeSitterClient {
                     completionHandler(.failure(.staleContent))
                     return
                 }
-                completionHandler(.success(state.tree))
+                if let tree = state.tree {
+                    completionHandler(.success(tree))
+                } else {
+                    completionHandler(.failure(.stateInvalid))
+                }
             }
         }
     }
