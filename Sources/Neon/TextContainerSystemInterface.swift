@@ -52,15 +52,19 @@ public struct TextContainerSystemInterface {
 
 extension TextContainerSystemInterface: TextSystemInterface {
 	private func setAttributes(_ attrs: [NSAttributedString.Key : Any], in range: NSRange) {
-		assert(range.max <= length, "range is out of bounds, is the text state being updated correctly?")
+		let endLocation = min(range.max, length)
 
-		layoutManager?.setTemporaryAttributes(attrs, forCharacterRange: range)
+		assert(endLocation == range.max, "range is out of bounds, is the text state being updated correctly?")
+
+		let clampedRange = NSRange(range.location..<endLocation)
+
+		layoutManager?.setTemporaryAttributes(attrs, forCharacterRange: clampedRange)
 
 		guard
 			#available(macOS 12, iOS 15.0, tvOS 15.0, *),
 			let textLayoutManager = textLayoutManager,
 			let contentManager = textLayoutManager.textContentManager,
-			let textRange = NSTextRange(range, provider: contentManager)
+			let textRange = NSTextRange(clampedRange, provider: contentManager)
 		else {
 			return
 		}
@@ -73,8 +77,6 @@ extension TextContainerSystemInterface: TextSystemInterface {
     }
 
     public func applyStyle(to token: Token) {
-        assert(token.range.max <= length, "range is out of bounds, is the text state being updated correctly?")
-
         guard let attrs = attributeProvider(token) else { return }
 
 		setAttributes(attrs, in: token.range)
