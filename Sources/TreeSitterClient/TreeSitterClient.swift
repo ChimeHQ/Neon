@@ -255,6 +255,8 @@ extension TreeSitterClient {
     }
 
     private func dispatchInvalidatedSet(_ set: IndexSet) {
+		preconditionOnMainQueue()
+		
         let transformedSet = transformRangeSet(set)
 
         if transformedSet.isEmpty {
