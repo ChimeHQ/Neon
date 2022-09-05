@@ -20,7 +20,7 @@ It does not feature:
 - A single View subclass
 - Low complexity
 
-Neon has a strong focus on efficiency and flexibility. These qualities bring some serious complexity. Right now, Neon is a collection of components that can be assembled together as part of a larger text system. It does not include a single component that ties everything together.
+Neon has a strong focus on efficiency and flexibility. These qualities bring some serious complexity. Right now, Neon is a collection of components that can be assembled together as part of a larger text system. It does not include a single View that ties everything together.
 
 I realize that many people are looking for exactly that. But, it's deceptively difficult, as text systems can be phenomenally complicated. I'd love to make easier-to-use parts, and that's a goal. But, it has to be done in a way that does not sacrifice flexibility.
 
@@ -172,13 +172,13 @@ Note that Highlighter is built to handle a `TokenProvider` calling its completio
 
 In a traditional `NSTextStorage`/`NSLayoutManager` system (TextKit 1), it can be challenging to achieve flicker-free on-keypress highlighting. This class offers a mechanism for buffering invalidations, so you can precisely control how and when actual text style updates occur.
 
-### TextContainerSystemInterface (macOS only)
+### TextViewSystemInterface
 
-An implementation of the `TextSystemInterface` protocol for an `NSTextContainer`-backed `NSTextView`. This takes care of the interface to `NSTextView` and `NSLayoutManager`, but defers `Token`-style translation (themes) to an external `AttributeProvider`.
+An implementation of the `TextSystemInterface` protocol for an `NSTextView` or `UITextView`. This takes care of the interface to the view and `NSLayoutManager`, but defers `Token`-style translation (themes) to an external `AttributeProvider`.
 
-### TextViewHighlighter (macOS only)
+### TextViewHighlighter
 
-A pretty minimal implemenation that makes it easy to connect an `NSTextView` with a `TreeSitterClient`. This could be a a good way to get going quickly, or just to see how the parts fit together.
+A pretty minimal implemenation that makes it easy to connect an `NSTextView` or `UITextView` with a `TreeSitterClient`. This could be a a good way to get going quickly, or just to see how the parts fit together.
 
 ### TreeSitterClient
 
