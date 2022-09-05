@@ -3,6 +3,7 @@ import AppKit
 import XCTest
 @testable import Neon
 
+@available(*, deprecated, message: "TextViewSystemInterface should be used instead")
 final class TextContainerSystemInterfaceTests: XCTestCase {
 	func testApplyAttributes() throws {
 		let textView = NSTextView()

@@ -1,34 +1,8 @@
-import Foundation
 #if os(macOS)
 import AppKit
-
 import Rearrange
 
-extension NSTextView {
-    func textRange(for rect: CGRect) -> NSRange {
-        let length = self.textStorage?.length ?? 0
-
-        guard let layoutManager = self.layoutManager else {
-            return NSRange(0..<length)
-        }
-
-        guard let container = self.textContainer else {
-            return NSRange(0..<length)
-        }
-
-        let origin = textContainerOrigin
-        let offsetRect = rect.offsetBy(dx: -origin.x, dy: -origin.y)
-
-        let glyphRange = layoutManager.glyphRange(forBoundingRect: offsetRect, in: container)
-
-        return layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
-    }
-
-    var visibleTextRange: NSRange {
-        return textRange(for: visibleRect)
-    }
-}
-
+@available(*, deprecated, message: "TextViewSystemInterface should be used instead")
 public struct TextContainerSystemInterface {
     public typealias AttributeProvider = (Token) -> [NSAttributedString.Key: Any]?
 
@@ -50,6 +24,7 @@ public struct TextContainerSystemInterface {
 	}
 }
 
+@available(*, deprecated, message: "TextViewSystemInterface should be used instead")
 extension TextContainerSystemInterface: TextSystemInterface {
 	private func setAttributes(_ attrs: [NSAttributedString.Key : Any], in range: NSRange) {
 		let endLocation = min(range.max, length)
@@ -58,7 +33,9 @@ extension TextContainerSystemInterface: TextSystemInterface {
 
 		let clampedRange = NSRange(range.location..<endLocation)
 
+		#if os(macOS)
 		layoutManager?.setTemporaryAttributes(attrs, forCharacterRange: clampedRange)
+		#endif
 
 		guard
 			#available(macOS 12, iOS 15.0, tvOS 15.0, *),
