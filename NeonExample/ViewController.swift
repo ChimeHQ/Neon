@@ -14,7 +14,7 @@ final class ViewController: NSViewController {
 		scrollView.documentView = textView
 		
 		let provider: TextViewSystemInterface.AttributeProvider = { token in
-			guard token.name == "keyword" else { return [:] }
+			guard token.name.hasPrefix("keyword") else { return [:] }
 
 			return [NSAttributedString.Key.foregroundColor: NSColor.red]
 		}
