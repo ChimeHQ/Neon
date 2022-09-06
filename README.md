@@ -18,7 +18,6 @@ It does not feature:
 
 - A theme system
 - A single View subclass
-- Low complexity
 
 Neon has a strong focus on efficiency and flexibility. These qualities bring some serious complexity. Right now, Neon is a collection of components that can be assembled together as part of a larger text system. It does not include a single View that ties everything together.
 
@@ -26,56 +25,40 @@ I realize that many people are looking for exactly that. But, it's deceptively d
 
 The library is being extracted from the [Chime](https://www.chimehq.com) editor. It's a big system, and pulling it out is something we intend to do over time.
 
-## Why is this so complicated?
-
-Working with small, static, and syntactically correct documents is one thing. Achieving both high performance and high quality behavior for an editor is totally different. Work needs to be done on every keystroke, and minimizing that work requires an enormous amount of infrastructure and careful design. Before starting, it's worth seriously evaluating your performance and quality needs. You may be able to get away with a much simpler system. A lot of this boils down to size of the document. Remember: most files are small, and small files can make even the most naive implementation feel acceptable.
-
-Some things to consider:
-
-- Latency to open a file
-- Latency to visible elements highlight
-- Latency to end-of-document highlight
-- Latency on keystroke
-- Precise invalidation on keystroke
-- Highlight quality in the face of invalid syntax
-- Ability to apply progressively higher-quality highlighting
-- Precise indentation calculation
-
-Not all of these might matter you. Neon's components are fairly loosely-coupled, so maybe just one or two parts might be usable without the whole thing.
-
 ## Language Support
 
 Neon is built around the idea that there can be multiple sources of information about the semantic meaning of the text, all with varying latencies and quality.
 
 - [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) has [semantic tokens](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens), which is high quality, high latency, and typically used in combination with other sources.
-- [tree-sitter](https://tree-sitter.github.io/tree-sitter/) is very good quality, and can potentially be low-latency
+- [tree-sitter](https://tree-sitter.github.io/tree-sitter/) is very good quality, and can **potentially** be low-latency
 - Regex-based systems can have ok quality and low-latency
 - Simpler pattern-matching systems generally have poor quality, but have very low latency
 
-Neon includes built-in support for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter also uses separate compiled parsers for each language. There are a variety of ways to use tree-sitter parsers with SwiftTreeSitter. Check out that project for details.
+Neon includes built-in support for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter uses separate compiled parsers for each language. There are a variety of ways to use tree-sitter parsers with SwiftTreeSitter. Check out that project for details.
 
 ## Integration
 
-Neon's components need to react to various events:
+Neon is text-system independent. It makes very few assumptions about how text is stored, displayed, and styled. And, it is built around parts that can be used together to build a full system. But, there are also some helper types for use-cases with simpler needs.
 
-- the text is about to change
-- the text has changed
-- a text change has been processed and is now ready to be styled
-- the visible text has changed
-- the styling has become invalid (ex: the theme has changed)
+### TextViewSystemInterface
 
-How and where they come from depends on your text setup. And, not every component needs to know about all of these, so you may be able to get away with less.
+An implementation of the `TextSystemInterface` protocol for `NSTextView`/`UITextView`. This takes care of the interface to the view and `NSLayoutManager`, but defers `Token`-style translation (themes) to an external `AttributeProvider`. This is compatible with both TextKit 1 and 2.
 
-## Simple Integration
+### TextViewHighlighter
 
-A minimal integration can be achieved by configuring a `Highlighter` to interface with an `NSTextView`'s text container:
+A more full-featured system that integrates `NSTextView`/`UITextView` with a `TreeSitterClient`. This is a good way to get going quickly, or just to see how the parts fit together. Also compatible with TextKit 1 and 2.
+
+Will take over as the delegate of the text view's `NSTextStorage`.
+
+There is also an example project that demonstrates how to use `TextViewHighlighter` for macOS and iOS.
+
+## Manual Integration
+
+A minimal integration can be achieved by configuring a `Highlighter` to interface with an `NSTextView`:
 
 ```swift
 func applicationDidFinishLaunching(_ aNotification: Notification) {
-   guard let textContainer = textView.textContainer, let textStorage = textView.textStorage else {
-      preconditionFailure()
-   }
-   let textInterface = TextContainerSystemInterface(textContainer: textContainer, attributeProvider: self.attributeProvider)
+   let textInterface = TextViewSystemInterface(textView: textView, attributeProvider: self.attributeProvider)
    self.highlighter = Highlighter(textInterface: textInterface, tokenProvider: self.tokenProvider)
    textStorage.delegate = self
    self.highlighter.invalidate()
@@ -144,7 +127,7 @@ Using this basic structure you can annotate the text with tokens while separatel
 
 ## Advanced Integration
 
-Achieving better performance and guaranteed flicker-free highlighting is more challenging. Monitoring the visible rect of the `NSTextView` will improve performance. You need to know when a text change has been processing by enough of the system that styling is possible. This point in the text change lifecycle is not natively supported by `NSTextStorage` or `NSLayoutManager`. It requires an `NSTextStorage` subclass. But, even that isn't quite enough unfortunately, as you still need to precisely control the timing of invalidation and styling. This is where `HighlighterInvalidationBuffer` comes in. I warned you this was complicated.
+Achieving better performance and guaranteed flicker-free highlighting is more challenging. Monitoring the visible rect of the text view will improve performance. You need to know when a text change has been processing by enough of the system that styling is possible. This point in the text change lifecycle is not natively supported by `NSTextStorage` or `NSLayoutManager`. It requires an `NSTextStorage` subclass. But, even that isn't quite enough unfortunately, as you still need to precisely control the timing of invalidation and styling. This is where `HighlighterInvalidationBuffer` comes in.
 
 ## Relationship to TextStory
 
@@ -172,13 +155,6 @@ Note that Highlighter is built to handle a `TokenProvider` calling its completio
 
 In a traditional `NSTextStorage`/`NSLayoutManager` system (TextKit 1), it can be challenging to achieve flicker-free on-keypress highlighting. This class offers a mechanism for buffering invalidations, so you can precisely control how and when actual text style updates occur.
 
-### TextViewSystemInterface
-
-An implementation of the `TextSystemInterface` protocol for an `NSTextView` or `UITextView`. This takes care of the interface to the view and `NSLayoutManager`, but defers `Token`-style translation (themes) to an external `AttributeProvider`.
-
-### TextViewHighlighter
-
-A pretty minimal implemenation that makes it easy to connect an `NSTextView` or `UITextView` with a `TreeSitterClient`. This could be a a good way to get going quickly, or just to see how the parts fit together.
 
 ### TreeSitterClient
 
