@@ -5,10 +5,12 @@ import SwiftTreeSitter
 #if os(macOS)
 import AppKit
 
+@available(macOS 11.0, *)
 public typealias TextStorageEditActions = NSTextStorageEditActions
 #elseif os(iOS)
 import UIKit
 
+@available(iOS 15.0, tvOS 15.0, *)
 public typealias TextStorageEditActions = NSTextStorage.EditActions
 #endif
 
