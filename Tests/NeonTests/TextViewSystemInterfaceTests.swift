@@ -100,5 +100,15 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 	}
 #endif
 
+#if os(macOS)
+	@available(macOS 12.0, *)
+	func testVisibleTextRangePreservesTextKit2() throws {
+		let textView = TextView()
+		XCTAssertNotNil(textView.textLayoutManager)
+		let _ = textView.visibleTextRange
+		XCTAssertNotNil(textView.textLayoutManager)
+	}
+#endif
+
 }
 
