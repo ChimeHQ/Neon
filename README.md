@@ -1,6 +1,7 @@
 [![Build Status][build status badge]][build status]
 [![License][license badge]][license]
 [![Platforms][platforms badge]][platforms]
+[![Documentation][documentation badge]][documentation]
 
 # Neon
 A Swift library for efficient highlighting, indenting, and querying structured syntax.
@@ -238,3 +239,5 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 [license badge]: https://img.shields.io/github/license/ChimeHQ/Neon
 [platforms]: https://swiftpackageindex.com/ChimeHQ/Neon
 [platforms badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FChimeHQ%2FNeon%2Fbadge%3Ftype%3Dplatforms
+[documentation]: https://swiftpackageindex.com/ChimeHQ/Neon/main/documentation
+[documentation badge]: https://img.shields.io/badge/Documentation-DocC-blue
