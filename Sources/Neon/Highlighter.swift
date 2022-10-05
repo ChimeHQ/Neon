@@ -8,6 +8,15 @@ public class Highlighter {
     private var pendingSet: IndexSet
     public var tokenProvider: TokenProvider
 
+	/// Requests to the TokenProvider will not exceed this length.
+	public var requestLengthLimit = 1024
+
+	/// Highlighting may be done past the visible range by up to this amount.
+	public var visibleLookAheadLength = 1024
+
+	/// Highlighting may be done before the visible range by up to this amount.
+	public var visibleLookBehindLength = 1024
+
     public init(textInterface: TextSystemInterface, tokenProvider: TokenProvider? = nil) {
         self.textInterface = textInterface
         self.validSet = IndexSet()
@@ -99,31 +108,47 @@ extension Highlighter {
         return fullTextSet.subtracting(validSet)
     }
 
+	/// Computes the next contiguous invalid range
     private func nextNeededTokenRange() -> NSRange? {
-        // first, compute the set that is actually visible, invalid, and
-        // not yet requested
-        let candidateSet = invalidSet
-            .intersection(visibleSet)
-            .subtracting(pendingSet)
+		let visibleRange = visibleTextRange
 
-        guard let range = candidateSet.nsRangeView.first else { return nil }
+		let lookBehindLength = requestLengthLimit
+		let lookAheadLength = requestLengthLimit
 
-        // what we want to do now is expand that range to
-        // cover as much adjacent invalid area as possible
-        // within a limit
-        let maxLength = 1024
-        let amount = max(0, maxLength - range.length)
-        let start = max(0, range.location - amount / 2)
-        let end  = min(textLength, range.max + amount / 2)
+		// expand the visible range by the maximum possible request length
+		let expandedVisibleStart = max(visibleRange.location - lookBehindLength, 0)
+		let expandedVisibleEnd = min(visibleRange.max + lookAheadLength, textLength)
 
-        let expanded = NSRange(start..<end)
+		let expandedVisibleSet = IndexSet(integersIn: NSRange(expandedVisibleStart..<expandedVisibleEnd))
 
-        // we now need to re-restrict this new range by what's actually invalid and pending
-        let set = IndexSet(integersIn: expanded)
-            .intersection(invalidSet)
-            .subtracting(pendingSet)
+		// determine what parts of that set are actually invalid
+		let expandedVisibleInvalidSet = invalidSet.intersection(expandedVisibleSet)
 
-        return set.nsRangeView.first
+		// here's a trick. Create a set with a single range, and then remove
+		// any pending ranges from it. The result can be used to determine the longest
+		// ranges that do not overlap pending.
+		let spanSet = expandedVisibleInvalidSet
+			.limitSpanningRange
+			.map({ IndexSet(integersIn: $0) }) ?? IndexSet()
+
+		let candidateSet = spanSet.subtracting(pendingSet)
+
+		// We want to prioritize the invalid ranges that are actually visible
+		let hasVisibleInvalidRanges = visibleSet.intersection(invalidSet).isEmpty == false
+
+		// now get back the first range, which is the longest continguous
+		// range that includes invalid regions
+		let range = candidateSet.nsRangeView.first{ range in
+			guard hasVisibleInvalidRanges else { return true }
+
+			return range.max > visibleRange.location
+		}
+
+		guard let range = range else { return nil }
+
+		// make sure to respect the request limit
+		return NSRange(location: range.location,
+					   length: min(range.length, requestLengthLimit))
     }
 
     private func makeNextTokenRequest() {
@@ -158,7 +183,7 @@ extension Highlighter {
     private func handleTokens(_ tokenApplication: TokenApplication, for range: NSRange) {
         self.pendingSet.remove(integersIn: range)
 
-        var receivedSet = IndexSet(integersIn: range)
+		var receivedSet = IndexSet(integersIn: tokenApplication.range ?? range)
 
         let tokenRanges = tokenApplication.tokens.map({ $0.range })
 

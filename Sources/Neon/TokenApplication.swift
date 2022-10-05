@@ -7,10 +7,12 @@ public struct TokenApplication {
     }
 
     public let tokens: [Token]
+	public let range: NSRange?
     public let action: Action
 
-    public init(tokens: [Token], action: TokenApplication.Action = .replace) {
+	public init(tokens: [Token], range: NSRange? = nil, action: TokenApplication.Action = .replace) {
         self.tokens = tokens
+		self.range = range
         self.action = action
     }
 
