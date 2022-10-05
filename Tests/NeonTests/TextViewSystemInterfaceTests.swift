@@ -11,6 +11,21 @@ extension NSTextView {
 		get { return string }
 		set { string = newValue }
 	}
+
+	@available(macOS 12.0, *)
+	static func textKit2View() -> NSTextView {
+		if #available(macOS 13.0, *) {
+			return NSTextView()
+		}
+
+		let textContainer = NSTextContainer(size: CGSize(width: 0.0, height: 1.0e7))
+		let textContentManager = NSTextContentStorage()
+		let textLayoutManager = NSTextLayoutManager()
+		textLayoutManager.textContainer = textContainer
+		textContentManager.addTextLayoutManager(textLayoutManager)
+
+		return NSTextView(frame: .zero, textContainer: textContainer)
+	}
 }
 
 #elseif os(iOS)
@@ -58,13 +73,8 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 	@available(macOS 12.0, iOS 15.0, *)
 	func testApplyAttributesToTextKit2TextView() throws {
 		#if os(macOS)
-		let textContainer = NSTextContainer(size: CGSize(width: 0.0, height: 1.0e7))
-		let textContentManager = NSTextContentStorage()
-		let textLayoutManager = NSTextLayoutManager()
-		textLayoutManager.textContainer = textContainer
-		textContentManager.addTextLayoutManager(textLayoutManager)
-
-		let textView = NSTextView(frame: .zero, textContainer: textContainer)
+		let textView = NSTextView.textKit2View()
+		let textLayoutManager = try XCTUnwrap(textView.textLayoutManager)
 		#else
 		let textView = UITextView()
 
@@ -100,15 +110,23 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 	}
 #endif
 
-#if os(macOS)
-	@available(macOS 12.0, *)
+#if os(macOS) || os(iOS)
+	@available(macOS 12.0, iOS 15.0, *)
 	func testVisibleTextRangePreservesTextKit2() throws {
-		let textView = TextView()
+		#if os(macOS)
+		let textView = NSTextView.textKit2View()
+
 		XCTAssertNotNil(textView.textLayoutManager)
 		let _ = textView.visibleTextRange
 		XCTAssertNotNil(textView.textLayoutManager)
+		#else
+		let textView = UITextView()
+
+		XCTAssertNotNil(textView.textContainer.textLayoutManager)
+		let _ = textView.visibleTextRange
+		XCTAssertNotNil(textView.textContainer.textLayoutManager)
+		#endif
 	}
 #endif
-
 }
 
