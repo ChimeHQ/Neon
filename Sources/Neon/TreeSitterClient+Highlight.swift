@@ -3,13 +3,7 @@ import SwiftTreeSitter
 import TreeSitterClient
 
 extension TreeSitterClient {
-    public typealias TextProvider = ResolvingQueryCursor.TextProvider
-
-    private func tokensFromCursor(_ cursor: ResolvingQueryCursor, textProvider: TextProvider?) -> [Token] {
-        if let textProvider = textProvider {
-            cursor.prepare(with: textProvider)
-        }
-
+    private func tokensFromCursor(_ cursor: ResolvingQueryCursor) -> [Token] {
         return cursor
             .map({ $0.captures })
             .flatMap({ $0 })
@@ -26,8 +20,8 @@ extension TreeSitterClient {
                                        executionMode: ExecutionMode = .asynchronous(prefetch: true),
                                        textProvider: TextProvider? = nil,
                                        completionHandler: @escaping (Result<[Token], TreeSitterClientError>) -> Void) {
-        executeResolvingQuery(query, in: range, executionMode: executionMode) { cursorResult in
-            let result = cursorResult.map({ self.tokensFromCursor($0, textProvider: textProvider) })
+		executeResolvingQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { cursorResult in
+            let result = cursorResult.map({ self.tokensFromCursor($0) })
 
             completionHandler(result)
         }

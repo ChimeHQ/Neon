@@ -11,6 +11,8 @@ public enum TreeSitterClientError: Error {
 }
 
 public final class TreeSitterClient {
+	public typealias TextProvider = ResolvingQueryCursor.TextProvider
+	
     public enum ExecutionMode: Hashable {
         case synchronous
         case synchronousPreferred
@@ -288,10 +290,12 @@ extension TreeSitterClient {
     /// - Parameter query: the query to execute
     /// - Parameter range: constrain the query to this range
     /// - Parameter executionMode: determine if a background query should be used
+	/// - Parameter textProvider: the ResolvingQueryCursor.TextProvider used for predicate resolution
     /// - Parameter completionHandler: returns the result
     public func executeResolvingQuery(_ query: Query,
                                       in range: NSRange,
                                       executionMode: ExecutionMode = .asynchronous(prefetch: true),
+									  textProvider: TextProvider? = nil,
                                       completionHandler: @escaping (ResolvingQueryCursorResult) -> Void) {
         preconditionOnMainQueue()
 
@@ -299,21 +303,21 @@ extension TreeSitterClient {
 
         switch executionMode {
         case .synchronous:
-            let result = executeResolvingQuerySynchronously(query, in: range)
+			let result = executeResolvingQuerySynchronously(query, in: range, textProvider: textProvider)
             completionHandler(result)
             return
         case .failIfAsynchronous:
             if canAttemptSynchronousQuery(in: range) == false {
                 completionHandler(.failure(.asyncronousExecutionRequired))
             } else {
-                let result = executeResolvingQuerySynchronously(query, in: range)
+                let result = executeResolvingQuerySynchronously(query, in: range, textProvider: textProvider)
                 completionHandler(result)
             }
 
             return
         case .synchronousPreferred:
             if canAttemptSynchronousQuery(in: range) {
-                let result = executeResolvingQuerySynchronously(query, in: range)
+                let result = executeResolvingQuerySynchronously(query, in: range, textProvider: textProvider)
                 completionHandler(result)
                 return
             }
@@ -351,6 +355,10 @@ extension TreeSitterClient {
                         return
                     }
 
+					if let textProvider = textProvider, let cursor = try? result.get() {
+						cursor.prepare(with: textProvider)
+					}
+
                     completionHandler(result)
                 }
             }
@@ -364,9 +372,10 @@ extension TreeSitterClient {
     @MainActor
     public func resolvingQueryCursor(with query: Query,
                                      in range: NSRange,
-                                     executionMode: ExecutionMode = .asynchronous(prefetch: true)) async throws -> ResolvingQueryCursor {
+                                     executionMode: ExecutionMode = .asynchronous(prefetch: true),
+									 textProvider: TextProvider? = nil) async throws -> ResolvingQueryCursor {
         try await withCheckedThrowingContinuation { continuation in
-            self.executeResolvingQuery(query, in: range, executionMode: executionMode) { result in
+			self.executeResolvingQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { result in
                 continuation.resume(with: result)
             }
         }
@@ -374,7 +383,7 @@ extension TreeSitterClient {
 
     /// Fetches the current stable version of Tree
     ///
-    /// This function always fetches tree that represents the current state of the content, even if the
+    /// This function always fetches the tree that represents the current state of the content, even if the
     /// system is working in the background.
     public func currentTree(completionHandler: @escaping (Result<Tree, TreeSitterClientError>) -> Void) {
         let startedVersion = version
@@ -399,14 +408,28 @@ extension TreeSitterClient {
 }
 
 extension TreeSitterClient {
-    public func executeResolvingQuerySynchronously(_ query: Query, in range: NSRange) -> ResolvingQueryCursorResult {
+	/// Executes a query synchronously and returns a ResolvingQueryCursor
+	///
+	/// Because it must run synchronously, this method will fail if the
+	/// there are pending background parse operations.
+	///
+	/// - Parameter query: the query to execute
+	/// - Parameter range: constrain the query to this range
+	/// - Parameter textProvider: the ResolvingQueryCursor.TextProvider used for predicate resolution
+    public func executeResolvingQuerySynchronously(_ query: Query, in range: NSRange, textProvider: TextProvider? = nil) -> ResolvingQueryCursorResult {
         preconditionOnMainQueue()
 
         if hasQueuedWork {
             return .failure(.staleState)
         }
 
-        return executeResolvingQuerySynchronouslyWithoutCheck(query, in: range, with: parseState)
+        let result = executeResolvingQuerySynchronouslyWithoutCheck(query, in: range, with: parseState)
+
+		if let textProvider = textProvider, let cursor = try? result.get() {
+			cursor.prepare(with: textProvider)
+		}
+
+		return result
     }
 
     private func executeResolvingQuerySynchronouslyWithoutCheck(_ query: Query, in range: NSRange, with state: TreeSitterParseState) -> ResolvingQueryCursorResult {
@@ -440,3 +463,35 @@ extension TreeSitterClient {
     }
 }
 
+extension TreeSitterClient {
+	/// Execute a standard injections.scm query
+	///
+	/// Note that some injection query definitions require evaluating the text content, which is only possible by supplying a `textProvider`.
+	public func executeInjectionsQuery(_ query: Query,
+									   in range: NSRange,
+									   executionMode: ExecutionMode = .asynchronous(prefetch: true),
+									   textProvider: TextProvider? = nil,
+									   completionHandler: @escaping (Result<[NamedRange], TreeSitterClientError>) -> Void) {
+		executeResolvingQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { cursorResult in
+			let result = cursorResult.map({ cursor in
+				cursor.compactMap({ $0.injection(with: textProvider) })
+			})
+
+			completionHandler(result)
+		}
+	}
+
+	/// Execute a standard injections.scm query
+	@available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
+	@MainActor
+	public func injections(with query: Query,
+						   in range: NSRange,
+						   executionMode: ExecutionMode = .asynchronous(prefetch: true),
+						   textProvider: TextProvider? = nil) async throws -> [NamedRange] {
+		try await withCheckedThrowingContinuation { continuation in
+			self.executeInjectionsQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { result in
+				continuation.resume(with: result)
+			}
+		}
+	}
+}
