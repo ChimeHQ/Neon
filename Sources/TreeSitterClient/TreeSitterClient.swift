@@ -411,7 +411,7 @@ extension TreeSitterClient {
     /// This function always fetches the tree that represents the current state of the content, even if the
     /// system is working in the background.
     @available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
-    func currentTree() async throws -> Tree? {
+    public func currentTree() async throws -> Tree? {
         try await withCheckedThrowingContinuation { continuation in
             currentTree() { result in
                 switch result {
