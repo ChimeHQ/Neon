@@ -42,4 +42,17 @@ final class NeonTests: XCTestCase {
 
         XCTAssertEqual(edit.affectedRange, NSRange(0..<0))
     }
+
+	func testAffectedRangeWithInsertAtEnd() {
+		let mutation = RangeMutation(range: NSRange(0..<10), delta: -10)
+		let inputEdit = InputEdit(startByte: 0,
+								  oldEndByte: 20,
+								  newEndByte: 0,
+								  startPoint: Point(row: 0, column: 0),
+								  oldEndPoint: Point(row: 0, column: 10),
+								  newEndPoint: Point(row: 0, column: 0))
+		let edit = TreeSitterClient.ContentEdit(rangeMutation: mutation, inputEdit: inputEdit, limit: 0)
+
+		XCTAssertEqual(edit.affectedRange, NSRange(0..<0))
+	}
 }

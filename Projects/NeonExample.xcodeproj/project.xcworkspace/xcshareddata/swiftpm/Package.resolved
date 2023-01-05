@@ -6,7 +6,7 @@
       "location" : "https://github.com/ChimeHQ/Neon.git",
       "state" : {
         "branch" : "main",
-        "revision" : "a1dc394bb40ecd0c7fef4929c711e55d01854dc9"
+        "revision" : "66e15b70d8807b4b4056a4603ff296682d9f23d8"
       }
     },
     {
@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/SwiftTreeSitter",
       "state" : {
-        "revision" : "b4d3460e90c5b6d1a0f0be2a7715d4c5c63cf606",
-        "version" : "0.6.3"
+        "revision" : "df25a52f72ebc5b50ae20d26d1363793408bb28b",
+        "version" : "0.7.1"
       }
     },
     {

@@ -102,9 +102,10 @@ extension TextViewHighlighter: NSTextStorageDelegate {
 
 	public func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
 		let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
+		let string = textStorage.string
 
 		highlighter.didChangeContent(in: adjustedRange, delta: delta)
-		treeSitterClient.didChangeContent(to: textStorage.string, in: adjustedRange, delta: delta, limit: textStorage.string.count)
+		treeSitterClient.didChangeContent(to: string, in: adjustedRange, delta: delta, limit: string.utf16.count)
 	}
 }
 
