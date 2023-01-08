@@ -1,0 +1,4 @@
+[submodule "tree-sitter-swift"]
+	path = tree-sitter-swift
+	url = https://github.com/alex-pinkus/tree-sitter-swift
+	branch = with-generated-files
