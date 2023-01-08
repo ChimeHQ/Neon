@@ -2,8 +2,9 @@ import XCTest
 import Rearrange
 import SwiftTreeSitter
 @testable import TreeSitterClient
+import TestTreeSitterSwift
 
-final class NeonTests: XCTestCase {
+final class TreeSitterClientTests: XCTestCase {
     func testInsertAffectedRange() {
         let mutation = RangeMutation(range: .zero, delta: 10, limit: 10)
         let inputEdit = InputEdit(startByte: 0,
@@ -54,5 +55,24 @@ final class NeonTests: XCTestCase {
 		let edit = TreeSitterClient.ContentEdit(rangeMutation: mutation, inputEdit: inputEdit, limit: 0)
 
 		XCTAssertEqual(edit.affectedRange, NSRange(0..<0))
+	}
+}
+
+extension TreeSitterClientTests {
+	func testBasicParse() async throws {
+		let language = Language(language: tree_sitter_swift())
+
+		let client = try TreeSitterClient(language: language)
+
+let content = """
+func main() { print("hello" }
+"""
+		await MainActor.run {
+			client.didChangeContent(to: content, in: .zero, delta: content.utf16.count, limit: 0)
+		}
+
+		let tree = try await client.currentTree()
+
+		XCTAssertNotNil(tree.rootNode)
 	}
 }
