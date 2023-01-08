@@ -59,6 +59,7 @@ final class TreeSitterClientTests: XCTestCase {
 }
 
 extension TreeSitterClientTests {
+	@available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
 	func testBasicParse() async throws {
 		let language = Language(language: tree_sitter_swift())
 
