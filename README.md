@@ -20,9 +20,7 @@ It does not feature:
 - A theme system
 - A single View subclass
 
-Neon has a strong focus on efficiency and flexibility. These qualities bring some serious complexity. Right now, Neon is a collection of components that can be assembled together as part of a larger text system. It does not include a single View that ties everything together.
-
-I realize that many people are looking for exactly that. But, it's deceptively difficult, as text systems can be phenomenally complicated. I'd love to make easier-to-use parts, and that's a goal. But, it has to be done in a way that does not sacrifice flexibility.
+Neon has a strong focus on efficiency and flexibility. I realize that many people are looking for a drop-in editor View subclass that does it all. This is a lower-level library. You could, however, use Neon to power the portions of this editor.
 
 The library is being extracted from the [Chime](https://www.chimehq.com) editor. It's a big system, and pulling it out is something we intend to do over time.
 
