@@ -8,6 +8,9 @@ on:
     branches:
       - '**'
 
+env:
+  DEVELOPER_DIR: /Applications/Xcode_14.2.app/Contents/Developer
+
 jobs:
   test:
     name: Test
