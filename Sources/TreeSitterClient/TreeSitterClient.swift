@@ -286,7 +286,7 @@ extension TreeSitterClient {
     /// - Parameter query: the query to execute
     /// - Parameter range: constrain the query to this range
     /// - Parameter executionMode: determine if a background query should be used
-	/// - Parameter textProvider: the ResolvingQueryCursor.TextProvider used for predicate resolution
+	/// - Parameter textProvider: the `ResolvingQueryCursor.TextProvider` used for predicate resolution
     /// - Parameter completionHandler: returns the result
     public func executeResolvingQuery(_ query: Query,
                                       in range: NSRange,
