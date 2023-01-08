@@ -6,7 +6,7 @@ import Neon
 final class ViewController: UIViewController {
 	let textView = UITextView()
 
-	lazy var highligher: TextViewHighlighter = {
+	lazy var highlighter: TextViewHighlighter = {
 		let language = Language(language: tree_sitter_swift())
 
 		let url = Bundle.main
@@ -30,7 +30,7 @@ final class ViewController: UIViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
-		_ = highligher.textView
+		_ = highlighter.textView
 
 		textView.text = "var something = String()"
 
