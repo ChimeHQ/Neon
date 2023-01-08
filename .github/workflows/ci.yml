@@ -19,6 +19,9 @@ jobs:
           - "platform=iOS Simulator,name=iPhone 11"
     
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Test platform ${{ matrix.destination }}
         run: set -o pipefail && xcodebuild -scheme Neon -destination "${{ matrix.destination }}" test | xcpretty
