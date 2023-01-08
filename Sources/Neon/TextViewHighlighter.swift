@@ -21,7 +21,7 @@ public enum TextViewHighlighterError: Error {
 #if os(macOS) || os(iOS)
 /// A class that can connect `NSTextView`/`UITextView` to `TreeSitterClient`
 ///
-/// This class is a minimal implemenation that can help perform highlighting
+/// This class is a minimal implementation that can help perform highlighting
 /// for a TextView. The created instance will become the delegate of the
 /// view's `NSTextStorage`.
 @available(macOS 11.0, iOS 15.0, tvOS 15.0, *)

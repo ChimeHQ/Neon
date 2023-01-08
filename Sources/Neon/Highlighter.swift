@@ -136,7 +136,7 @@ extension Highlighter {
 		// We want to prioritize the invalid ranges that are actually visible
 		let hasVisibleInvalidRanges = visibleSet.intersection(invalidSet).isEmpty == false
 
-		// now get back the first range, which is the longest continguous
+		// now get back the first range, which is the longest continuous
 		// range that includes invalid regions
 		let range = candidateSet.nsRangeView.first{ range in
 			guard hasVisibleInvalidRanges else { return true }
