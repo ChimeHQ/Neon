@@ -410,11 +410,7 @@ extension TreeSitterClient {
     public func currentTree() async throws -> Tree? {
         try await withCheckedThrowingContinuation { continuation in
             currentTree() { result in
-                switch result {
-                case .failure: continuation.resume(returning: nil)
-                case .success(let tree):
-                    continuation.resume(returning: tree)
-                }
+				continuation.resume(with: result)
             }
         }
     }
