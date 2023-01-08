@@ -112,7 +112,7 @@ extension TreeSitterClient {
     /// - Parameter range: the range that was affected by the edit
     /// - Parameter delta: the change in length of the content
     /// - Parameter limit: the current length of the content
-    /// - Parameter readerHandler: a function that returns the text data
+    /// - Parameter readHandler: a function that returns the text data
     /// - Parameter completionHandler: invoked when the edit has been fully processed
     public func didChangeContent(in range: NSRange,
                                  delta: Int,
@@ -209,21 +209,17 @@ extension TreeSitterClient {
 
         queue.async {
             let (oldState, newState) = self.applyEdit(edit, readHandler: readHandler)
+			let set = doInvalidations ? self.computeInvalidatedSet(from: oldState, to: newState, with: edit) : IndexSet()
 
-            DispatchQueue.global().async {
-                // we can safely compute the invalidations on another queue
-                let set = doInvalidations ? self.computeInvalidatedSet(from: oldState, to: newState, with: edit) : IndexSet()
+			OperationQueue.main.addOperation {
+				let completedEdit = self.outstandingEdits.removeFirst()
 
-                OperationQueue.main.addOperation {
-                    let completedEdit = self.outstandingEdits.removeFirst()
+				assert(completedEdit.inputEdit == edit.inputEdit)
 
-                    assert(completedEdit.inputEdit == edit.inputEdit)
+				self.dispatchInvalidatedSet(set)
 
-                    self.dispatchInvalidatedSet(set)
-
-                    completionHandler()
-                }
-            }
+				completionHandler()
+			}
         }
     }
 
