@@ -382,6 +382,8 @@ extension TreeSitterClient {
     /// This function always fetches the tree that represents the current state of the content, even if the
     /// system is working in the background.
     public func currentTree(completionHandler: @escaping (Result<Tree, TreeSitterClientError>) -> Void) {
+		preconditionOnMainQueue()
+
         let startedVersion = version
         queue.async {
             self.semaphore.wait()
@@ -407,6 +409,7 @@ extension TreeSitterClient {
     /// This function always fetches the tree that represents the current state of the content, even if the
     /// system is working in the background.
     @available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
+	@MainActor
     public func currentTree() async throws -> Tree {
         try await withCheckedThrowingContinuation { continuation in
             currentTree() { result in
