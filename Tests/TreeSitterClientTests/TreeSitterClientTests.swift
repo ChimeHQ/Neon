@@ -58,8 +58,14 @@ final class TreeSitterClientTests: XCTestCase {
 	}
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
 extension TreeSitterClientTests {
-	@available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
+	private func makeSwiftClient() throws -> TreeSitterClient {
+		let language = Language(language: tree_sitter_swift())
+
+		return try TreeSitterClient(language: language)
+	}
+
 	func testBasicParse() async throws {
 		let language = Language(language: tree_sitter_swift())
 
@@ -69,11 +75,78 @@ let content = """
 func main() { print("hello" }
 """
 		await MainActor.run {
-			client.didChangeContent(to: content, in: .zero, delta: content.utf16.count, limit: 0)
+			client.didChangeContent(to: content, in: .zero, delta: content.utf16.count, limit: content.utf16.count)
 		}
 
 		let tree = try await client.currentTree()
+		let root = try XCTUnwrap(tree.rootNode)
 
-		XCTAssertNotNil(tree.rootNode)
+		XCTAssertEqual(root.childCount, 1)
+	}
+
+	func testRegularQuery() async throws {
+		let language = Language(language: tree_sitter_swift())
+
+		let client = try TreeSitterClient(language: language)
+
+let content = """
+func main() { print("hello" }
+"""
+
+		await MainActor.run {
+			client.didChangeContent(to: content, in: .zero, delta: content.utf16.count, limit: content.utf16.count)
+		}
+
+		let queryText = """
+("func" @keyword.function)
+"""
+		let queryData = try XCTUnwrap(queryText.data(using: .utf8))
+		let query = try Query(language: language, data: queryData)
+
+		let highlights = try await client.highlights(with: query, in: NSRange(0..<4))
+
+		let range = NamedRange(nameComponents: ["keyword", "function"],
+							   tsRange: TSRange(points: Point(row: 0, column: 0)..<Point(row: 0, column: 8),
+												bytes: 0..<8))
+		XCTAssertEqual(highlights, [range])
+	}
+
+	func testStaleQuery() throws {
+		let language = Language(language: tree_sitter_swift())
+
+		let client = try TreeSitterClient(language: language, synchronousLengthThreshold: 1)
+
+let content = """
+func main() { print("hello" }
+"""
+		
+		let queryText = """
+("func" @keyword.function)
+"""
+		let queryData = try XCTUnwrap(queryText.data(using: .utf8))
+		let query = try Query(language: language, data: queryData)
+
+		var result: Result<[NamedRange], TreeSitterClientError> = .failure(.stateInvalid)
+
+		let queryExpectation = expectation(description: "query")
+
+		// the goal here is to begin the query, and then submit a change so
+		// the query runs on stale content. It's slightly hard to control all of the execution
+		// here, but I'm fairly sure this will work without races.
+		client.executeHighlightsQuery(query, in: NSRange(0..<4)) { queryResult in
+			result = queryResult
+			queryExpectation.fulfill()
+		}
+
+		client.didChangeContent(to: content, in: .zero, delta: content.utf16.count, limit: content.utf16.count)
+
+		wait(for: [queryExpectation], timeout: 2.0)
+		
+		switch result {
+		case .failure(.staleContent):
+			break
+		default:
+			XCTFail("Should have failed: \(result)")
+		}
 	}
 }

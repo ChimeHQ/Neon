@@ -171,6 +171,8 @@ extension TreeSitterClient {
         let runAsync = hasQueuedWork || largeEdit || largeDocument
         let doInvalidations = computeInvalidations
 
+		self.version += 1
+
         if runAsync == false {
             processEditSync(edit, withInvalidations: doInvalidations, readHandler: readHandler, completionHandler: completionHandler)
             return
@@ -476,24 +478,55 @@ extension TreeSitterClient {
 }
 
 extension TreeSitterClient {
+	/// Execute a standard highlights.scm query
+	///
+	/// Note that some query definitions require evaluating the text content, which is only possible by supplying a `textProvider`.
+	public func executeHighlightsQuery(_ query: Query,
+									   in range: NSRange,
+									   executionMode: ExecutionMode = .asynchronous(prefetch: true),
+									   textProvider: TextProvider? = nil,
+									   completionHandler: @escaping (Result<[NamedRange], TreeSitterClientError>) -> Void) {
+		executeResolvingQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { cursorResult in
+			let result = cursorResult.map { $0.highlights() }
+
+			completionHandler(result)
+		}
+	}
+
+	/// Execute a standard highlights.scm query
+	///
+	/// Note that some query definitions require evaluating the text content, which is only possible by supplying a `textProvider`.
+	@available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
+	@MainActor
+	public func highlights(with query: Query,
+						   in range: NSRange,
+						   executionMode: ExecutionMode = .asynchronous(prefetch: true),
+						   textProvider: TextProvider? = nil) async throws -> [NamedRange] {
+		try await withCheckedThrowingContinuation { continuation in
+			self.executeHighlightsQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { result in
+				continuation.resume(with: result)
+			}
+		}
+	}
+
 	/// Execute a standard injections.scm query
 	///
-	/// Note that some injection query definitions require evaluating the text content, which is only possible by supplying a `textProvider`.
+	/// Note that some query definitions require evaluating the text content, which is only possible by supplying a `textProvider`.
 	public func executeInjectionsQuery(_ query: Query,
 									   in range: NSRange,
 									   executionMode: ExecutionMode = .asynchronous(prefetch: true),
 									   textProvider: TextProvider? = nil,
 									   completionHandler: @escaping (Result<[NamedRange], TreeSitterClientError>) -> Void) {
 		executeResolvingQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { cursorResult in
-			let result = cursorResult.map({ cursor in
-				cursor.compactMap({ $0.injection(with: textProvider) })
-			})
+			let result = cursorResult.map { $0.injections() }
 
 			completionHandler(result)
 		}
 	}
 
 	/// Execute a standard injections.scm query
+	///
+	/// Note that some query definitions require evaluating the text content, which is only possible by supplying a `textProvider`.
 	@available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
 	@MainActor
 	public func injections(with query: Query,
