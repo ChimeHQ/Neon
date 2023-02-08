@@ -4,7 +4,7 @@
 [![Documentation][documentation badge]][documentation]
 
 # Neon
-A Swift library for efficient, flexible syntax highlighting.
+A Swift library for efficient, flexible content-based text styling.
 
 - Minimal text invalidation
 - Support for multiple sources of highlighting data
