@@ -13,7 +13,7 @@ A Swift library for efficient, flexible content-based text styling.
 - Compatibility with lazy text loading
 - Text-system agnostic
 
-Neon has a strong focus on efficiency and flexibility. It sits in-between your text system and whatever you get your semantic token information.
+Neon has a strong focus on efficiency and flexibility. It sits in-between your text system and wherever you get your semantic token information.
 
 Many people are looking for a drop-in editor View subclass that does it all. This is a lower-level library. You could, however, use Neon to drive highlighting for a view like this.
 
