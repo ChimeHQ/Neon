@@ -31,7 +31,7 @@ This separation makes it very easy for you to do this look-up in a way that make
 
 ## Tree-Sitter Integration
 
-Neon includes a tree-sitter token source, built around [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). There is an included standalone module called `TreeSitterClient` that abstracts almost all of the details and provides a hybrid synchronous/asynchronous API. This makes it possible to scale tree-sitter to large documents, where its parsing/queries can introduce too much latency.
+Neon includes a tree-sitter token source, built around [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). There is an included standalone module called `TreeSitterClient` that abstracts almost all of the details. It includes support for running tree-sitter "highlights.scm" queries, among other features. Its hybrid synchronous/asynchronous API makes it possible to scale tree-sitter to large documents, where its parsing/queries can introduce too much latency.
 
 Tree-sitter uses separate compiled parsers for each language. There are a variety of ways to use tree-sitter parsers with SwiftTreeSitter. Check out that project for details.
 
