@@ -4,36 +4,36 @@
 [![Documentation][documentation badge]][documentation]
 
 # Neon
-A Swift library for efficient highlighting, indenting, and querying structured syntax.
-
-It features:
+A Swift library for efficient, flexible syntax highlighting.
 
 - Minimal text invalidation
-- Support for multiple token sources
+- Support for multiple sources of highlighting data
 - A hybrid sync/async system for targeting flicker-free styling on keystrokes
 - [tree-sitter](https://tree-sitter.github.io/tree-sitter/) integration
-- Compatibility with lazy text data reading
-- Flexibility when integrating with a larger text system
+- Compatibility with lazy text loading
+- Text-system agnostic
 
-It does not feature:
+Neon has a strong focus on efficiency and flexibility. It sits in-between your text system and whatever you get your semantic token information. I realize that many people are looking for a drop-in editor View subclass that does it all. This is a lower-level library. You could, however, use Neon to drive highlighting for this editor.
 
-- A theme system
-- A single View subclass
+## Token Data Sources
 
-Neon has a strong focus on efficiency and flexibility. I realize that many people are looking for a drop-in editor View subclass that does it all. This is a lower-level library. You could, however, use Neon to power the portions of this editor.
+Neon was designed to accept and overlay token data from multiple sources simultaneously. Here's a real-world example of how this is used:
 
-The library is being extracted from the [Chime](https://www.chimehq.com) editor. It's a big system, and pulling it out is something we intend to do over time.
+- First pass: pattern-matching system with ok quality and guaranteed low-latency
+- Second pass: tree-sitter, which has good quality and can **often** be low-latency
+- Third pass: [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)'s [semantic tokens](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens), which can augment existing highlighting, but is high-latency
 
-## Language Support
+## Theming
 
-Neon is built around the idea that there can be multiple sources of information about the semantic meaning of the text, all with varying latencies and quality.
+A highlighting theme is really just a mapping from semantic labels to styles. Token data sources apply the semantic labels and the `TextSystemInterface` uses those labels to look up styling.
 
-- [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) has [semantic tokens](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens), which is high quality, high latency, and typically used in combination with other sources.
-- [tree-sitter](https://tree-sitter.github.io/tree-sitter/) is very good quality, and can **potentially** be low-latency
-- Regex-based systems can have ok quality and low-latency
-- Simpler pattern-matching systems generally have poor quality, but have very low latency
+This separation makes it very easy for you to do this look-up in a way that makes the most sense for whatever theming formats you'd like to support. This is also a convenient spot to adapt/modify the semantic labels coming from your data sources into a normalized form.
 
-Neon includes built-in support for tree-sitter via [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). Tree-sitter uses separate compiled parsers for each language. There are a variety of ways to use tree-sitter parsers with SwiftTreeSitter. Check out that project for details.
+## Tree-Sitter Integration
+
+Neon includes a tree-sitter token source, built around [SwiftTreeSitter](https://github.com/ChimeHQ/SwiftTreeSitter). There is an included standalone module called `TreeSitterClient` that abstracts almost all of the details and provides a hybrid synchronous/asynchronous API. This makes it possible to scale tree-sitter to large documents, where its parsing/queries can introduce too much latency.
+
+Tree-sitter uses separate compiled parsers for each language. There are a variety of ways to use tree-sitter parsers with SwiftTreeSitter. Check out that project for details.
 
 ## Integration
 
@@ -136,8 +136,6 @@ Achieving better performance and guaranteed flicker-free highlighting is more ch
 - `TextMutationEventRouter` makes it easier to route events to the components
 - `LazyTextStoringMonitor` allows for lazy content reading, which is essential to quickly open large documents
 
-You can definitely use Neon without TextStory. But, I think it may be reasonable to just make Neon depend on TextStory to help simplify usage.
-
 ## Components
 
 ### Highlighter
@@ -153,7 +151,6 @@ Note that Highlighter is built to handle a `TokenProvider` calling its completio
 ### HighlighterInvalidationBuffer
 
 In a traditional `NSTextStorage`/`NSLayoutManager` system (TextKit 1), it can be challenging to achieve flicker-free on-keypress highlighting. This class offers a mechanism for buffering invalidations, so you can precisely control how and when actual text style updates occur.
-
 
 ### TreeSitterClient
 
