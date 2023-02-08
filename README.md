@@ -13,7 +13,9 @@ A Swift library for efficient, flexible content-based text styling.
 - Compatibility with lazy text loading
 - Text-system agnostic
 
-Neon has a strong focus on efficiency and flexibility. It sits in-between your text system and whatever you get your semantic token information. I realize that many people are looking for a drop-in editor View subclass that does it all. This is a lower-level library. You could, however, use Neon to drive highlighting for this editor.
+Neon has a strong focus on efficiency and flexibility. It sits in-between your text system and whatever you get your semantic token information.
+
+Many people are looking for a drop-in editor View subclass that does it all. This is a lower-level library. You could, however, use Neon to drive highlighting for a view like this.
 
 ## Token Data Sources
 
@@ -35,7 +37,7 @@ Neon includes a tree-sitter token source, built around [SwiftTreeSitter](https:/
 
 Tree-sitter uses separate compiled parsers for each language. There are a variety of ways to use tree-sitter parsers with SwiftTreeSitter. Check out that project for details.
 
-## Integration
+## Text System Integration
 
 Neon is text-system independent. It makes very few assumptions about how text is stored, displayed, and styled. And, it is built around parts that can be used together to build a full system. But, there are also some helper types for use-cases with simpler needs.
 
