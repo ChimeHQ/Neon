@@ -7,13 +7,13 @@
 A Swift library for efficient, flexible content-based text styling.
 
 - Minimal text invalidation
-- Support for multiple sources of highlighting data
+- Support for multiple sources of token data
 - A hybrid sync/async system for targeting flicker-free styling on keystrokes
 - [tree-sitter](https://tree-sitter.github.io/tree-sitter/) integration
 - Compatibility with lazy text loading
 - Text-system agnostic
 
-Neon has a strong focus on efficiency and flexibility. It sits in-between your text system and wherever you get your semantic token information.
+Neon has a strong focus on efficiency and flexibility. It sits in-between your text system and wherever you get your semantic token information. Neon was developed for syntax highlighting and it can serve that need very well. However, it is more general-purpose than that and could be used for any system that needs to style text based its content.
 
 Many people are looking for a drop-in editor View subclass that does it all. This is a lower-level library. You could, however, use Neon to drive highlighting for a view like this.
 
