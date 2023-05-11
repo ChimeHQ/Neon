@@ -92,6 +92,11 @@ public final class TextViewHighlighter: NSObject {
 			self.highlighter.invalidate(.set(set))
 		}
 	}
+
+	/// Perform manual invalidation on the underlying highlighter
+	public func invalidate(_ target: TextTarget = .all) {
+		highlighter.invalidate()
+	}
 }
 
 @available(macOS 11.0, iOS 15.0, tvOS 15.0, *)
