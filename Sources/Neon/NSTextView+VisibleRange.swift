@@ -32,7 +32,7 @@ extension NSTextView {
 		return layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
 	}
 
-	var visibleTextRange: NSRange {
+	public var visibleTextRange: NSRange {
 		return textRange(for: visibleRect)
 	}
 }
