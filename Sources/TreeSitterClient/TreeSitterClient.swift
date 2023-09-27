@@ -464,12 +464,15 @@ extension TreeSitterClient {
     }
 
     private func executeQuerySynchronouslyWithoutCheck(_ query: Query, in range: NSRange, with state: TreeSitterParseState) -> QueryCursorResult {
-        guard let node = state.tree?.rootNode else {
-            return .failure(.stateInvalid)
-        }
+		guard
+			let tree = state.tree,
+			let node = tree.rootNode
+		else {
+			return .failure(.stateInvalid)
+		}
 
         // critical to keep a reference to the tree, so it survives as long as the query
-        let cursor = query.execute(node: node, in: state.tree)
+        let cursor = query.execute(node: node, in: tree)
 
         cursor.setRange(range)
 
