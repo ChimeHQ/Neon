@@ -31,6 +31,7 @@ final class ViewController: UIViewController {
 		super.viewDidLoad()
 
 		_ = highlighter.textView
+		_ = textView.layoutManager
 
 		textView.text = "var something = String()"
 
