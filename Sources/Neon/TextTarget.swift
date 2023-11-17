@@ -20,3 +20,5 @@ public enum TextTarget {
         return set
     }
 }
+
+public typealias Region = TextTarget
