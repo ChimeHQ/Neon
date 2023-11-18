@@ -106,6 +106,12 @@ extension TextViewHighlighter: NSTextStorageDelegate {
 	}
 
 	public func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
+		// Avoid potential infinite loop in synchronous highlighting. If attributes
+		// are stored in `textStorage`, that applies `.editedAttributes` only.
+		// We don't need to re-apply highlighting in that case.
+		// (With asynchronous highlighting, it's not blocking, but also never stops.)
+		guard editedMask.contains(.editedCharacters) else { return }
+
 		let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
 		let string = textStorage.string
 
