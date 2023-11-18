@@ -14,9 +14,20 @@ public struct TextViewSystemInterface {
 
 	public let textView: TextView
 	public let attributeProvider: AttributeProvider
+	public var defaultTextViewAttributes: [NSAttributedString.Key: Any] = [:]
 
-	public init(textView: TextView, attributeProvider: @escaping AttributeProvider) {
+	public init(
+		textView: TextView,
+		defaultTextViewAttributes: [NSAttributedString.Key: Any] = [:],
+		attributeProvider: @escaping AttributeProvider
+	) {
 		self.textView = textView
+		// Assume that the default styles used before enabling any highlighting
+		// should be retained, unless client code overrides this.
+		self.defaultTextViewAttributes = [
+			 .font: textView.font as Any,
+			 .foregroundColor: textView.textColor as Any,
+		].merging(defaultTextViewAttributes) { _, override in override }
 		self.attributeProvider = attributeProvider
 	}
 
@@ -39,13 +50,6 @@ public struct TextViewSystemInterface {
 
 	public var textStorage: NSTextStorage? {
 		return textView.textStorage
-	}
-
-	var defaultTextViewAttributes: [NSAttributedString.Key: Any] {
-		[
-			.font: textView.font as Any,
-			.foregroundColor: textView.textColor as Any,
-		]
 	}
 }
 
