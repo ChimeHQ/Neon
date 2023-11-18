@@ -65,7 +65,6 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 		XCTAssertEqual(attrs.count, 1)
 		XCTAssertEqual(attrs[.foregroundColor] as? PlatformColor, PlatformColor.red)
 		XCTAssertEqual(effectiveRange, NSRange(0..<6))
-
 	}
 #endif
 
@@ -91,15 +90,13 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 
 		system.applyStyle(to: Token(name: "test", range: NSRange(0..<6)))
 
-		let documentRange = textLayoutManager.documentRange
+		let textStorage = try XCTUnwrap(system.textStorage)
+		let documentRange = NSRange(location: 0, length: textStorage.length)
 
-		var attrRangePairs = [([NSAttributedString.Key: Any], NSTextRange)]()
-
-		textLayoutManager.enumerateRenderingAttributes(from: documentRange.location, reverse: false, using: { _, attrs, range in
+		var attrRangePairs = [([NSAttributedString.Key: Any], NSRange)]()
+		textStorage.enumerateAttributes(in: documentRange) { attrs, range, _ in
 			attrRangePairs.append((attrs, range))
-
-			return true
-		})
+		}
 
 		XCTAssertEqual(attrRangePairs.count, 1)
 
