@@ -80,10 +80,21 @@ public final class TextViewHighlighter: NSObject {
 		treeSitterClient.invalidationHandler = { [weak self] in self?.handleInvalidation($0) }
 	}
 
-	public convenience init(textView: TextView, language: Language, highlightQuery: Query, attributeProvider: @escaping TextViewSystemInterface.AttributeProvider) throws {
+	public convenience init(
+		textView: TextView,
+		language: Language,
+		highlightQuery: Query,
+		executionMode: TreeSitterClient.ExecutionMode = .asynchronous(prefetch: true),
+		attributeProvider: @escaping TextViewSystemInterface.AttributeProvider
+	) throws {
 		let client = try TreeSitterClient(language: language, transformer: { _ in return .zero })
 
-		try self.init(textView: textView, client: client, highlightQuery: highlightQuery, attributeProvider: attributeProvider)
+		try self.init(
+			textView: textView,
+			client: client,
+			highlightQuery: highlightQuery,
+			executionMode: executionMode,
+			attributeProvider: attributeProvider)
 	}
 
 	@objc private func visibleContentChanged(_ notification: NSNotification) {
