@@ -30,7 +30,13 @@ public final class TextViewHighlighter: NSObject {
 	private let highlighter: Highlighter
 	private let treeSitterClient: TreeSitterClient
 
-	public init(textView: TextView, client: TreeSitterClient, highlightQuery: Query, attributeProvider: @escaping TextViewSystemInterface.AttributeProvider) throws {
+	public init(
+		textView: TextView,
+		client: TreeSitterClient,
+		highlightQuery: Query,
+		executionMode: TreeSitterClient.ExecutionMode = .asynchronous(prefetch: true),
+		attributeProvider: @escaping TextViewSystemInterface.AttributeProvider
+	) throws {
 		self.treeSitterClient = client
 		self.textView = textView
 
@@ -46,7 +52,7 @@ public final class TextViewHighlighter: NSObject {
 			return storage.attributedSubstring(from: range).string
 		}
 
-		let tokenProvider = client.tokenProvider(with: highlightQuery, textProvider: textProvider)
+		let tokenProvider = client.tokenProvider(with: highlightQuery, executionMode: executionMode, textProvider: textProvider)
 
 		let interface = TextViewSystemInterface(textView: textView, attributeProvider: attributeProvider)
 		self.highlighter = Highlighter(textInterface: interface, tokenProvider: tokenProvider)
@@ -106,6 +112,12 @@ extension TextViewHighlighter: NSTextStorageDelegate {
 	}
 
 	public func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
+		// Avoid potential infinite loop in synchronous highlighting. If attributes
+		// are stored in `textStorage`, that applies `.editedAttributes` only.
+		// We don't need to re-apply highlighting in that case.
+		// (With asynchronous highlighting, it's not blocking, but also never stops.)
+		guard editedMask.contains(.editedCharacters) else { return }
+
 		let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
 		let string = textStorage.string
 
