@@ -10,6 +10,7 @@ final class ViewController: NSViewController {
 
 	init() {
 		self.textView = NSTextView()
+		textView.isRichText = false  // Discards any attributes when pasting.
 
 		scrollView.documentView = textView
 		
