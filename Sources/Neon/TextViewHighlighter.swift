@@ -5,7 +5,7 @@ import SwiftTreeSitter
 #if os(macOS)
 import AppKit
 
-@available(macOS 11.0, *)
+@available(macOS 10.13, *)
 public typealias TextStorageEditActions = NSTextStorageEditActions
 #elseif os(iOS)
 import UIKit
@@ -24,7 +24,7 @@ public enum TextViewHighlighterError: Error {
 /// This class is a minimal implementation that can help perform highlighting
 /// for a TextView. The created instance will become the delegate of the
 /// view's `NSTextStorage`.
-@available(macOS 11.0, iOS 15.0, tvOS 15.0, *)
+@available(macOS 10.13, iOS 15.0, tvOS 15.0, *)
 public final class TextViewHighlighter: NSObject {
 	public let textView: TextView
 	private let highlighter: Highlighter
@@ -99,7 +99,7 @@ public final class TextViewHighlighter: NSObject {
 	}
 }
 
-@available(macOS 11.0, iOS 15.0, tvOS 15.0, *)
+@available(macOS 10.13, iOS 15.0, tvOS 15.0, *)
 extension TextViewHighlighter: NSTextStorageDelegate {
 	public func textStorage(_ textStorage: NSTextStorage, willProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
 		treeSitterClient.willChangeContent(in: editedRange)
