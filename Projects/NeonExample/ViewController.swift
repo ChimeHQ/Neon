@@ -16,6 +16,11 @@ final class ViewController: NSViewController {
 		let regularFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .regular)
 		let boldFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .regular)
 		let italicFont = NSFont(descriptor: regularFont.fontDescriptor.withSymbolicTraits(.italic), size: 16) ?? regularFont
+
+		// Alternatively, set `textView.typingAttributes = [.font: regularFont, ...]`
+		// if you want to customize other default (fallback) attributes.
+		textView.font = regularFont
+
 		let provider: TextViewSystemInterface.AttributeProvider = { token in
 			return switch token.name {
 			case let keyword where keyword.hasPrefix("keyword"): [.foregroundColor: NSColor.red, .font: boldFont]
