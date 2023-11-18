@@ -61,21 +61,7 @@ extension TextViewSystemInterface: TextSystemInterface {
 	private func setAttributes(_ attrs: [NSAttributedString.Key : Any]?, in range: NSRange) {
 		let clampedRange = clamped(range: range)
 
-		// Try TextKit 2 first
-		if
-			#available(macOS 12, iOS 15.0, tvOS 15.0, *),
-			let textLayoutManager = textLayoutManager,
-			let contentManager = textLayoutManager.textContentManager,
-			let textRange = NSTextRange(clampedRange, provider: contentManager)
-		{
-			// TextKit 2 uses temporary rendering attributes. These can be
-			// overwritten to clear.
-			let attrs = attrs ?? [:]
-			textLayoutManager.setRenderingAttributes(attrs, for: textRange)
-			return
-		}
-
-		// For TextKit 1: Fall back to applying styles directly to the storage.
+		// Both `NSTextLayoutManager.setRenderingAttributes` and
 		// `NSLayoutManager.setTemporaryAttributes` is limited to attributes
 		// that don't affect layout, like color. So it ignores fonts,
 		// making font weight changes or italicizing text impossible.
