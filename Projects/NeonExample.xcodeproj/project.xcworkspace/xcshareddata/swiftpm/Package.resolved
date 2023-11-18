@@ -1,15 +1,6 @@
 {
   "pins" : [
     {
-      "identity" : "neon",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/Neon.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "4bc0fe43c46e2c08cf522d5db86666086b6e641e"
-      }
-    },
-    {
       "identity" : "rearrange",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/Rearrange",
