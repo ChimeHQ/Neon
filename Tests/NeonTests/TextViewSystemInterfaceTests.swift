@@ -54,13 +54,13 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 		var effectiveRange: NSRange = .zero
 
 		#if os(macOS)
-		let attrs = textView.layoutManager?.temporaryAttributes(atCharacterIndex: 0, effectiveRange: &effectiveRange) ?? [:]
+		let allAttrs = textView.textStorage?.attributes(at: 0, effectiveRange: &effectiveRange) ?? [:]
 		#else
 		let allAttrs = textView.textStorage.attributes(at: 0, effectiveRange: &effectiveRange)
+		#endif
 
 		// we have to remove some attributes, like font, that are normal for the textStorage.
 		let attrs = allAttrs.filter({ $0.key == .foregroundColor })
-		#endif
 
 		XCTAssertEqual(attrs.count, 1)
 		XCTAssertEqual(attrs[.foregroundColor] as? PlatformColor, PlatformColor.red)
