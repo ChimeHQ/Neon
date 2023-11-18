@@ -1,7 +1,7 @@
 import Foundation
 import Rearrange
 
-@available(macOS 10.15, iOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public final class RangeStateValidator {
 	public enum ValidationResult: Sendable, Hashable {
 		case success(NSRange)
@@ -94,7 +94,7 @@ public final class RangeStateValidator {
 	}
 }
 
-@available(macOS 10.15, iOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension RangeStateValidator {
 	private var length: Int {
 		configuration.lengthProvider()
@@ -123,7 +123,7 @@ extension RangeStateValidator {
 	}
 }
 
-@available(macOS 10.15, iOS 13.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension RangeStateValidator {
 	/// Computes the next contiguous invalid range
 	private func nextNeededRange() -> NSRange? {
