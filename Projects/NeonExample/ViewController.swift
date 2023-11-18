@@ -14,7 +14,7 @@ final class ViewController: NSViewController {
 		scrollView.documentView = textView
 		
 		let regularFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .regular)
-		let boldFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .regular)
+		let boldFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .bold)
 		let italicFont = NSFont(descriptor: regularFont.fontDescriptor.withSymbolicTraits(.italic), size: 16) ?? regularFont
 
 		// Alternatively, set `textView.typingAttributes = [.font: regularFont, ...]`
