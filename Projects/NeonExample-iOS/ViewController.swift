@@ -19,17 +19,25 @@ final class ViewController: UIViewController {
 		let boldFont = UIFont.monospacedSystemFont(ofSize: 16, weight: .bold)
 		let italicFont = regularFont.fontDescriptor.withSymbolicTraits(.traitItalic).map { UIFont(descriptor: $0, size: 16) } ?? regularFont
 
+		// Set the default styles. This is applied by stock `NSTextStorage`s during
+		// so-called "attribute fixing" when you type, and we emulate that as
+		// part of the highlighting process in `TextViewSystemInterface`.
+		textView.font = regularFont
+		textView.textColor = .darkGray
+
 		let provider: TextViewSystemInterface.AttributeProvider = { token in
 			return switch token.name {
 			case let keyword where keyword.hasPrefix("keyword"): [.foregroundColor: UIColor.red, .font: boldFont]
 			case "comment": [.foregroundColor: UIColor.green, .font: italicFont]
-			default: [.foregroundColor: UIColor.darkText, .font: regularFont]
+			// Note: Default is not actually applied to unstyled/untokenized text.
+			default: [.foregroundColor: UIColor.blue, .font: regularFont]
 			}
 		}
 
 		return try! TextViewHighlighter(textView: textView,
 										language: language,
 										highlightQuery: query,
+										executionMode: .synchronous,
 										attributeProvider: provider)
 	}()
 

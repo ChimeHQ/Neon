@@ -40,23 +40,37 @@ public struct TextViewSystemInterface {
 	public var textStorage: NSTextStorage? {
 		return textView.textStorage
 	}
+
+	var defaultTextViewAttributes: [NSAttributedString.Key: Any] {
+		[
+			.font: textView.font as Any,
+			.foregroundColor: textView.textColor as Any,
+		]
+	}
 }
 
 extension TextViewSystemInterface: TextSystemInterface {
-	private func setAttributes(_ attrs: [NSAttributedString.Key : Any], in range: NSRange) {
+	private func clamped(range: NSRange) -> NSRange {
 		let endLocation = min(range.max, length)
 
 		assert(endLocation == range.max, "range is out of bounds, is the text state being updated correctly?")
 
-		let clampedRange = NSRange(range.location..<endLocation)
+		return NSRange(range.location..<endLocation)
+	}
 
-		// try text kit 2 first
+	private func setAttributes(_ attrs: [NSAttributedString.Key : Any]?, in range: NSRange) {
+		let clampedRange = clamped(range: range)
+
+		// Try TextKit 2 first
 		if
 			#available(macOS 12, iOS 15.0, tvOS 15.0, *),
 			let textLayoutManager = textLayoutManager,
 			let contentManager = textLayoutManager.textContentManager,
 			let textRange = NSTextRange(clampedRange, provider: contentManager)
 		{
+			// TextKit 2 uses temporary rendering attributes. These can be
+			// overwritten to clear.
+			let attrs = attrs ?? [:]
 			textLayoutManager.setRenderingAttributes(attrs, for: textRange)
 			return
 		}
@@ -66,11 +80,12 @@ extension TextViewSystemInterface: TextSystemInterface {
 		// that don't affect layout, like color. So it ignores fonts,
 		// making font weight changes or italicizing text impossible.
 		assert(textStorage != nil, "TextView's NSTextStorage cannot be nil")
+		let attrs = attrs ?? defaultTextViewAttributes
 		textStorage?.setAttributes(attrs, range: clampedRange)
 	}
 
 	public func clearStyle(in range: NSRange) {
-		setAttributes([:], in: range)
+		setAttributes(nil, in: range)
 	}
 
 	public func applyStyle(to token: Token) {
