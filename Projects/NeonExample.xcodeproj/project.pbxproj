@@ -25,6 +25,7 @@
 
 /* Begin PBXFileReference section */
 		5077D7FF2B08D1F1000A15B8 /* Neon */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = Neon; path = ..; sourceTree = "<group>"; };
+		5077D8012B08DF5D000A15B8 /* NeonExample.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = NeonExample.xctestplan; sourceTree = "<group>"; };
 		C9610B3228C6AD4F008ADDE6 /* NeonExample-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NeonExample-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9610B3428C6AD4F008ADDE6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C9610B3628C6AD4F008ADDE6 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -87,6 +88,7 @@
 		C9A60F7928C68FD9006883EC = {
 			isa = PBXGroup;
 			children = (
+				5077D8012B08DF5D000A15B8 /* NeonExample.xctestplan */,
 				5077D7FF2B08D1F1000A15B8 /* Neon */,
 				C9A60F8428C68FD9006883EC /* NeonExample */,
 				C9610B3328C6AD4F008ADDE6 /* NeonExample-iOS */,
