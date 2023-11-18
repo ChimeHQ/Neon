@@ -13,10 +13,20 @@ final class ViewController: NSViewController {
 
 		scrollView.documentView = textView
 		
-		let provider: TextViewSystemInterface.AttributeProvider = { token in
-			guard token.name.hasPrefix("keyword") else { return [:] }
+		let regularFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .regular)
+		let boldFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .bold)
+		let italicFont = NSFont(descriptor: regularFont.fontDescriptor.withSymbolicTraits(.italic), size: 16) ?? regularFont
 
-			return [NSAttributedString.Key.foregroundColor: NSColor.red]
+		// Alternatively, set `textView.typingAttributes = [.font: regularFont, ...]`
+		// if you want to customize other default (fallback) attributes.
+		textView.font = regularFont
+
+		let provider: TextViewSystemInterface.AttributeProvider = { token in
+			return switch token.name {
+			case let keyword where keyword.hasPrefix("keyword"): [.foregroundColor: NSColor.red, .font: boldFont]
+			case "comment": [.foregroundColor: NSColor.green, .font: italicFont]
+			default: [.foregroundColor: NSColor.textColor, .font: regularFont]
+			}
 		}
 
 		let language = Language(language: tree_sitter_swift())
@@ -52,6 +62,10 @@ final class ViewController: NSViewController {
 	}
 
 	override func viewWillAppear() {
-		textView.string = "let value = \"hello world\"\nprint(value)"
+		textView.string = """
+		// Example Code!
+		let value = "hello world"
+		print(value)
+		"""
 	}
 }

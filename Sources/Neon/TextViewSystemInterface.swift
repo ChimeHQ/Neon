@@ -61,15 +61,10 @@ extension TextViewSystemInterface: TextSystemInterface {
 			return
 		}
 
-		// next, textkit 1
-		#if os(macOS)
-		if let layoutManager = layoutManager {
-			layoutManager.setTemporaryAttributes(attrs, forCharacterRange: clampedRange)
-			return
-		}
-		#endif
-
-		// finally, fall back to applying color directly to the storage
+		// For TextKit 1: Fall back to applying styles directly to the storage.
+		// `NSLayoutManager.setTemporaryAttributes` is limited to attributes
+		// that don't affect layout, like color. So it ignores fonts,
+		// making font weight changes or italicizing text impossible.
 		assert(textStorage != nil, "TextView's NSTextStorage cannot be nil")
 		textStorage?.setAttributes(attrs, range: clampedRange)
 	}
