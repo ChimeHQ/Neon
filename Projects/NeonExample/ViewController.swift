@@ -21,10 +21,12 @@ final class ViewController: NSViewController {
 		// Set the default styles. This is applied by stock `NSTextStorage`s during
 		// so-called "attribute fixing" when you type, and we emulate that as
 		// part of the highlighting process in `TextViewSystemInterface`.
-		textView.font = regularFont
-		textView.textColor = .darkGray
+		textView.typingAttributes = [
+			.foregroundColor: NSColor.darkGray,
+			.font: regularFont,
+		]
 
-		let provider: TextViewSystemInterface.AttributeProvider = { token in
+		let provider: TokenAttributeProvider = { token in
 			return switch token.name {
 			case let keyword where keyword.hasPrefix("keyword"): [.foregroundColor: NSColor.red, .font: boldFont]
 			case "comment": [.foregroundColor: NSColor.green, .font: italicFont]
@@ -41,10 +43,11 @@ final class ViewController: NSViewController {
 					  .appendingPathComponent("Contents/Resources/queries/highlights.scm")
 		let query = try! language.query(contentsOf: url!)
 
+		let interface = TextStorageSystemInterface(textView: textView, attributeProvider: provider)
 		self.highlighter = try! TextViewHighlighter(textView: textView,
 													language: language,
 													highlightQuery: query,
-													attributeProvider: provider)
+													interface: interface)
 
 		super.init(nibName: nil, bundle: nil)
 	}

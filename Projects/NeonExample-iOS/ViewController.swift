@@ -25,7 +25,7 @@ final class ViewController: UIViewController {
 		textView.font = regularFont
 		textView.textColor = .darkGray
 
-		let provider: TextViewSystemInterface.AttributeProvider = { token in
+		let provider: TokenAttributeProvider = { token in
 			return switch token.name {
 			case let keyword where keyword.hasPrefix("keyword"): [.foregroundColor: UIColor.red, .font: boldFont]
 			case "comment": [.foregroundColor: UIColor.green, .font: italicFont]

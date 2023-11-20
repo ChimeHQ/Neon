@@ -42,7 +42,7 @@ Neon is text-system independent. It makes very few assumptions about how text is
 
 ### TextViewSystemInterface
 
-An implementation of the `TextSystemInterface` protocol for `NSTextView`/`UITextView`. This takes care of the interface to the view and `NSLayoutManager`, but defers `Token`-style translation (themes) to an external `AttributeProvider`. This is compatible with both TextKit 1 and 2.
+An implementation of the `TextSystemInterface` protocol for `NSTextView`/`UITextView`. This takes care of the interface to the view and `NSLayoutManager`, but defers `Token`-style translation (themes) to an external `AttributeProvider`. This is compatible with both TextKit 1 and 2. There are also more specalized versions if you want a little better control over the process. Check out `LayoutManagerSystemInterface`, `TextLayoutManagerSystemInterface`, and `TextStorageSystemInterface`.
 
 ### TextViewHighlighter
 

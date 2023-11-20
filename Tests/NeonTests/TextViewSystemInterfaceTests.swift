@@ -54,17 +54,18 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 		var effectiveRange: NSRange = .zero
 
 		#if os(macOS)
-		let allAttrs = textView.textStorage?.attributes(at: 0, effectiveRange: &effectiveRange) ?? [:]
+		let attrs = textView.layoutManager?.temporaryAttributes(atCharacterIndex: 0, effectiveRange: &effectiveRange) ?? [:]
 		#else
 		let allAttrs = textView.textStorage.attributes(at: 0, effectiveRange: &effectiveRange)
-		#endif
 
 		// we have to remove some attributes, like font, that are normal for the textStorage.
 		let attrs = allAttrs.filter({ $0.key == .foregroundColor })
+		#endif
 
 		XCTAssertEqual(attrs.count, 1)
 		XCTAssertEqual(attrs[.foregroundColor] as? PlatformColor, PlatformColor.red)
 		XCTAssertEqual(effectiveRange, NSRange(0..<6))
+
 	}
 #endif
 
@@ -90,13 +91,15 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 
 		system.applyStyle(to: Token(name: "test", range: NSRange(0..<6)))
 
-		let textStorage = try XCTUnwrap(system.textStorage)
-		let documentRange = NSRange(location: 0, length: textStorage.length)
+		let documentRange = textLayoutManager.documentRange
 
-		var attrRangePairs = [([NSAttributedString.Key: Any], NSRange)]()
-		textStorage.enumerateAttributes(in: documentRange) { attrs, range, _ in
+		var attrRangePairs = [([NSAttributedString.Key: Any], NSTextRange)]()
+
+		textLayoutManager.enumerateRenderingAttributes(from: documentRange.location, reverse: false, using: { _, attrs, range in
 			attrRangePairs.append((attrs, range))
-		}
+
+			return true
+		})
 
 		XCTAssertEqual(attrRangePairs.count, 1)
 

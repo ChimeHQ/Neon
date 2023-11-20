@@ -35,7 +35,7 @@ public final class TextViewHighlighter: NSObject {
 		client: TreeSitterClient,
 		highlightQuery: Query,
 		executionMode: TreeSitterClient.ExecutionMode = .asynchronous(prefetch: true),
-		attributeProvider: @escaping TokenAttributeProvider
+		interface: TextSystemInterface
 	) throws {
 		self.treeSitterClient = client
 		self.textView = textView
@@ -54,7 +54,6 @@ public final class TextViewHighlighter: NSObject {
 
 		let tokenProvider = client.tokenProvider(with: highlightQuery, executionMode: executionMode, textProvider: textProvider)
 
-		let interface = TextViewSystemInterface(textView: textView, attributeProvider: attributeProvider)
 		self.highlighter = Highlighter(textInterface: interface, tokenProvider: tokenProvider)
 
 		super.init()
@@ -78,6 +77,43 @@ public final class TextViewHighlighter: NSObject {
 		#endif
 
 		treeSitterClient.invalidationHandler = { [weak self] in self?.handleInvalidation($0) }
+
+	}
+
+	public convenience init(
+		textView: TextView,
+		client: TreeSitterClient,
+		highlightQuery: Query,
+		executionMode: TreeSitterClient.ExecutionMode = .asynchronous(prefetch: true),
+		attributeProvider: @escaping TokenAttributeProvider
+	) throws {
+		let interface = TextViewSystemInterface(textView: textView, attributeProvider: attributeProvider)
+
+		try self.init(
+			textView: textView,
+			client: client,
+			highlightQuery: highlightQuery,
+			executionMode: executionMode,
+			interface: interface
+		)
+	}
+
+	public convenience init(
+		textView: TextView,
+		language: Language,
+		highlightQuery: Query,
+		executionMode: TreeSitterClient.ExecutionMode = .asynchronous(prefetch: true),
+		interface: TextSystemInterface
+	) throws {
+		let client = try TreeSitterClient(language: language, transformer: { _ in return .zero })
+
+		try self.init(
+			textView: textView,
+			client: client,
+			highlightQuery: highlightQuery,
+			executionMode: executionMode,
+			interface: interface
+		)
 	}
 
 	public convenience init(
@@ -94,7 +130,8 @@ public final class TextViewHighlighter: NSObject {
 			client: client,
 			highlightQuery: highlightQuery,
 			executionMode: executionMode,
-			attributeProvider: attributeProvider)
+			attributeProvider: attributeProvider
+		)
 	}
 
 	@objc private func visibleContentChanged(_ notification: NSNotification) {

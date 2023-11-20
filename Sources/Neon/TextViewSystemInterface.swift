@@ -58,7 +58,7 @@ extension TextViewSystemInterface: TextSystemInterface {
 	private var effectiveInterface: TextSystemInterface? {
 		let provider = { textView.visibleTextRange }
 
-		if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *) {
+		if #available(macOS 12.0, iOS 16.0, tvOS 16.0, *) {
 			if let textLayoutManager {
 				return TextLayoutManagerSystemInterface(
 					textLayoutManager: textLayoutManager,
@@ -68,6 +68,7 @@ extension TextViewSystemInterface: TextSystemInterface {
 			}
 		}
 
+#if os(macOS)
 		if let layoutManager {
 			return LayoutManagerSystemInterface(
 				layoutManager: layoutManager,
@@ -75,12 +76,12 @@ extension TextViewSystemInterface: TextSystemInterface {
 				visibleRangeProvider: provider
 			)
 		}
+#endif
 
-		if let textStorage {
+		if textStorage != nil {
 			return TextStorageSystemInterface(
-				textStorage: textStorage,
-				attributeProvider: attributeProvider,
-				visibleRangeProvider: provider
+				textView: textView,
+				attributeProvider: attributeProvider
 			)
 		}
 
@@ -106,6 +107,7 @@ extension TextViewSystemInterface: TextSystemInterface {
 
 #endif
 
+#if os(macOS)
 /// A concrete `TextSystemInterface` that uses `NSLayoutManager` temporary attributes.
 public struct LayoutManagerSystemInterface {
 	public let layoutManager: NSLayoutManager
@@ -151,9 +153,10 @@ extension LayoutManagerSystemInterface: TextSystemInterface {
 		visibleRangeProvider()
 	}
 }
+#endif
 
 /// A concrete `TextSystemInterface` that uses `NSTextLayoutManager` rendering attributes.
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, *)
+@available(macOS 12.0, iOS 16.0, tvOS 16.0, *)
 public struct `TextLayoutManagerSystemInterface` {
 	public let textLayoutManager: NSTextLayoutManager
 	public let attributeProvider: TokenAttributeProvider
@@ -173,7 +176,7 @@ public struct `TextLayoutManagerSystemInterface` {
 	}
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, *)
+@available(macOS 12.0, iOS 16.0, tvOS 16.0, *)
 extension TextLayoutManagerSystemInterface: TextSystemInterface {
 	private var textElementProvider: NSTextElementProvider? {
 		textLayoutManager.textContentManager
@@ -215,21 +218,28 @@ extension TextLayoutManagerSystemInterface: TextSystemInterface {
 
 /// A concrete `TextSystemInterface` that modifies `NSTextStorage` text attributes.
 public struct TextStorageSystemInterface {
-	public let textStorage: NSTextStorage
+	private let textStorage: NSTextStorage?
 	public let attributeProvider: TokenAttributeProvider
+	public let defaultAttributesProvider: () -> [NSAttributedString.Key : Any]
 	public let visibleRangeProvider: () -> NSRange
 
-	public init(textStorage: NSTextStorage, attributeProvider: @escaping TokenAttributeProvider, visibleRangeProvider: @escaping () -> NSRange) {
+	public init(
+		textStorage: NSTextStorage,
+		attributeProvider: @escaping TokenAttributeProvider,
+		visibleRangeProvider: @escaping () -> NSRange,
+		defaultAttributesProvider: @escaping () -> [NSAttributedString.Key : Any]
+	) {
 		self.textStorage = textStorage
 		self.attributeProvider = attributeProvider
 		self.visibleRangeProvider = visibleRangeProvider
+		self.defaultAttributesProvider = defaultAttributesProvider
 	}
 
-	public init?(textView: TextView, attributeProvider: @escaping TokenAttributeProvider) {
-		guard let storage = textView.textStorage else { return nil }
-		self.textStorage = storage
+	public init(textView: TextView, attributeProvider: @escaping TokenAttributeProvider) {
+		self.textStorage = textView.textStorage
 		self.visibleRangeProvider = { textView.visibleTextRange }
 		self.attributeProvider = attributeProvider
+		self.defaultAttributesProvider = { textView.typingAttributes }
 	}
 }
 
@@ -237,11 +247,11 @@ extension TextStorageSystemInterface: TextSystemInterface {
 	private func setAttributes(_ attrs: [NSAttributedString.Key : Any], in range: NSRange) {
 		let clampedRange = range.clamped(to: length)
 
-		textStorage.setAttributes(attrs, range: clampedRange)
+		textStorage?.setAttributes(attrs, range: clampedRange)
 	}
 
 	public func clearStyle(in range: NSRange) {
-		setAttributes([:], in: range)
+		setAttributes(defaultAttributesProvider(), in: range)
 	}
 
 	public func applyStyle(to token: Token) {
@@ -251,7 +261,7 @@ extension TextStorageSystemInterface: TextSystemInterface {
 	}
 
 	public var length: Int {
-		textStorage.length
+		textStorage?.length ?? 0
 	}
 
 	public var visibleRange: NSRange {
