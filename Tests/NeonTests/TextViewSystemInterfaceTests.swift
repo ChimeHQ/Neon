@@ -41,7 +41,7 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 
 		XCTAssertNotNil(textView.layoutManager)
 
-		let provider: TextViewSystemInterface.AttributeProvider = { _ in
+		let provider: TokenAttributeProvider = { _ in
 			return [.foregroundColor: PlatformColor.red]
 		}
 
@@ -80,7 +80,7 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 		let textLayoutManager = try XCTUnwrap(textView.textContainer.textLayoutManager)
 		#endif
 
-		let provider: TextViewSystemInterface.AttributeProvider = { _ in
+		let provider: TokenAttributeProvider = { _ in
 			return [.foregroundColor: PlatformColor.red]
 		}
 

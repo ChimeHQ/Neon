@@ -35,7 +35,7 @@ public final class TextViewHighlighter: NSObject {
 		client: TreeSitterClient,
 		highlightQuery: Query,
 		executionMode: TreeSitterClient.ExecutionMode = .asynchronous(prefetch: true),
-		attributeProvider: @escaping TextViewSystemInterface.AttributeProvider
+		attributeProvider: @escaping TokenAttributeProvider
 	) throws {
 		self.treeSitterClient = client
 		self.textView = textView
@@ -85,7 +85,7 @@ public final class TextViewHighlighter: NSObject {
 		language: Language,
 		highlightQuery: Query,
 		executionMode: TreeSitterClient.ExecutionMode = .asynchronous(prefetch: true),
-		attributeProvider: @escaping TextViewSystemInterface.AttributeProvider
+		attributeProvider: @escaping TokenAttributeProvider
 	) throws {
 		let client = try TreeSitterClient(language: language, transformer: { _ in return .zero })
 
