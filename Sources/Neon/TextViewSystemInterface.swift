@@ -13,7 +13,7 @@ import Rearrange
 public typealias TokenAttributeProvider = (Token) -> [NSAttributedString.Key: Any]
 
 #if os(macOS) || os(iOS)
-/// A ``TextSystemInterface`` that connects directly to an `NSTextView`/`UITextView`.
+/// A concrete ``TextSystemInterface`` that connects directly to an `NSTextView`/`UITextView`.
 ///
 /// This class can help you get started applying styles to a text view quickly. It prioritizes simplicity and compatibility. It will use the available layout systems's ephemeral attributes if available, and fall back to directly modifying the underlying `NSTextStorage`. 
 ///
