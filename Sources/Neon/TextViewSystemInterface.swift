@@ -13,13 +13,13 @@ import Rearrange
 public typealias TokenAttributeProvider = (Token) -> [NSAttributedString.Key: Any]
 
 #if os(macOS) || os(iOS)
-/// A concrete `TextSystemInterface` that connects directly to an `NSTextView`/`UITextView`.
+/// A concrete ``TextSystemInterface`` that connects directly to an `NSTextView`/`UITextView`.
 ///
-/// This class can help you get started applying styles to a text view quickly. It prioritizes simplicity and compatibility. It will use the available layout systems's ephemeral attributes if available, and fall back to directly modifying the underlying NSTextStorage. 
+/// This class can help you get started applying styles to a text view quickly. It prioritizes simplicity and compatibility. It will use the available layout systems's ephemeral attributes if available, and fall back to directly modifying the underlying `NSTextStorage`. 
 ///
 /// Transiting the view from TextKit 2 to TextKit 1 is supported.
 ///
-/// > Note: Consider checking out `LayoutManagerSystemInterface`, `TextLayoutManagerSystemInterface`, or `TextStorageSystemInterface`. These is recommended if you know what behavior you'd like. Alternatively, you can always create your own `TextSystemInterface` for complete control.
+/// > Note: Consider checking out ``LayoutManagerSystemInterface``, ``TextLayoutManagerSystemInterface``, or ``TextStorageSystemInterface``. These is recommended if you know what behavior you'd like. Alternatively, you can always create your own ``TextSystemInterface`` for complete control.
 public struct TextViewSystemInterface {
 	public let textView: TextView
 	public let attributeProvider: TokenAttributeProvider
@@ -108,7 +108,7 @@ extension TextViewSystemInterface: TextSystemInterface {
 #endif
 
 #if os(macOS)
-/// A concrete `TextSystemInterface` that uses `NSLayoutManager` temporary attributes.
+/// A concrete ``TextSystemInterface`` that uses `NSLayoutManager` temporary attributes.
 public struct LayoutManagerSystemInterface {
 	public let layoutManager: NSLayoutManager
 	public let attributeProvider: TokenAttributeProvider
@@ -155,9 +155,9 @@ extension LayoutManagerSystemInterface: TextSystemInterface {
 }
 #endif
 
-/// A concrete `TextSystemInterface` that uses `NSTextLayoutManager` rendering attributes.
+/// A concrete ``TextSystemInterface`` that uses `NSTextLayoutManager` rendering attributes.
 @available(macOS 12.0, iOS 16.0, tvOS 16.0, *)
-public struct `TextLayoutManagerSystemInterface` {
+public struct TextLayoutManagerSystemInterface {
 	public let textLayoutManager: NSTextLayoutManager
 	public let attributeProvider: TokenAttributeProvider
 	public let visibleRangeProvider: () -> NSRange
