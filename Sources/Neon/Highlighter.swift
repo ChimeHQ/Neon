@@ -1,6 +1,9 @@
 import Foundation
 import Rearrange
 
+/// Manages highlighting state for a `TextSystemInterface`.
+///
+/// > Note: A Highlighter must be informed of all text content changes made using `didChangeContent(in:, delta:)`.
 public class Highlighter {
     public var textInterface: TextSystemInterface
 
