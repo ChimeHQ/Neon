@@ -1,6 +1,11 @@
+<div align="center">
+
 [![Build Status][build status badge]][build status]
 [![Platforms][platforms badge]][platforms]
 [![Documentation][documentation badge]][documentation]
+[![Discord][discord badge]][discord]
+
+</div>
 
 # Neon
 A Swift library for efficient, flexible content-based text styling.
@@ -225,7 +230,7 @@ client.executeHighlightsQuery(query, in: range, textProvider: provider) { result
 
 ## Contributing and Collaboration
 
-I'd love to hear from you! Get in touch via an issue or pull request.
+I would love to hear from you! Issues or pull requests work great. A [Discord server][discord] is also available for live help, but I have a strong bias towards answering in the form of documentation.
 
 I prefer collaboration, and would love to find ways to work together if you have a similar project.
 
@@ -239,3 +244,5 @@ By participating in this project you agree to abide by the [Contributor Code of 
 [platforms badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FChimeHQ%2FNeon%2Fbadge%3Ftype%3Dplatforms
 [documentation]: https://swiftpackageindex.com/ChimeHQ/Neon/main/documentation
 [documentation badge]: https://img.shields.io/badge/Documentation-DocC-blue
+[discord]: https://discord.gg/esFpX6sErJ
+[discord badge]: https://img.shields.io/badge/Discord-purple?logo=Discord&label=Chat&color=%235A64EC
