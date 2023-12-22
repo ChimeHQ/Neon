@@ -10,7 +10,7 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.7.1"),
-		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.5.3"),
+		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.6.0"),
 	],
 	targets: [
 		.target(
