@@ -4,6 +4,7 @@ import Rearrange
 /// Manages highlighting state for a `TextSystemInterface`.
 ///
 /// > Note: A Highlighter must be informed of all text content changes made using `didChangeContent(in:, delta:)`.
+@MainActor
 public class Highlighter {
     public var textInterface: TextSystemInterface
 
@@ -30,8 +31,6 @@ public class Highlighter {
 
 extension Highlighter {
     public func invalidate(_ target: TextTarget = .all) {
-        preconditionOnMainQueue()
-
         let set = target.indexSet(with: fullTextSet)
 
         if set.isEmpty {
@@ -85,7 +84,9 @@ extension Highlighter {
         // if we have pending requests, we have to start over
         self.pendingSet.removeAll()
         DispatchQueue.main.async {
-            self.makeNextTokenRequest()
+			assumeMainActor {
+				self.makeNextTokenRequest()
+			}
         }
     }
 }
@@ -161,7 +162,7 @@ extension Highlighter {
 
         // this can be called 0 or more times
         tokenProvider(range) { result in
-            preconditionOnMainQueue()
+			dispatchPrecondition(condition: .onQueue(.main))
             
             switch result {
             case .failure(let error):

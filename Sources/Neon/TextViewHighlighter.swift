@@ -25,6 +25,7 @@ public enum TextViewHighlighterError: Error {
 /// for a TextView. The created instance will become the delegate of the
 /// view's `NSTextStorage`.
 @available(macOS 10.13, iOS 15.0, tvOS 15.0, *)
+@MainActor
 public final class TextViewHighlighter: NSObject {
 	public let textView: TextView
 	private let highlighter: Highlighter
@@ -155,22 +156,26 @@ public final class TextViewHighlighter: NSObject {
 
 @available(macOS 10.13, iOS 15.0, tvOS 15.0, *)
 extension TextViewHighlighter: NSTextStorageDelegate {
-	public func textStorage(_ textStorage: NSTextStorage, willProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
-		treeSitterClient.willChangeContent(in: editedRange)
+	public nonisolated func textStorage(_ textStorage: NSTextStorage, willProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
+		assumeMainActor {
+			treeSitterClient.willChangeContent(in: editedRange)
+		}
 	}
 
-	public func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
-		// Avoid potential infinite loop in synchronous highlighting. If attributes
-		// are stored in `textStorage`, that applies `.editedAttributes` only.
-		// We don't need to re-apply highlighting in that case.
-		// (With asynchronous highlighting, it's not blocking, but also never stops.)
-		guard editedMask.contains(.editedCharacters) else { return }
-
-		let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
-		let string = textStorage.string
-
-		highlighter.didChangeContent(in: adjustedRange, delta: delta)
-		treeSitterClient.didChangeContent(to: string, in: adjustedRange, delta: delta, limit: string.utf16.count)
+	public nonisolated func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
+		assumeMainActor {
+			// Avoid potential infinite loop in synchronous highlighting. If attributes
+			// are stored in `textStorage`, that applies `.editedAttributes` only.
+			// We don't need to re-apply highlighting in that case.
+			// (With asynchronous highlighting, it's not blocking, but also never stops.)
+			guard editedMask.contains(.editedCharacters) else { return }
+			
+			let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
+			let string = textStorage.string
+			
+			highlighter.didChangeContent(in: adjustedRange, delta: delta)
+			treeSitterClient.didChangeContent(to: string, in: adjustedRange, delta: delta, limit: string.utf16.count)
+		}
 	}
 }
 

@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 public final class HighlighterInvalidationBuffer {
     private enum State: Hashable {
         case idle

@@ -36,6 +36,7 @@ typealias PlatformColor = UIColor
 
 final class TextViewSystemInterfaceTests: XCTestCase {
 #if os(macOS) || os(iOS)
+	@MainActor
 	func testApplyAttributesToTextView() throws {
 		let textView = TextView()
 
@@ -71,6 +72,7 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 
 #if os(macOS) || os(iOS)
 	@available(macOS 12.0, iOS 15.0, *)
+	@MainActor
 	func testApplyAttributesToTextKit2TextView() throws {
 		#if os(macOS)
 		let textView = NSTextView.textKit2View()
@@ -112,6 +114,7 @@ final class TextViewSystemInterfaceTests: XCTestCase {
 
 #if os(macOS) || os(iOS)
 	@available(macOS 12.0, iOS 15.0, *)
+	@MainActor
 	func testVisibleTextRangePreservesTextKit2() throws {
 		#if os(macOS)
 		let textView = NSTextView.textKit2View()

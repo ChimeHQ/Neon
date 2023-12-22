@@ -13,7 +13,11 @@ let package = Package(
 		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.5.3"),
 	],
 	targets: [
-		.target(name: "Neon", dependencies: ["SwiftTreeSitter", "Rearrange", "TreeSitterClient"]),
+		.target(
+			name: "Neon",
+			dependencies: ["SwiftTreeSitter", "Rearrange", "TreeSitterClient"],
+			swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+		),
 		.target(name: "TreeSitterClient", dependencies: ["Rearrange", "SwiftTreeSitter"]),
 		.target(name: "TestTreeSitterSwift",
 				path: "tree-sitter-swift",

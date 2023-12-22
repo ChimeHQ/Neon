@@ -18,6 +18,7 @@ class MockInterface: TextSystemInterface {
 }
 
 final class HighlighterTests: XCTestCase {
+	@MainActor
     func testEditAndVisibleRangeChange() throws {
         let interface = MockInterface(length: 10, visibleRange: NSRange(0..<10))
 
@@ -35,6 +36,7 @@ final class HighlighterTests: XCTestCase {
         XCTAssertEqual(requestedRange, NSRange(0..<10))
     }
 
+	@MainActor
 	func testValidSetDefinedByEffectiveRange() throws {
 		let interface = MockInterface(length: 100, visibleRange: NSRange(0..<100))
 
@@ -70,6 +72,7 @@ final class HighlighterTests: XCTestCase {
 		XCTAssertEqual(requestedRanges.last, NSRange(10..<100))
 	}
 
+	@MainActor
 	func testValidSetDefinedByTokensOutsideValidRange() throws {
 		let interface = MockInterface(length: 100, visibleRange: NSRange(0..<50))
 
@@ -110,6 +113,7 @@ final class HighlighterTests: XCTestCase {
 		XCTAssertEqual(requestedRanges.last, NSRange(51..<100))
 	}
 
+	@MainActor
 	func testConsolidateInvalidRanges() throws {
 		let interface = MockInterface(length: 100, visibleRange: NSRange(0..<100))
 
