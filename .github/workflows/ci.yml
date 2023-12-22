@@ -13,6 +13,9 @@ on:
     branches:
       - main
 
+env:
+  DEVELOPER_DIR: /Applications/Xcode_15.1.app/Contents/Developer
+
 jobs:
   test:
     name: Test
