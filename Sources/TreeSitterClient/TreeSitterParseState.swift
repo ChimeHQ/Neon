@@ -2,9 +2,9 @@ import Foundation
 import SwiftTreeSitter
 
 struct TreeSitterParseState {
-    var tree: Tree?
+    var tree: MutableTree?
 
-    init(tree: Tree? = nil) {
+    init(tree: MutableTree? = nil) {
         self.tree = tree
     }
 
@@ -36,7 +36,7 @@ struct TreeSitterParseState {
     }
 
     func copy() -> TreeSitterParseState {
-        return TreeSitterParseState(tree: tree?.copy())
+        return TreeSitterParseState(tree: tree?.mutableCopy())
     }
 }
 

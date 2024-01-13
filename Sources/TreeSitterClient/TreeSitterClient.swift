@@ -11,8 +11,8 @@ public enum TreeSitterClientError: Error {
 }
 
 public final class TreeSitterClient {
-	public typealias TextProvider = ResolvingQueryCursor.TextProvider
-	
+    public typealias TextProvider = SwiftTreeSitter.Predicate.TextProvider
+
     public enum ExecutionMode: Hashable {
         case synchronous
         case synchronousPreferred
@@ -389,7 +389,7 @@ extension TreeSitterClient {
         let startedVersion = version
         queue.async {
             self.semaphore.wait()
-            let state = self.parseState.copy()
+            let tree = self.parseState.tree?.copy()
             self.semaphore.signal()
 
             OperationQueue.main.addOperation {
@@ -397,7 +397,7 @@ extension TreeSitterClient {
                     completionHandler(.failure(.staleContent))
                     return
                 }
-                if let tree = state.tree {
+                if let tree {
                     completionHandler(.success(tree))
                 } else {
                     completionHandler(.failure(.stateInvalid))
