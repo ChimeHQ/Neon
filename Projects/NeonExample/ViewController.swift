@@ -2,6 +2,7 @@ import Cocoa
 import Neon
 import SwiftTreeSitter
 import TreeSitterSwift
+import TreeSitterClient
 
 final class ViewController: NSViewController {
 	let textView: NSTextView
@@ -12,6 +13,12 @@ final class ViewController: NSViewController {
 		self.textView = NSTextView()
 		textView.isRichText = false  // Discards any attributes when pasting.
 
+		textView.string = """
+		// Example Code!
+		let value = "hello world"
+		print(value)
+		"""
+		
 		scrollView.documentView = textView
 		
 		let regularFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .regular)
@@ -35,19 +42,18 @@ final class ViewController: NSViewController {
 			}
 		}
 
-		let language = Language(language: tree_sitter_swift())
+		let languageConfig = try! LanguageConfiguration(
+			tree_sitter_swift(),
+			name: "Swift"
+		)
 
-		let url = Bundle.main
-					  .resourceURL?
-					  .appendingPathComponent("TreeSitterSwift_TreeSitterSwift.bundle")
-					  .appendingPathComponent("Contents/Resources/queries/highlights.scm")
-		let query = try! language.query(contentsOf: url!)
+		let highlighterConfig = TextViewHighlighter.Configuration(
+			languageConfiguration: languageConfig,
+			attributeProvider: provider,
+			locationTransformer: { _ in nil }
+		)
 
-		let interface = TextStorageSystemInterface(textView: textView, attributeProvider: provider)
-		self.highlighter = try! TextViewHighlighter(textView: textView,
-													language: language,
-													highlightQuery: query,
-													interface: interface)
+		self.highlighter = try! TextViewHighlighter(textView: textView, configuration: highlighterConfig)
 
 		super.init(nibName: nil, bundle: nil)
 	}
@@ -68,11 +74,51 @@ final class ViewController: NSViewController {
 		self.view = scrollView
 	}
 
-	override func viewWillAppear() {
-		textView.string = """
-		// Example Code!
-		let value = "hello world"
-		print(value)
-		"""
+	func setUpTreeSitter() throws {
+		let languageConfig = try LanguageConfiguration(
+			tree_sitter_swift(),
+			name: "Swift"
+		)
+
+		let clientConfig = TreeSitterClient.Configuration(
+			languageProvider: { identifier in
+				// look up nested languages by identifier here. If done
+				// asynchronously, inform the client they are ready with
+				// `languageConfigurationChanged(for:)`
+				return nil
+			},
+			contentProvider: { [textView] length in
+				// given a maximum needed length, produce a Content structure
+				// that will be used to access the text data
+
+				return .init(string: textView.string)
+			},
+			lengthProvider: { [textView] in
+				textView.string.utf16.count
+
+			},
+			invalidationHandler: { set in
+				// take action on invalidated regions of the text
+			},
+			locationTransformer: { location in
+				// optionally, use the UTF-16 location to produce a line-relative Point structure.
+				return nil
+			}
+		)
+
+		let client = try TreeSitterClient(
+			rootLanguageConfig: languageConfig,
+			configuration: clientConfig
+		)
+
+		let source = textView.string
+
+		let provider = source.predicateTextProvider
+
+		// this uses the synchronous query API, but with the `.required` mode, which will force the client
+		// to do all processing necessary to satsify the request.
+		let highlights = try client.highlights(in: NSRange(0..<24), provider: provider, mode: .required)!
+
+		print("highlights:", highlights)
 	}
 }

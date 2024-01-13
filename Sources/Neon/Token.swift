@@ -1,14 +1,39 @@
 import Foundation
 
-public struct Token {
-    public let name: String
-    public let range: NSRange
+import RangeState
 
-    public init(name: String, range: NSRange) {
-        self.name = name
-        self.range = range
-    }
+public struct Token: Hashable, Sendable {
+	public let name: String
+	public let range: NSRange
+
+	public init(name: String, range: NSRange) {
+		self.name = name
+		self.range = range
+	}
 }
 
-extension Token: Hashable {
+extension Token: CustomDebugStringConvertible {
+	public var debugDescription: String {
+		"<\"\(name)\": \(range)>"
+	}
 }
+
+public struct TokenApplication: Hashable, Sendable {
+	public let tokens: [Token]
+	public let range: NSRange?
+
+	public init(tokens: [Token], range: NSRange? = nil) {
+		self.tokens = tokens
+		self.range = range
+	}
+}
+
+extension TokenApplication: ExpressibleByArrayLiteral {
+	public typealias ArrayLiteralElement = Token
+	
+	public init(arrayLiteral elements: Token...) {
+		self.init(tokens: elements)
+	}
+}
+
+public typealias TokenProvider = HybridValueProvider<NSRange, TokenApplication>

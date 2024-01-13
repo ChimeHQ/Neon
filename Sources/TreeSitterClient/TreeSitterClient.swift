@@ -1,545 +1,324 @@
 import Foundation
-import SwiftTreeSitter
+import os.log
+
+import RangeState
 import Rearrange
+import SwiftTreeSitter
+import SwiftTreeSitterLayer
 
-public enum TreeSitterClientError: Error {
-    case staleState
-    case stateInvalid
-    case staleContent
-    case queryFailed(Error)
-    case asynchronousExecutionRequired
+enum TreeSitterClientError: Error {
+	case languageUnavailable(String)
 }
 
+@MainActor
 public final class TreeSitterClient {
-    public typealias TextProvider = SwiftTreeSitter.Predicate.TextProvider
-
-    public enum ExecutionMode: Hashable {
-        case synchronous
-        case synchronousPreferred
-        case failIfAsynchronous
-        case asynchronous(prefetch: Bool = true)
-    }
-
-    struct ContentEdit {
-        var rangeMutation: RangeMutation
-        var inputEdit: InputEdit
-        var limit: Int
-
-        var size: Int {
-            return max(abs(rangeMutation.delta), rangeMutation.range.length)
-        }
-
-        var affectedRange: NSRange {
-            let range = rangeMutation.range
-
-            // we want to expand our affected range just slightly, so that
-            // changes to immediately-adjacent tokens are included in the range checks
-            // for the cursor.
-            let start = max(range.location - 1, 0)
-            let end = min(max(range.max, range.max + rangeMutation.delta) + 1, limit)
-
-            return NSRange(start..<end)
-        }
-    }
-
-    private var oldEndPoint: Point?
-    private let parser: Parser
-    private var parseState: TreeSitterParseState
-    private var outstandingEdits: [ContentEdit]
-    private var version: Int
-    private let queue: DispatchQueue
-    private let semaphore: DispatchSemaphore
-    private let synchronousLengthThreshold: Int
-
-    // This was roughly determined to be the limit in characters
-    // before it's likely that tree-sitter edit processing
-    // and tree-diffing will start to become noticeably laggy
-    private let synchronousContentLengthThreshold: Int = 1_000_000
-
-    public let locationTransformer: Point.LocationTransformer?
-    public var computeInvalidations: Bool
-
-    /// Invoked when parts of the text content have changed
-    ///
-    /// This function always returns values that represent
-    /// the current state of the content, even if the
-    /// system is working in the background.
-    ///
-    /// This function will only be invoked if `computeInvalidations`
-    /// was true at the time an edit was applied.
-    public var invalidationHandler: (IndexSet) -> Void
-
-    public init(language: Language, transformer: Point.LocationTransformer? = nil, synchronousLengthThreshold: Int = 1024) throws {
-        self.parser = Parser()
-        self.parseState = TreeSitterParseState(tree: nil)
-        self.outstandingEdits = []
-        self.computeInvalidations = true
-        self.version = 0
-        self.queue = DispatchQueue(label: "com.chimehq.Neon.TreeSitterClient")
-        self.semaphore = DispatchSemaphore(value: 1)
-
-        try parser.setLanguage(language)
-
-        self.invalidationHandler = { _ in }
-        self.locationTransformer = transformer
-        self.synchronousLengthThreshold = synchronousLengthThreshold
-    }
-
-    private var hasQueuedWork: Bool {
-        return outstandingEdits.count > 0
-    }
-}
-
-extension TreeSitterClient {
-    /// Prepare for a content change.
-    ///
-    /// This method must be called before any content changes have been applied that
-    /// would affect how the `transformer`parameter will behave.
-    ///
-    /// - Parameter range: the range of content that will be affected by an edit
-    public func willChangeContent(in range: NSRange) {
-        oldEndPoint = locationTransformer?(range.max)
-    }
-
-    /// Process a change in the underlying text content.
-    ///
-    /// This method will re-parse the sections of the content
-    /// needed by tree-sitter. It may do so **asynchronously**
-    /// which means you **must** guarantee that `readHandler`
-    /// provides a stable, thread-safe view of the
-    /// content up until `completionHandler` is called.
-    ///
-    /// - Parameter range: the range that was affected by the edit
-    /// - Parameter delta: the change in length of the content
-    /// - Parameter limit: the current length of the content
-    /// - Parameter readHandler: a function that returns the text data
-    /// - Parameter completionHandler: invoked when the edit has been fully processed
-    public func didChangeContent(in range: NSRange,
-                                 delta: Int,
-                                 limit: Int,
-                                 readHandler: @escaping Parser.ReadBlock,
-                                 completionHandler: @escaping () -> Void) {
-        if locationTransformer != nil && oldEndPoint == nil {
-            assertionFailure("oldEndPoint unavailable")
-            return
-        }
-        let oldEndPoint = self.oldEndPoint ?? .zero
-        self.oldEndPoint = nil
-
-        guard let inputEdit = InputEdit(range: range, delta: delta, oldEndPoint: oldEndPoint, transformer: locationTransformer) else {
-            assertionFailure("unable to build InputEdit")
-            return
-        }
-
-        // RangeMutation has a "limit" concept, used for bounds checking. However,
-        // they are treated as pre-application of the mutation. Here, the content
-        // has already changed. That's why it's optional!
-        //
-        // So, why use RangeMutation at all? Because we want to make use of its
-        // transformation capabilities for invalidations.
-        let mutation = RangeMutation(range: range, delta: delta)
-        let edit = ContentEdit(rangeMutation: mutation, inputEdit: inputEdit, limit: limit)
-
-        processEdit(edit, readHandler: readHandler, completionHandler: completionHandler)
-    }
-
-    /// Process a string representing text content.
-    ///
-    /// This method is similar to `didChangeContent(in:delta:limit:readHandler:completionHandler:)`,
-    /// but it makes use of the immutability of String to meet the content
-    /// requirements. This makes it much easier to use. However,
-    /// this approach may not be able to achieve the same level of performance.
-    ///
-    /// - Parameter string: the text content with the change applied
-    /// - Parameter range: the range that was affected by the edit
-    /// - Parameter delta: the change in length of the content
-    /// - Parameter limit: the current length of the content
-    /// - Parameter completionHandler: invoked when the edit has been fully processed
-    public func didChangeContent(to string: String, in range: NSRange, delta: Int, limit: Int, completionHandler: @escaping () -> Void = {}) {
-        let readFunction = Parser.readFunction(for: string, limit: limit)
-
-        didChangeContent(in: range, delta: delta, limit: limit, readHandler: readFunction, completionHandler: completionHandler)
-    }
-}
-
-extension TreeSitterClient {
-    func processEdit(_ edit: ContentEdit, readHandler: @escaping Parser.ReadBlock, completionHandler: @escaping () -> Void) {
-        preconditionOnMainQueue()
-
-        let largeEdit = edit.size > synchronousLengthThreshold
-        let largeDocument = edit.limit > synchronousContentLengthThreshold
-        let runAsync = hasQueuedWork || largeEdit || largeDocument
-        let doInvalidations = computeInvalidations
-
-		self.version += 1
-
-        if runAsync == false {
-            processEditSync(edit, withInvalidations: doInvalidations, readHandler: readHandler, completionHandler: completionHandler)
-            return
-        }
-
-        processEditAsync(edit, withInvalidations: doInvalidations, readHandler: readHandler, completionHandler: completionHandler)
-    }
-
-    private func applyEdit(_ edit: ContentEdit, readHandler: @escaping Parser.ReadBlock) -> (TreeSitterParseState, TreeSitterParseState) {
-        self.semaphore.wait()
-        let state = self.parseState
-
-        state.applyEdit(edit.inputEdit)
-        self.parseState = self.parser.parse(state: state, readHandler: readHandler)
-
-        let oldState = state.copy()
-        let newState = parseState.copy()
-
-        self.semaphore.signal()
-
-        return (oldState, newState)
-    }
-
-    private func processEditSync(_ edit: ContentEdit, withInvalidations doInvalidations: Bool, readHandler: @escaping Parser.ReadBlock, completionHandler: () -> Void) {
-        let (oldState, newState) = applyEdit(edit, readHandler: readHandler)
-
-        let set = doInvalidations ? self.computeInvalidatedSet(from: oldState, to: newState, with: edit) : IndexSet()
-
-        completionHandler()
-
-        dispatchInvalidatedSet(set)
-    }
-
-    private func processEditAsync(_ edit: ContentEdit, withInvalidations doInvalidations: Bool, readHandler: @escaping Parser.ReadBlock, completionHandler: @escaping () -> Void) {
-        outstandingEdits.append(edit)
-
-        queue.async {
-            let (oldState, newState) = self.applyEdit(edit, readHandler: readHandler)
-			let set = doInvalidations ? self.computeInvalidatedSet(from: oldState, to: newState, with: edit) : IndexSet()
-
-			OperationQueue.main.addOperation {
-				let completedEdit = self.outstandingEdits.removeFirst()
-
-				assert(completedEdit.inputEdit == edit.inputEdit)
-
-				self.dispatchInvalidatedSet(set)
-
-				completionHandler()
-			}
-        }
-    }
-
-    func computeInvalidatedSet(from oldState: TreeSitterParseState, to newState: TreeSitterParseState, with edit: ContentEdit) -> IndexSet {
-        let changedRanges = oldState.changedByteRanges(for: newState).map({ $0.range })
-
-        // we have to ensure that any invalidated ranges don't fall outside of limit
-        let clampedRanges = changedRanges.compactMap({ $0.clamped(to: edit.limit) })
-
-        var set = IndexSet(integersIn: edit.affectedRange)
-
-        set.insert(ranges: clampedRanges)
-
-        return set
-    }
-}
-
-extension TreeSitterClient {
-    private func transformRangeSet(_ set: IndexSet) -> IndexSet {
-        let rangeMutations = outstandingEdits.map({ $0.rangeMutation })
-
-        var transformedSet = set
-
-        // this ensures that the set we have computed lines up with
-        // the current state of the world
-        for rangeMutation in rangeMutations {
-            transformedSet = rangeMutation.transform(set: transformedSet)
-        }
-
-        return set
-    }
-
-    private func dispatchInvalidatedSet(_ set: IndexSet) {
-		preconditionOnMainQueue()
-		
-        let transformedSet = transformRangeSet(set)
-
-        if transformedSet.isEmpty {
-            return
-        }
-
-        self.invalidationHandler(transformedSet)
-    }
-}
-
-extension TreeSitterClient {
-    public typealias QueryCursorResult = Result<QueryCursor, TreeSitterClientError>
-    public typealias ResolvingQueryCursorResult = Result<ResolvingQueryCursor, TreeSitterClientError>
-
-    /// Determine if it is likely that a synchronous query will execute quickly
-    public func canAttemptSynchronousQuery(in range: NSRange) -> Bool {
-        let largeRange = range.length > synchronousLengthThreshold
-        let largeLocation = range.max > synchronousContentLengthThreshold
-
-        return (hasQueuedWork || largeRange || largeLocation) == false
-    }
-
-    /// Executes a query and returns a ResolvingQueryCursor
-    ///
-    /// This method runs a query on the current state of the content. It guarantees
-    /// that a successful result corresponds to that state. It must be invoked from
-    /// the main thread and will always call `completionHandler` on the main thread as well.
-    ///
-    /// - Parameter query: the query to execute
-    /// - Parameter range: constrain the query to this range
-    /// - Parameter executionMode: determine if a background query should be used
-	/// - Parameter textProvider: the `ResolvingQueryCursor.TextProvider` used for predicate resolution
-    /// - Parameter completionHandler: returns the result
-    public func executeResolvingQuery(_ query: Query,
-                                      in range: NSRange,
-                                      executionMode: ExecutionMode = .asynchronous(prefetch: true),
-									  textProvider: TextProvider? = nil,
-                                      completionHandler: @escaping (ResolvingQueryCursorResult) -> Void) {
-        preconditionOnMainQueue()
-
-        let prefetchMatches: Bool
-
-        switch executionMode {
-        case .synchronous:
-			let result = executeResolvingQuerySynchronously(query, in: range, textProvider: textProvider)
-            completionHandler(result)
-            return
-        case .failIfAsynchronous:
-            if canAttemptSynchronousQuery(in: range) == false {
-                completionHandler(.failure(.asynchronousExecutionRequired))
-            } else {
-                let result = executeResolvingQuerySynchronously(query, in: range, textProvider: textProvider)
-                completionHandler(result)
-            }
-
-            return
-        case .synchronousPreferred:
-            if canAttemptSynchronousQuery(in: range) {
-                let result = executeResolvingQuerySynchronously(query, in: range, textProvider: textProvider)
-                completionHandler(result)
-                return
-            }
-
-            prefetchMatches = true
-        case .asynchronous(let prefetch):
-            prefetchMatches = prefetch
-        }
-
-        // We only want to produce results that match the *current* state
-        // of the content...
-        let startedVersion = version
-
-        queue.async {
-            // .. so at the state could be mutated at at any point. But,
-            // let's be optimistic and only check once at the end.
-
-            self.semaphore.wait()
-            let state = self.parseState.copy()
-            self.semaphore.signal()
-
-            DispatchQueue.global().async {
-                let result = self.executeResolvingQuerySynchronouslyWithoutCheck(query,
-                                                                                 in: range,
-                                                                                 with: state)
-
-                if case .success(let cursor) = result, prefetchMatches {
-                    cursor.prefetchMatches()
-                }
-
-                OperationQueue.main.addOperation {
-                    guard startedVersion == self.version else {
-                        completionHandler(.failure(.staleContent))
-
-                        return
-                    }
-
-					if let textProvider = textProvider, let cursor = try? result.get() {
-						cursor.prepare(with: textProvider)
-					}
-
-                    completionHandler(result)
-                }
-            }
-        }
-    }
-
-    /// Executes a query and returns a ResolvingQueryCursor
-    ///
-    /// This is the async version of executeResolvingQuery(:in:preferSynchronous:prefetchMatches:completionHandler:)
-    @available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
-    @MainActor
-    public func resolvingQueryCursor(with query: Query,
-                                     in range: NSRange,
-                                     executionMode: ExecutionMode = .asynchronous(prefetch: true),
-									 textProvider: TextProvider? = nil) async throws -> ResolvingQueryCursor {
-        try await withCheckedThrowingContinuation { continuation in
-			self.executeResolvingQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { result in
-                continuation.resume(with: result)
-            }
-        }
-    }
-
-    /// Fetches the current stable version of Tree
-    ///
-    /// This function always fetches the tree that represents the current state of the content, even if the
-    /// system is working in the background.
-    public func currentTree(completionHandler: @escaping (Result<Tree, TreeSitterClientError>) -> Void) {
-		preconditionOnMainQueue()
-
-        let startedVersion = version
-        queue.async {
-            self.semaphore.wait()
-            let tree = self.parseState.tree?.copy()
-            self.semaphore.signal()
-
-            OperationQueue.main.addOperation {
-                guard startedVersion == self.version else {
-                    completionHandler(.failure(.staleContent))
-                    return
-                }
-                if let tree {
-                    completionHandler(.success(tree))
-                } else {
-                    completionHandler(.failure(.stateInvalid))
-                }
-            }
-        }
-    }
-
-    /// Fetches the current stable version of Tree
-    ///
-    /// This function always fetches the tree that represents the current state of the content, even if the
-    /// system is working in the background.
-    @available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
-	@MainActor
-    public func currentTree() async throws -> Tree {
-        try await withCheckedThrowingContinuation { continuation in
-            currentTree() { result in
-				continuation.resume(with: result)
-            }
-        }
-    }
-}
-
-extension TreeSitterClient {
-	/// Executes a query synchronously and returns a ResolvingQueryCursor
-	///
-	/// Because it must run synchronously, this method will fail if the
-	/// there are pending background parse operations.
-	///
-	/// - Parameter query: the query to execute
-	/// - Parameter range: constrain the query to this range
-	/// - Parameter textProvider: the ResolvingQueryCursor.TextProvider used for predicate resolution
-    public func executeResolvingQuerySynchronously(_ query: Query, in range: NSRange, textProvider: TextProvider? = nil) -> ResolvingQueryCursorResult {
-        preconditionOnMainQueue()
-
-        if hasQueuedWork {
-            return .failure(.staleState)
-        }
-
-        let result = executeResolvingQuerySynchronouslyWithoutCheck(query, in: range, with: parseState)
-
-		if let textProvider = textProvider, let cursor = try? result.get() {
-			cursor.prepare(with: textProvider)
-		}
-
-		return result
-    }
-
-    private func executeResolvingQuerySynchronouslyWithoutCheck(_ query: Query, in range: NSRange, with state: TreeSitterParseState) -> ResolvingQueryCursorResult {
-        return executeQuerySynchronouslyWithoutCheck(query, in: range, with: state)
-            .map({ ResolvingQueryCursor(cursor: $0) })
-    }
-}
-
-extension TreeSitterClient {
-    public func executeQuerySynchronously(_ query: Query, in range: NSRange) -> QueryCursorResult {
-        preconditionOnMainQueue()
-
-        if hasQueuedWork {
-            return .failure(.staleState)
-        }
-
-        return executeQuerySynchronouslyWithoutCheck(query, in: range, with: parseState)
-    }
-
-    private func executeQuerySynchronouslyWithoutCheck(_ query: Query, in range: NSRange, with state: TreeSitterParseState) -> QueryCursorResult {
-		guard
-			let tree = state.tree,
-			let node = tree.rootNode
-		else {
-			return .failure(.stateInvalid)
-		}
-
-        // critical to keep a reference to the tree, so it survives as long as the query
-        let cursor = query.execute(node: node, in: tree)
-
-        cursor.setRange(range)
-
-        return .success(cursor)
-    }
-}
-
-extension TreeSitterClient {
-	/// Execute a standard highlights.scm query
-	///
-	/// Note that some query definitions require evaluating the text content, which is only possible by supplying a `textProvider`.
-	public func executeHighlightsQuery(_ query: Query,
-									   in range: NSRange,
-									   executionMode: ExecutionMode = .asynchronous(prefetch: true),
-									   textProvider: TextProvider? = nil,
-									   completionHandler: @escaping (Result<[NamedRange], TreeSitterClientError>) -> Void) {
-		executeResolvingQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { cursorResult in
-			let result = cursorResult.map { $0.highlights() }
-
-			completionHandler(result)
+	public typealias TextProvider = SwiftTreeSitter.Predicate.TextProvider
+	public typealias ContentProvider = (Int) -> LanguageLayer.Content
+	private typealias SublayerValidator = RangeValidator<UnversionableContent>
+
+	private static let deltaRange = 128..<Int.max
+	private let logger = OSLog(subsystem: "com.chimehq.Neon", category: "TreeSitterClient")
+
+	public struct Configuration {
+		public let languageProvider: LanguageLayer.LanguageProvider
+		public let contentProvider: ContentProvider
+		public let lengthProvider: RangeProcessor.LengthProvider
+		public let invalidationHandler: (IndexSet) -> Void
+		public let locationTransformer: (Int) -> Point?
+
+		/// Create the client configuration.
+		///
+		/// The `invalidationHandler` function always returns values that represent the current state of the content, even if the system is working in the background.
+		///
+		/// - Parameter languageProvider: called when nested language configuration is needed.
+		/// - Parameter invalidationHandler: invoked when parts of the text content have changed.
+		///
+		public init(
+			languageProvider: @escaping LanguageLayer.LanguageProvider = { _ in nil },
+			contentProvider: @escaping (Int) -> LanguageLayer.Content,
+			lengthProvider: @escaping RangeProcessor.LengthProvider,
+			invalidationHandler: @escaping (IndexSet) -> Void,
+			locationTransformer: @escaping (Int) -> Point?
+		) {
+			self.languageProvider = languageProvider
+			self.contentProvider = contentProvider
+			self.lengthProvider = lengthProvider
+			self.invalidationHandler = invalidationHandler
+			self.locationTransformer = locationTransformer
 		}
 	}
 
-	/// Execute a standard highlights.scm query
+	private var versionedContent: UnversionableContent
+	private let configuration: Configuration
+	private lazy var rangeProcessor = RangeProcessor(
+		configuration: .init(
+			deltaRange: Self.deltaRange,
+			lengthProvider: configuration.lengthProvider,
+			changeHandler: { [unowned self] in self.didChange($0) }
+		)
+	)
+	private lazy var sublayerValidator = SublayerValidator(
+		configuration: .init(
+			versionedContent: versionedContent,
+			validationProvider: validatorProvider
+		)
+	)
+
+	private let layerTree: BackgroundingLanguageLayerTree
+	private let queue = DispatchQueue(label: "com.chimehq.HybridTreeSitterClient")
+
+	public init(rootLanguageConfig: LanguageConfiguration, configuration: Configuration) throws {
+		self.configuration = configuration
+		self.versionedContent = UnversionableContent(lengthProvider: configuration.lengthProvider)
+		self.layerTree = try BackgroundingLanguageLayerTree(
+			rootLanguageConfig: rootLanguageConfig,
+			configuration: .init(
+				locationTransformer: configuration.locationTransformer,
+				languageProvider: configuration.languageProvider
+			)
+		)
+	}
+
+	/// Prepare for a content change.
 	///
-	/// Note that some query definitions require evaluating the text content, which is only possible by supplying a `textProvider`.
-	@available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
-	@MainActor
-	public func highlights(with query: Query,
-						   in range: NSRange,
-						   executionMode: ExecutionMode = .asynchronous(prefetch: true),
-						   textProvider: TextProvider? = nil) async throws -> [NamedRange] {
-		try await withCheckedThrowingContinuation { continuation in
-			self.executeHighlightsQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { result in
-				continuation.resume(with: result)
+	/// This method must be called before any content changes have been applied that would affect how the `locationTransformer` configuration will behave.
+	///
+	/// - Parameter range: the range of content that will be affected by an edit
+	public func willChangeContent(in range: NSRange) {
+		layerTree.willChangeContent(in: range)
+	}
+
+	/// Process a change in the underlying text content.
+	///
+	/// This method will re-parse the sections of the content needed by tree-sitter. It may do so **asynchronously**.
+	///
+	/// - Parameter range: the range that was affected by the edit
+	/// - Parameter delta: the change in length of the content
+	public func didChangeContent(in range: NSRange, delta: Int) {
+		rangeProcessor.didChangeContent(in: range, delta: delta)
+		sublayerValidator.contentChanged(in: range, delta: delta)
+		versionedContent.contentChanged()
+	}
+
+	/// Inform the client that calls to `languageConfiguration` may change.
+	public func languageConfigurationChanged(for name: String) {
+		let content = maximumProcessedContent
+
+		layerTree.languageConfigurationChanged(for: name, content: content) { result in
+			do {
+				let invalidated = try result.get()
+
+				self.handleInvalidation(invalidated, sublayers: true)
+			} catch {
+				fatalError("failed to process language configuration change, how do we handle this? \(error)")
 			}
 		}
 	}
 
-	/// Execute a standard injections.scm query
-	///
-	/// Note that some query definitions require evaluating the text content, which is only possible by supplying a `textProvider`.
-	public func executeInjectionsQuery(_ query: Query,
-									   in range: NSRange,
-									   executionMode: ExecutionMode = .asynchronous(prefetch: true),
-									   textProvider: TextProvider? = nil,
-									   completionHandler: @escaping (Result<[NamedRange], TreeSitterClientError>) -> Void) {
-		executeResolvingQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { cursorResult in
-			let result = cursorResult.map { $0.injections() }
+	private var maximumProcessedContent: LanguageLayer.Content {
+		configuration.contentProvider(rangeProcessor.maximumProcessedLocation)
+	}
+}
 
-			completionHandler(result)
+extension TreeSitterClient {
+	private var hasPendingChanges: Bool {
+		rangeProcessor.hasPendingChanges
+	}
+
+	private func didChange(_ mutation: RangeMutation) {
+		let limit = mutation.postApplyLimit
+
+		let content = configuration.contentProvider(limit)
+
+		layerTree.didChangeContent(content, in: mutation.range, delta: mutation.delta, completion: { invalidated in
+			self.completeChange(mutation, invalidating: invalidated)
+		})
+	}
+
+	private func completeChange(_ mutation: RangeMutation, invalidating invalidated: IndexSet) {
+		rangeProcessor.completeContentChanged(mutation)
+
+		handleInvalidation(invalidated, sublayers: false)
+	}
+
+	private func handleInvalidation(_ set: IndexSet, sublayers: Bool) {
+		let target = rangeProcessor.transformTargetToCurrent(.set(set))
+		let transformedSet = target.indexSet(with: configuration.lengthProvider())
+
+		configuration.invalidationHandler(transformedSet)
+
+		if sublayers {
+			sublayerValidator.invalidate(target)
 		}
 	}
 
-	/// Execute a standard injections.scm query
-	///
-	/// Note that some query definitions require evaluating the text content, which is only possible by supplying a `textProvider`.
-	@available(macOS 10.15, iOS 13.0, watchOS 6.0.0, tvOS 13.0.0, *)
-	@MainActor
-	public func injections(with query: Query,
-						   in range: NSRange,
-						   executionMode: ExecutionMode = .asynchronous(prefetch: true),
-						   textProvider: TextProvider? = nil) async throws -> [NamedRange] {
-		try await withCheckedThrowingContinuation { continuation in
-			self.executeInjectionsQuery(query, in: range, executionMode: executionMode, textProvider: textProvider) { result in
-				continuation.resume(with: result)
-			}
+	private func languageConfig(for name: String) -> LanguageConfiguration? {
+		configuration.languageProvider(name)
+	}
+}
+
+extension TreeSitterClient {
+	private func resolveSublayers(in range: NSRange) -> Bool {
+		let set = IndexSet(integersIn: range)
+
+		guard self.canAttemptSynchronousAccess(in: set) else {
+			return false
 		}
+
+		let content = self.maximumProcessedContent
+
+		do {
+			let invalidatedSet = try self.layerTree.resolveSublayers(with: content, in: set)
+
+			self.handleInvalidation(invalidatedSet, sublayers: false)
+		} catch {
+			os_log(.fault, log: self.logger, "Failed resolve sublayers", String(describing: error))
+		}
+
+		return true
+	}
+
+	private func resolveSublayers(in range: NSRange) async {
+		let content = self.maximumProcessedContent
+		let set = IndexSet(integersIn: range)
+
+		do {
+			let invalidatedSet = try await self.layerTree.resolveSublayers(with: content, in: set)
+
+			self.handleInvalidation(invalidatedSet, sublayers: false)
+		} catch {
+			os_log(.fault, log: self.logger, "Failed resolve sublayers", String(describing: error))
+		}
+	}
+
+	private var validatorProvider: SublayerValidator.ValidationProvider {
+		.init(
+			rangeProcessor: rangeProcessor,
+			inputTransformer: { ($0.value.max, .optional) },
+			syncValue: { versioned in
+				guard versioned.version == self.versionedContent.currentVersion else {
+					return .stale
+				}
+
+				guard self.resolveSublayers(in: versioned.value) else {
+					return nil
+				}
+
+				return .success(versioned.value)
+
+			},
+			asyncValue: { versioned in
+				guard versioned.version == self.versionedContent.currentVersion else {
+					return .stale
+				}
+
+				await self.resolveSublayers(in: versioned.value)
+
+				// have to check on both sides of the await
+				guard versioned.version == self.versionedContent.currentVersion else {
+					return .stale
+				}
+
+				return .success(versioned.value)
+			}
+		)
+	}
+}
+
+extension TreeSitterClient {
+	@MainActor
+	public struct ClientQueryParams {
+		public let indexSet: IndexSet
+		public let textProvider: TextProvider
+		public let mode: RangeFillMode
+
+		public init(indexSet: IndexSet, textProvider: @escaping TextProvider, mode: RangeFillMode = .required) {
+			self.indexSet = indexSet
+			self.textProvider = textProvider
+			self.mode = mode
+		}
+
+		public init(range: NSRange, textProvider: @escaping TextProvider, mode: RangeFillMode = .required) {
+			self.indexSet = IndexSet(integersIn: range)
+			self.textProvider = textProvider
+			self.mode = mode
+		}
+
+		public var maxLocation: Int {
+			indexSet.max() ?? 0
+		}
+	}
+
+	@MainActor
+	public struct ClientQuery {
+		public let query: Query.Definition
+		public let params: ClientQueryParams
+
+		public init(query: Query.Definition, indexSet: IndexSet, textProvider: @escaping TextProvider, mode: RangeFillMode = .required) {
+			self.query = query
+			self.params = ClientQueryParams(indexSet: indexSet, textProvider: textProvider, mode: mode)
+		}
+
+		public init(query: Query.Definition, range: NSRange, textProvider: @escaping TextProvider, mode: RangeFillMode = .required) {
+			self.query = query
+			self.params = ClientQueryParams(range: range, textProvider: textProvider, mode: mode)
+		}
+	}
+
+	public func canAttemptSynchronousAccess(in set: IndexSet) -> Bool {
+		return hasPendingChanges == false
+	}
+
+	private func validateSublayers(in set: IndexSet) {
+		sublayerValidator.validate(.set(set))
+	}
+
+	private func executeQuery(_ clientQuery: ClientQuery) async throws -> some Sequence<QueryMatch> {
+		rangeProcessor.processLocation(clientQuery.params.maxLocation, mode: clientQuery.params.mode)
+
+		await rangeProcessor.processingCompleted()
+
+		validateSublayers(in: clientQuery.params.indexSet)
+
+		let matches = try await layerTree.executeQuery(clientQuery.query, in: clientQuery.params.indexSet)
+
+		return matches.resolve(with: .init(textProvider: clientQuery.params.textProvider))
+	}
+
+	public var highlightsProvider: HybridThrowingValueProvider<ClientQueryParams, [NamedRange]> {
+		.init(
+			rangeProcessor: rangeProcessor,
+			inputTransformer: { ($0.maxLocation, $0.mode) },
+			syncValue: { input in
+				let set = input.indexSet
+
+				guard self.canAttemptSynchronousAccess(in: set) else { return [] }
+
+				self.validateSublayers(in: set)
+
+				return try self.layerTree.executeQuery(.highlights, in: set).highlights()
+			},
+			asyncValue: { input in
+				let query = ClientQuery(query: .highlights, indexSet: input.indexSet, textProvider: input.textProvider, mode: input.mode)
+
+				return try await self.executeQuery(query).highlights()
+			})
+	}
+}
+
+extension TreeSitterClient {
+	/// Execute a standard highlights.scm query.
+	public func highlights(in set: IndexSet, provider: @escaping TextProvider, mode: RangeFillMode = .required) async throws -> [NamedRange] {
+		try await highlightsProvider.async(.init(indexSet: set, textProvider: provider, mode: mode))
+	}
+
+	/// Execute a standard highlights.scm query.
+	public func highlights(in range: NSRange, provider: @escaping TextProvider, mode: RangeFillMode = .required) throws -> [NamedRange]? {
+		try highlightsProvider.sync(.init(range: range, textProvider: provider, mode: mode))
+	}
+
+	/// Execute a standard highlights.scm query.
+	public func highlights(in range: NSRange, provider: @escaping TextProvider, mode: RangeFillMode = .required) async throws -> [NamedRange] {
+		try await highlightsProvider.async(.init(range: range, textProvider: provider, mode: mode))
 	}
 }

@@ -1,4 +1,4 @@
-#if os(macOS)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 import AppKit
 
 extension NSTextView {

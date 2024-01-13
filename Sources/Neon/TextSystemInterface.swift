@@ -1,40 +1,19 @@
 import Foundation
 
+import RangeState
+
 public protocol TextSystemInterface {
-	@MainActor
-    func clearStyle(in range: NSRange)
-	@MainActor
-    func applyStyle(to token: Token)
+    associatedtype Content: VersionedContent
 
-	@MainActor
-    var length: Int { get }
-	@MainActor
+    @MainActor
+    func applyStyles(for application: TokenApplication)
+
+    @MainActor
     var visibleRange: NSRange { get }
+
+    @MainActor
+    var content: Content { get }
 }
 
-@MainActor
-public extension TextSystemInterface {
-    func clearStyles(in set: IndexSet) {
-        for range in set.nsRangeView {
-            clearStyle(in: range)
-        }
-    }
+public typealias TokenAttributeProvider = (Token) -> [NSAttributedString.Key: Any]
 
-    func clearAllStyles() {
-        clearStyle(in: NSRange(0..<length))
-    }
-
-    func applyStyles(to tokens: [Token]) {
-        for token in tokens {
-            applyStyle(to: token)
-        }
-    }
-
-    func apply(_ tokenApplication: TokenApplication, to set: IndexSet) {
-        if tokenApplication.action == .replace {
-            clearStyles(in: set)
-        }
-
-        applyStyles(to: tokenApplication.tokens)
-    }
-}
