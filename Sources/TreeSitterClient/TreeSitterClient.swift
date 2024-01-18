@@ -158,12 +158,11 @@ extension TreeSitterClient {
 
 extension TreeSitterClient {
 	private func resolveSublayers(in range: NSRange) -> Bool {
-		let set = IndexSet(integersIn: range)
-
-		guard self.canAttemptSynchronousAccess(in: set) else {
+		guard self.canAttemptSynchronousAccess(in: .range(range)) else {
 			return false
 		}
 
+		let set = IndexSet(integersIn: range)
 		let content = self.maximumProcessedContent
 
 		do {
@@ -178,8 +177,8 @@ extension TreeSitterClient {
 	}
 
 	private func resolveSublayers(in range: NSRange) async {
-		let content = self.maximumProcessedContent
 		let set = IndexSet(integersIn: range)
+		let content = self.maximumProcessedContent
 
 		do {
 			let invalidatedSet = try await self.layerTree.resolveSublayers(with: content, in: set)
@@ -264,7 +263,7 @@ extension TreeSitterClient {
 		}
 	}
 
-	public func canAttemptSynchronousAccess(in set: IndexSet) -> Bool {
+	public func canAttemptSynchronousAccess(in target: RangeTarget) -> Bool {
 		return hasPendingChanges == false
 	}
 
@@ -291,7 +290,7 @@ extension TreeSitterClient {
 			syncValue: { input in
 				let set = input.indexSet
 
-				guard self.canAttemptSynchronousAccess(in: set) else { return [] }
+				guard self.canAttemptSynchronousAccess(in: .set(set)) else { return [] }
 
 				self.validateSublayers(in: set)
 

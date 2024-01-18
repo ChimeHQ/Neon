@@ -39,6 +39,8 @@ Neon's lowest-level component is called RangeState. This module contains the cor
 
 Many of these support versionable content. If you are working with a backing store structure that supports efficient versioning, like a [piece table](https://en.wikipedia.org/wiki/Piece_table), expressing this to RangeState can improve its efficiency.
 
+It might be surprising to see that `RangeValidator` and `RangeProcessor` are marked `@MainActor`.
+
 ### TreeSitterClient
 
 This library is a hybrid sync/async interface to [SwiftTreeSitter][SwiftTreeSitter]. It features:

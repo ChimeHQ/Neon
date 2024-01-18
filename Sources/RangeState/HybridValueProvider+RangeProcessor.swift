@@ -1,6 +1,7 @@
 import Foundation
 
 extension HybridValueProvider {
+	/// Don't use this
 	@MainActor
 	public init(
 		value: Output,
@@ -29,6 +30,7 @@ extension HybridValueProvider {
 		)
 	}
 
+	/// Construct a `HybridValueProvider` that will first attempt to process a location using a `RangeProcessor`.
 	@MainActor
 	public init(
 		rangeProcessor: RangeProcessor,
@@ -60,6 +62,7 @@ extension HybridValueProvider {
 }
 
 extension HybridThrowingValueProvider {
+	/// Construct a `HybridThrowingValueProvider` that will first attempt to process a location using a `RangeProcessor`.
 	@MainActor
 	public init(
 		rangeProcessor: RangeProcessor,
@@ -88,5 +91,4 @@ extension HybridThrowingValueProvider {
 			}
 		)
 	}
-
 }

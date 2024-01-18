@@ -1,5 +1,6 @@
 import Foundation
 
+/// A type that can perform work both synchronously and asynchronously.
 public struct HybridValueProvider<Input: Sendable, Output: Sendable> {
 	public typealias SyncValueProvider = (Input) -> Output?
 	public typealias AsyncValueProvider = (Input) async -> Output
@@ -24,6 +25,7 @@ public struct HybridValueProvider<Input: Sendable, Output: Sendable> {
 	}
 }
 
+/// A type that can perform failable work both synchronously and asynchronously.
 public struct HybridThrowingValueProvider<Input: Sendable, Output: Sendable> {
 	public typealias SyncValueProvider = (Input) throws -> Output?
 	public typealias AsyncValueProvider = (Input) async throws -> Output
@@ -49,6 +51,7 @@ public struct HybridThrowingValueProvider<Input: Sendable, Output: Sendable> {
 }
 
 extension HybridValueProvider {
+	/// Returns a new `HybridValueProvider` with a new output type.
 	public func map<T>(_ transform: @escaping (Output) -> T) -> HybridValueProvider<Input, T> where T: Sendable {
 		.init(
 			syncValue: { self.sync($0).map(transform) },
@@ -58,10 +61,31 @@ extension HybridValueProvider {
 }
 
 extension HybridThrowingValueProvider {
+	/// Returns a new `HybridThrowingValueProvider` with a new output type.
 	public func map<T>(_ transform: @escaping (Output) throws -> T) -> HybridThrowingValueProvider<Input, T> where T: Sendable {
 		.init(
 			syncValue: { try self.sync($0).map(transform) },
 			asyncValue: { try transform(try await self.async($0)) }
+		)
+	}
+
+	/// Transforms a `HybridThrowingValueProvider` into a `HybridValueProvider`.
+	public func catching(_ block: @escaping (Input, Error) -> Output) -> HybridValueProvider<Input, Output> {
+		.init(
+			syncValue: {
+				do {
+					return try self.sync($0)
+				} catch {
+					return block($0, error)
+				}
+			},
+			asyncValue: {
+				do {
+					return try await self.async($0)
+				} catch {
+					return block($0, error)
+				}
+			}
 		)
 	}
 }
