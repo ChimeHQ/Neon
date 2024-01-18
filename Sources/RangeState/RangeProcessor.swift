@@ -19,6 +19,7 @@ public enum RangeFillMode: Sendable, Hashable {
 }
 
 /// A type that can perform on-demand processing of range-based data.
+@MainActor
 public final class RangeProcessor {
 	private typealias Continuation = CheckedContinuation<(), Never>
 	private typealias VersionedMutation = Versioned<Int, RangeMutation>
@@ -31,7 +32,7 @@ public final class RangeProcessor {
 	/// Function to apply changes.
 	///
 	/// These mutations can come from the content being modified or from operations that require lazy processing. The parameter's postApplyLimit property defines the maximum read location and needs to be respected to preserve the lazy access semantics.
-	public typealias ChangeHandler = (RangeMutation) -> Void
+	public typealias ChangeHandler = (RangeMutation, @MainActor @escaping () -> Void) -> Void
 	public typealias LengthProvider = () -> Int
 
 	public struct Configuration {
@@ -58,7 +59,7 @@ public final class RangeProcessor {
     public let configuration: Configuration
 
 	// when starting, we have not even processed zero yet
-	public private(set) var maximumProcessedLocation: Int = -1
+	public private(set) var maximumProcessedLocation: Int?
 	private var targetProcessingLocation: Int = -1
 	private var pendingProcessedLocation: Int = -1
 	private var version = 0
@@ -88,7 +89,7 @@ extension RangeProcessor {
 
 		precondition(location <= length)
 
-		let start = max(maximumProcessedLocation, 0)
+		let start = max(maximumProcessedLocation ?? 0, 0)
 		let realDelta = location - start
 
 		if realDelta <= 0 {
@@ -118,7 +119,7 @@ extension RangeProcessor {
 			// update our target
 			self.targetProcessingLocation = max(location, targetProcessingLocation)
 			
-			continueFillingIfNeeded()
+			scheduleFilling()
 		case .required:
 			processMutation(mutation)
 		}
@@ -128,7 +129,11 @@ extension RangeProcessor {
 	}
 
     public func processed(_ location: Int) -> Bool {
-		maximumProcessedLocation >= location
+		precondition(location >= 0)
+
+		guard let maximumProcessedLocation else { return false }
+
+		return maximumProcessedLocation >= location
     }
 
 	public func processed(_ range: NSRange) -> Bool {
@@ -191,10 +196,12 @@ extension RangeProcessor {
 
 		// at this point, it is possible that the target location is no longer meaningful. But that's ok, because it will be clamped and possibly overwritten anyways
 
-		configuration.changeHandler(mutation)
+		configuration.changeHandler(mutation, {
+			self.completeContentChanged(mutation)
+		})
 	}
 
-	public func completeContentChanged(_ mutation: RangeMutation) {
+	private func completeContentChanged(_ mutation: RangeMutation) {
 		self.processedVersion += 1
 
 		resumeLeadingContinuations()
@@ -213,15 +220,7 @@ extension RangeProcessor {
 
 		updateProcessedLocation(by: mutation.delta)
 
-		DispatchQueue.main.asyncUnsafe {
-			self.continueFillingIfNeeded()
-		}
-	}
-
-	public func completeContentChanged(in range: NSRange, delta: Int) {
-		let mutation = RangeMutation(range: range, delta: delta)
-
-		completeContentChanged(mutation)
+		scheduleFilling()
 	}
 
 	public func continueFillingIfNeeded() {
@@ -236,12 +235,23 @@ extension RangeProcessor {
 
 		processMutation(mutation)
 	}
+
+	private func scheduleFilling() {
+		DispatchQueue.main.async {
+			self.continueFillingIfNeeded()
+		}
+	}
 }
 
 extension RangeProcessor {
 	private func updateProcessedLocation(by delta: Int) {
-		self.maximumProcessedLocation += delta
-		precondition(maximumProcessedLocation >= 0)
+		var newMax = maximumProcessedLocation ?? 0
+
+		newMax += delta
+
+		precondition(newMax >= 0)
+
+		self.maximumProcessedLocation = newMax
 	}
 
 	private func resumeLeadingContinuations() {

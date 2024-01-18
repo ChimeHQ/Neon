@@ -54,7 +54,7 @@ public final class TreeSitterClient {
 		configuration: .init(
 			deltaRange: Self.deltaRange,
 			lengthProvider: configuration.lengthProvider,
-			changeHandler: { [unowned self] in self.didChange($0) }
+			changeHandler: { [unowned self] in self.didChange($0, completion: $1) }
 		)
 	)
 	private lazy var sublayerValidator = SublayerValidator(
@@ -116,7 +116,7 @@ public final class TreeSitterClient {
 	}
 
 	private var maximumProcessedContent: LanguageLayer.Content {
-		configuration.contentProvider(rangeProcessor.maximumProcessedLocation)
+		configuration.contentProvider(rangeProcessor.maximumProcessedLocation ?? 0)
 	}
 }
 
@@ -125,20 +125,15 @@ extension TreeSitterClient {
 		rangeProcessor.hasPendingChanges
 	}
 
-	private func didChange(_ mutation: RangeMutation) {
+	private func didChange(_ mutation: RangeMutation, completion: @MainActor @escaping () -> Void) {
 		let limit = mutation.postApplyLimit
 
 		let content = configuration.contentProvider(limit)
 
 		layerTree.didChangeContent(content, in: mutation.range, delta: mutation.delta, completion: { invalidated in
-			self.completeChange(mutation, invalidating: invalidated)
+			completion()
+			self.handleInvalidation(invalidated, sublayers: false)
 		})
-	}
-
-	private func completeChange(_ mutation: RangeMutation, invalidating invalidated: IndexSet) {
-		rangeProcessor.completeContentChanged(mutation)
-
-		handleInvalidation(invalidated, sublayers: false)
 	}
 
 	private func handleInvalidation(_ set: IndexSet, sublayers: Bool) {
