@@ -8,21 +8,22 @@ import Rearrange
 /// > Note: If a `WorkingRangeProvider` is not provided, the validator will **only** perform validation manually via the `validate(_:)` method.
 @MainActor
 public final class RangeValidator<Content: VersionedContent> {
-    public typealias Version = Content.Version
+	public typealias Version = Content.Version
 
-    public enum Validation: Sendable {
-        case stale
-        case success(NSRange)
-    }
+	public enum Validation: Sendable {
+		case stale
+		case success(NSRange)
+	}
 
-    public typealias ContentRange = VersionedRange<Version>
-    public typealias ValidationProvider = HybridValueProvider<ContentRange, Validation>
+	public typealias ContentRange = VersionedRange<Version>
+	public typealias ValidationProvider = HybridValueProvider<ContentRange, Validation>
+
 	public typealias WorkingRangeProvider = () -> NSRange
-    private typealias Sequence = AsyncStream<ContentRange>
+	private typealias Sequence = AsyncStream<ContentRange>
 
 	public struct Configuration {
 		public let versionedContent: Content
-        public let validationProvider: ValidationProvider
+		public let validationProvider: ValidationProvider
 		public let workingRangeProvider: WorkingRangeProvider?
 
 		public init(
@@ -38,30 +39,30 @@ public final class RangeValidator<Content: VersionedContent> {
 
 	private var validSet = IndexSet()
 	private var pendingSet = IndexSet()
-    private var pendingRequests = 0
-    private var version: Content.Version
-    private let continuation: Sequence.Continuation
-	
-    public let configuration: Configuration
+	private var pendingRequests = 0
+	private var version: Content.Version
+	private let continuation: Sequence.Continuation
+
+	public let configuration: Configuration
 
 	public init(configuration: Configuration) {
 		self.configuration = configuration
 		self.version = configuration.versionedContent.currentVersion
 
-        let (stream, continuation) = Sequence.makeStream()
+		let (stream, continuation) = Sequence.makeStream()
 
-        self.continuation = continuation
+		self.continuation = continuation
 
-        Task {
-            for await versionedRange in stream {
-                await validateRangeAsync(versionedRange)
-            }
-        }
+		Task {
+			for await versionedRange in stream {
+				await validateRangeAsync(versionedRange)
+			}
+		}
 	}
 
-    deinit {
-        continuation.finish()
-    }
+	deinit {
+		continuation.finish()
+	}
 
 	/// Manually mark a region as invalid.
 	public func invalidate(_ target: RangeTarget) {
@@ -74,7 +75,7 @@ public final class RangeValidator<Content: VersionedContent> {
 		validSet.subtract(invalidated)
 		pendingSet.subtract(invalidated)
 
-        self.version = configuration.versionedContent.currentVersion
+		self.version = configuration.versionedContent.currentVersion
 
 		makeNextWorkingSetRequest()
 	}
@@ -190,58 +191,58 @@ extension RangeValidator {
 
 		self.pendingSet.insert(range: range)
 
-        let versionedRange = ContentRange(range, version: version)
+		let versionedRange = ContentRange(range, version: version)
 
 		// if we have an outstanding async operation going, force this to be async too
-        if pendingRequests > 0 {
-            enqueueValidation(for: versionedRange)
+		if pendingRequests > 0 {
+			enqueueValidation(for: versionedRange)
 			return
 		}
 
 		switch configuration.validationProvider.sync(versionedRange) {
-        case let .success(validatedRange):
-            handleValidatedRange(validatedRange)
-        case .stale:
+		case let .success(validatedRange):
+			handleValidatedRange(validatedRange)
+		case .stale:
 			handleStaleResults()
 		case nil:
-            enqueueValidation(for: versionedRange)
+			enqueueValidation(for: versionedRange)
 		}
 	}
 
 	private func enqueueValidation(for contentRange: ContentRange) {
 		self.pendingRequests += 1
-        continuation.yield(contentRange)
+		continuation.yield(contentRange)
 	}
 
-    private func validateRangeAsync(_ contentRange: ContentRange) async {
+	private func validateRangeAsync(_ contentRange: ContentRange) async {
 		self.pendingRequests -= 1
-        precondition(pendingRequests >= 0)
+		precondition(pendingRequests >= 0)
 
 		let result = await self.configuration.validationProvider.async(contentRange)
 
-        switch result {
-        case .stale:
-            handleStaleResults()
-        case let .success(range):
-            // here we must re-validate that the version has remained stable after the await
-            guard contentRange.version == version else {
-                handleStaleResults()
-                break
-            }
+		switch result {
+		case .stale:
+			handleStaleResults()
+		case let .success(range):
+			// here we must re-validate that the version has remained stable after the await
+			guard contentRange.version == version else {
+				handleStaleResults()
+				break
+			}
 
-            handleValidatedRange(range)
-        }
-    }
+			handleValidatedRange(range)
+		}
+	}
 
-    private func handleStaleResults() {
-        print("RangeStateValidation provider returned stale results")
+	private func handleStaleResults() {
+		print("RangeStateValidation provider returned stale results")
 
-        pendingSet.removeAll()
+		pendingSet.removeAll()
 
-        DispatchQueue.main.asyncUnsafe {
-            self.makeNextWorkingSetRequest()
-        }
-    }
+		DispatchQueue.main.asyncUnsafe {
+			self.makeNextWorkingSetRequest()
+		}
+	}
 
 	private func handleValidatedRange(_ range: NSRange) {
 		pendingSet.remove(integersIn: range)
