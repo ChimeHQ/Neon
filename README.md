@@ -77,7 +77,7 @@ This separation makes it very easy for you to do this look-up in a way that make
 
 ### TextKit Integration
 
-In a traditional `NSTextStorage`-backed system (TextKit 1 and 2), it can be challenging to achieve flicker-free on-keypress highlighting. You need to know when a text change has been processing by enough of the system that styling is possible. This point in the text change lifecycle is not natively supported by `NSTextStorage` or `NSLayoutManager`. It requires an `NSTextStorage` subclass. Such a subclass, `TSYTextStorage` is available in [TextStory](https://github.com/ChimeHQ/TextStory).
+In a traditional `NSTextStorage`-backed system (TextKit 1 and 2), it can be challenging to achieve flicker-free on-keypress highlighting. You need to know when a text change has been processed by enough of the system that styling is possible. This point in the text change lifecycle is not natively supported by `NSTextStorage` or `NSLayoutManager`. It requires an `NSTextStorage` subclass. Such a subclass, `TSYTextStorage` is available in [TextStory](https://github.com/ChimeHQ/TextStory).
 
 But, even that isn't quite enough unfortunately. You still need to precisely control the timing of invalidation and styling. This is where `RangeInvalidationBuffer` comes in.
 
