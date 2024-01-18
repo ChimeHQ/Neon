@@ -10,11 +10,12 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", revision: "87ed52a71d4ad6b5e6a11185b42f6f74eb5b47da"),
-		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.6.0"),
+		.package(url: "https://github.com/ChimeHQ/Rearrange", revision: "3b154b59176ce40839071e7830c83410a0139d86"),
 	],
 	targets: [
         .target(name: "ConcurrencyCompatibility"),
 		.target(name: "RangeState", dependencies: ["ConcurrencyCompatibility", "Rearrange"]),
+		.testTarget(name: "RangeStateTests", dependencies: ["RangeState"]),
 		.target(
 			name: "Neon",
 			dependencies: [

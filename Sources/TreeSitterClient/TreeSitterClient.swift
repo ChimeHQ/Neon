@@ -142,13 +142,12 @@ extension TreeSitterClient {
 	}
 
 	private func handleInvalidation(_ set: IndexSet, sublayers: Bool) {
-		let target = rangeProcessor.transformTargetToCurrent(.set(set))
-		let transformedSet = target.indexSet(with: configuration.lengthProvider())
+		let transformedSet = set.apply(rangeProcessor.pendingMutations)
 
 		configuration.invalidationHandler(transformedSet)
 
 		if sublayers {
-			sublayerValidator.invalidate(target)
+			sublayerValidator.invalidate(.set(transformedSet))
 		}
 	}
 

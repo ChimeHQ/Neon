@@ -1,11 +1,25 @@
 import Foundation
 
+import Rearrange
+
 public enum RangeTarget: Hashable, Sendable {
 	case set(IndexSet)
 	case range(NSRange)
 	case all
 
 	public static let empty = RangeTarget.set(IndexSet())
+
+	public init(_ set: IndexSet) {
+		self = .set(set)
+	}
+
+	public init(_ range: NSRange) {
+		self = .range(range)
+	}
+
+	public init(_ ranges: [NSRange]) {
+		self = .set(IndexSet(ranges: ranges))
+	}
 
 	public func indexSet(with length: Int) -> IndexSet {
 		let set: IndexSet
@@ -21,30 +35,49 @@ public enum RangeTarget: Hashable, Sendable {
 
 		return set
 	}
+}
 
+extension RangeTarget {
 	public func union(_ other: RangeTarget) -> RangeTarget {
 		switch (self, other) {
-		case let (.set(lhs), .set(rhs)):
-			return RangeTarget.set(lhs.union(rhs))
+		case (.set(var set), .set(let rhs)):
+			set.formUnion(rhs)
+			return RangeTarget(set)
 		case (.all, _):
 			return RangeTarget.all
 		case (_, .all):
 			return RangeTarget.all
-		case let (.set(lhs), .range(rhs)):
-			let set = lhs.union(IndexSet(integersIn: rhs))
+		case (.set(var set), .range(let range)):
+			set.insert(range: range)
 
-			return RangeTarget.set(set)
+			return RangeTarget(set)
 		case let (.range(lhs), .set(rhs)):
 			let set = rhs.union(IndexSet(integersIn: lhs))
 
-			return RangeTarget.set(set)
+			return RangeTarget(set)
 		case let (.range(lhs), .range(rhs)):
-			var set = IndexSet()
+			return RangeTarget([lhs, rhs])
+		}
+	}
 
-			set.insert(range: lhs)
-			set.insert(range: rhs)
+	public func apply(mutations: [RangeMutation]) -> RangeTarget {
+		switch self {
+		case .all:
+			return .all
+		case var .range(range):
+			for mutation in mutations {
+				guard let newRange = range.apply(mutation) else {
+					return .empty
+				}
 
-			return RangeTarget.set(set)
+				range = newRange
+			}
+
+			return .range(range)
+		case var .set(set):
+			set.applying(mutations)
+
+			return .set(set)
 		}
 	}
 }

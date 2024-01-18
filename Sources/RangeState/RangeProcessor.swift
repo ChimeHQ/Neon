@@ -156,6 +156,9 @@ extension RangeProcessor {
         }
     }
 
+	/// Array of any mutations that are scheduled to be applied.
+	///
+	/// You can use this property to transform Range, IndexSet, and RangeTarget values to match the current content.
 	public var pendingMutations: [RangeMutation] {
 		pendingEvents.compactMap {
 			switch $0 {
@@ -219,29 +222,6 @@ extension RangeProcessor {
 		let mutation = RangeMutation(range: range, delta: delta)
 
 		completeContentChanged(mutation)
-	}
-
-	public func transformTargetToCurrent(_ target: RangeTarget) -> RangeTarget {
-		switch target {
-		case .all:
-			return .all
-		case var .range(range):
-			for mutation in pendingMutations {
-				guard let newRange = mutation.transform(range: range) else {
-					return .empty
-				}
-
-				range = newRange
-			}
-
-			return .range(range)
-		case var .set(set):
-			for mutation in pendingMutations {
-				set = mutation.transform(set: set)
-			}
-
-			return .set(set)
-		}
 	}
 
 	public func continueFillingIfNeeded() {
