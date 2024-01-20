@@ -54,14 +54,18 @@ public final class RangeValidator<Content: VersionedContent> {
 		self.continuation = continuation
 
 		Task {
-			for await versionedRange in stream {
-				await validateRangeAsync(versionedRange)
-			}
+			await self.beginMonitoring(stream)
 		}
 	}
 
 	deinit {
 		continuation.finish()
+	}
+
+	private func beginMonitoring(_ stream: Sequence) async {
+		for await versionedRange in stream {
+			await self.validateRangeAsync(versionedRange)
+		}
 	}
 
 	/// Manually mark a region as invalid.

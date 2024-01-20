@@ -5,7 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/Rearrange",
       "state" : {
-        "revision" : "3b154b59176ce40839071e7830c83410a0139d86"
+        "revision" : "3b154b59176ce40839071e7830c83410a0139d86",
+        "version" : "1.8.0"
       }
     },
     {
