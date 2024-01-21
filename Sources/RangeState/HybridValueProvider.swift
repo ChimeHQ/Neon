@@ -58,6 +58,14 @@ extension HybridValueProvider {
 			asyncValue: { transform(await self.async($0)) }
 		)
 	}
+
+	/// Convert to a `HybridThrowingValueProvider`.
+	public var throwing: HybridThrowingValueProvider<Input, Output> {
+		.init(
+			syncValue: self.syncValueProvider,
+			asyncValue: self.asyncValueProvider
+		)
+	}
 }
 
 extension HybridThrowingValueProvider {
