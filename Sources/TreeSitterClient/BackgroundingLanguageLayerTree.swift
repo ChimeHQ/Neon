@@ -61,7 +61,7 @@ final class BackgroundingLanguageLayerTree {
 		}
 
 		// this must be unsafe because LanguageLayerTree is not Sendable. However access is gated through the main actor/queue.
-		queue.asyncUnsafe { [rootLayer] in
+		queue.backport.asyncUnsafe { [rootLayer] in
 			let result = Result(catching: { try operation(rootLayer) })
 
 			DispatchQueue.main.async {
@@ -122,7 +122,7 @@ extension BackgroundingLanguageLayerTree {
 
 				return snapshot
 			} completion: { result in
-				DispatchQueue.global().asyncUnsafe {
+				DispatchQueue.global().backport.asyncUnsafe {
 					let cursorResult = result.flatMap { snapshot in
 						Result(catching: {
 							let cursor = try snapshot.executeQuery(queryDef, in: set)

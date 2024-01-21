@@ -11,7 +11,7 @@ import AppKit
 import UIKit
 #endif
 
-#if canImport(AppKit) || canImport(UIKit)
+#if os(macOS) || os(iOS) || os(visionOS)
 public enum TextViewHighlighterError: Error {
 	case noTextStorage
 }
@@ -131,13 +131,13 @@ public final class TextViewHighlighter: NSObject {
 
 extension TextViewHighlighter: NSTextStorageDelegate {
 	public nonisolated func textStorage(_ textStorage: NSTextStorage, willProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
-		MainActor.runUnsafely {
+		MainActor.backport.assumeIsolated {
 			client.willChangeContent(in: editedRange)
 		}
 	}
 
 	public nonisolated func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
-		MainActor.runUnsafely {
+		MainActor.backport.assumeIsolated {
 			// Avoid potential infinite loop in synchronous highlighting. If attributes
 			// are stored in `textStorage`, that applies `.editedAttributes` only.
 			// We don't need to re-apply highlighting in that case.
