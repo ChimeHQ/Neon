@@ -39,7 +39,7 @@ Neon's lowest-level component is called RangeState. This module contains the cor
 
 Many of these support versionable content. If you are working with a backing store structure that supports efficient versioning, like a [piece table](https://en.wikipedia.org/wiki/Piece_table), expressing this to RangeState can improve its efficiency.
 
-It might be surprising to see that `RangeValidator` and `RangeProcessor` are marked `@MainActor`. Right now, I have found no way to both express the hybrid sync/async functionality while also not being tied to a global actor. I think this is the most resonable trade-off, but I would very much like to lift this restriction. If you have ideas, I'd love to hear them.
+It might be surprising to see that `RangeValidator` and `RangeProcessor` are marked `@MainActor`. Right now, I have found no way to both support the hybrid sync/async functionality while also not being tied to a global actor. I think this is the most resonable trade-off, but I would very much like to lift this restriction. If you have ideas, I'd love to hear them.
 
 ### TreeSitterClient
 
