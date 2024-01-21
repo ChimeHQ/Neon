@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(os.log)
 import os.log
+#endif
 
 import RangeState
 import Rearrange
@@ -17,7 +19,9 @@ public final class TreeSitterClient {
 	private typealias SublayerValidator = RangeValidator<UnversionableContent>
 
 	private static let deltaRange = 128..<Int.max
+#if canImport(os.log)
 	private let logger = OSLog(subsystem: "com.chimehq.Neon", category: "TreeSitterClient")
+#endif
 
 	public struct Configuration {
 		public let languageProvider: LanguageLayer.LanguageProvider
@@ -165,7 +169,11 @@ extension TreeSitterClient {
 
 			self.handleInvalidation(invalidatedSet, sublayers: false)
 		} catch {
+#if canImport(os.log)
 			os_log(.fault, log: self.logger, "Failed resolve sublayers", String(describing: error))
+#else
+			print("Failed resolve sublayers", error)
+#endif
 		}
 
 		return true
@@ -180,7 +188,11 @@ extension TreeSitterClient {
 
 			self.handleInvalidation(invalidatedSet, sublayers: false)
 		} catch {
+#if canImport(os.log)
 			os_log(.fault, log: self.logger, "Failed resolve sublayers", String(describing: error))
+#else
+			print("Failed resolve sublayers", error)
+#endif
 		}
 	}
 
