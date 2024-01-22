@@ -4,13 +4,19 @@ import PackageDescription
 
 let package = Package(
 	name: "Neon",
-    platforms: [.macOS(.v10_15), .iOS(.v13), .tvOS(.v13), .watchOS(.v6)],
+	platforms: [
+		.macOS(.v10_15),
+		.iOS(.v13),
+		.tvOS(.v13),
+		.watchOS(.v6),
+		.macCatalyst(.v13)
+	],
 	products: [
 		.library(name: "Neon", targets: ["Neon"]),
 	],
 	dependencies: [
 		.package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", revision: "87ed52a71d4ad6b5e6a11185b42f6f74eb5b47da"),
-		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.8.0"),
+		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.8.1"),
 	],
 	targets: [
         .target(name: "ConcurrencyCompatibility"),
