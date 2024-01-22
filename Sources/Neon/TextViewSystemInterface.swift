@@ -47,7 +47,11 @@ public struct TextViewSystemInterface {
 	}
 
 	public var textStorage: NSTextStorage {
+#if os(macOS)
 		return textView.textStorage ?? placeholderStorage
+#else
+		return textView.textStorage
+#endif
 	}
 }
 
@@ -230,7 +234,11 @@ public struct TextStorageSystemInterface {
 	}
 
 	public init(textView: TextView, attributeProvider: @escaping TokenAttributeProvider) {
+#if os(macOS)
 		self.textStorage = textView.textStorage ?? NSTextStorage()
+#else
+		self.textStorage = textView.textStorage
+#endif
 		self.visibleRangeProvider = { textView.visibleTextRange }
 		self.attributeProvider = attributeProvider
 		self.defaultAttributesProvider = { textView.typingAttributes }
