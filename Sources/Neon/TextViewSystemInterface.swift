@@ -151,6 +151,7 @@ extension LayoutManagerSystemInterface: TextSystemInterface {
 }
 #endif
 
+#if os(macOS) || os(iOS) || os(visionOS)
 /// A concrete ``TextSystemInterface`` that uses `NSTextLayoutManager` rendering attributes.
 @available(macOS 12.0, iOS 16.0, tvOS 16.0, *)
 @MainActor
@@ -271,3 +272,5 @@ extension TextStorageSystemInterface: TextSystemInterface {
 		textStorage
 	}
 }
+
+#endif

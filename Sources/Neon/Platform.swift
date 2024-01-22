@@ -7,14 +7,14 @@ import AppKit
 
 public typealias TextStorageEditActions = NSTextStorageEditActions
 public typealias TextView = NSTextView
-#elseif os(iOS) || os(iOS) || os(tvOS) || os(visionOS)
+#elseif os(iOS) || os(iOS) || os(visionOS)
 import UIKit
 
 public typealias TextStorageEditActions = NSTextStorage.EditActions
 public typealias TextView = UITextView
 #endif
 
-#if os(macOS) || os(iOS) || os(iOS) || os(tvOS) || os(visionOS)
+#if os(macOS) || os(iOS) || os(iOS) || os(visionOS)
 extension NSTextStorage: VersionedContent {
 	public var currentVersion: Int {
 		hashValue
