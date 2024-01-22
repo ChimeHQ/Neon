@@ -1,4 +1,4 @@
-#if canImport(UIKit)
+#if targetEnvironment(macCatalyst) || os(iOS) || os(visionOS)
 import UIKit
 import Rearrange
 

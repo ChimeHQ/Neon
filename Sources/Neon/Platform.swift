@@ -2,19 +2,19 @@ import Foundation
 
 import RangeState
 
-#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+#if os(macOS) && !targetEnvironment(macCatalyst)
 import AppKit
 
 public typealias TextStorageEditActions = NSTextStorageEditActions
 public typealias TextView = NSTextView
-#elseif canImport(UIKit)
+#elseif os(iOS) || os(iOS) || os(tvOS) || os(visionOS)
 import UIKit
 
 public typealias TextStorageEditActions = NSTextStorage.EditActions
 public typealias TextView = UITextView
 #endif
 
-#if canImport(AppKit) || canImport(UIKit)
+#if os(macOS) || os(iOS) || os(iOS) || os(tvOS) || os(visionOS)
 extension NSTextStorage: VersionedContent {
 	public var currentVersion: Int {
 		hashValue

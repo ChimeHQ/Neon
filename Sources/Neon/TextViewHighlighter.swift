@@ -5,9 +5,9 @@ import TreeSitterClient
 import SwiftTreeSitter
 import SwiftTreeSitterLayer
 
-#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+#if os(macOS) && !targetEnvironment(macCatalyst)
 import AppKit
-#elseif canImport(UIKit)
+#elseif os(iOS) || os(visionOS)
 import UIKit
 #endif
 
@@ -17,7 +17,7 @@ public enum TextViewHighlighterError: Error {
 }
 
 extension TextView {
-#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+#if os(macOS) && !targetEnvironment(macCatalyst)
 	func getTextStorage() throws -> NSTextStorage {
 		guard let storage = textStorage else {
 			throw TextViewHighlighterError.noTextStorage
@@ -102,7 +102,7 @@ public final class TextViewHighlighter: NSObject {
 
 		try textView.getTextStorage().delegate = self
 
-#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+#if os(macOS) && !targetEnvironment(macCatalyst)
 		guard let scrollView = textView.enclosingScrollView else { return }
 
 		NotificationCenter.default.addObserver(self,
