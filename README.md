@@ -24,6 +24,24 @@ Many people are looking for a drop-in editor View subclass that does it all. Thi
 
 > Warning: The code on the main branch is still in beta. It differs significantly from the 0.6.x releases. Both your patience and bug reports are very appreciated.
 
+## Installation
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/ChimeHQ/Neon", branch: "main")
+],
+targets: [
+    .target(
+        name: "MyTarget",
+        dependencies: [
+            "Neon",
+            .product(name: "TreeSitterClient", package: "Neon"),
+            .product(name: "RangeState", package: "Neon"),
+        ]
+    ),
+]
+```
+
 ## Concepts
 
 Neon is made up of three parts: the core library, `RangeState` and `TreeSitterClient`.
