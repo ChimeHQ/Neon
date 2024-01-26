@@ -44,7 +44,7 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 	private var validationProvider: Validator.ValidationProvider {
 		.init(
 			syncValue: { [weak self] in self?.validate($0) },
-			asyncValue: { [weak self] in await self?.validate($0) ?? .stale }
+			asyncValue: { [weak self] range, _ in await self?.validate(range) ?? .stale }
 		)
 	}
 
@@ -67,7 +67,8 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 	private func validate(_ range: Validator.ContentRange) async -> Validator.Validation {
 		guard range.version == currentVersion else { return .stale }
 
-		let application = await configuration.tokenProvider.async(range.value)
+		// https://github.com/apple/swift/pull/71143
+		let application = await configuration.tokenProvider.mainActorAsync(range.value)
 
 		applyStyles(for: application)
 

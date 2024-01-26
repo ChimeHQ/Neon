@@ -7,7 +7,7 @@ extension HybridValueProvider {
 		rangeProcessor: RangeProcessor,
 		inputTransformer: @escaping (Input) -> (Int, RangeFillMode),
 		syncValue: @escaping SyncValueProvider,
-		asyncValue: @escaping AsyncValueProvider
+		asyncValue: @escaping @MainActor (Input) async -> Output
 	) {
 		self.init(
 			syncValue: { input in
@@ -19,11 +19,10 @@ extension HybridValueProvider {
 
 				return nil
 			},
-			asyncValue: { input in
+			asyncValue: { input, actor in
 				let (location, fill) = inputTransformer(input)
 
-				rangeProcessor.processLocation(location, mode: fill)
-
+				await rangeProcessor.processLocation(location, mode: fill)
 				await rangeProcessor.processingCompleted()
 
 				return await asyncValue(input)
@@ -39,7 +38,7 @@ extension HybridThrowingValueProvider {
 		rangeProcessor: RangeProcessor,
 		inputTransformer: @escaping (Input) -> (Int, RangeFillMode),
 		syncValue: @escaping SyncValueProvider,
-		asyncValue: @escaping AsyncValueProvider
+		asyncValue: @escaping @MainActor (Input) async throws -> Output
 	) {
 		self.init(
 			syncValue: { input in
@@ -51,11 +50,10 @@ extension HybridThrowingValueProvider {
 
 				return nil
 			},
-			asyncValue: { input in
+			asyncValue: { input, actor in
 				let (location, fill) = inputTransformer(input)
 
-				rangeProcessor.processLocation(location, mode: fill)
-
+				await rangeProcessor.processLocation(location, mode: fill)
 				await rangeProcessor.processingCompleted()
 
 				return try await asyncValue(input)

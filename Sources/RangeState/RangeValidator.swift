@@ -9,6 +9,7 @@ import Rearrange
 @MainActor
 public final class RangeValidator<Content: VersionedContent> {
 	public typealias Version = Content.Version
+	public typealias ValidationHandler = (NSRange) -> Void
 
 	public enum Validation: Sendable {
 		case stale
@@ -44,6 +45,7 @@ public final class RangeValidator<Content: VersionedContent> {
 	private let continuation: Sequence.Continuation
 
 	public let configuration: Configuration
+	public var validationHandler: ValidationHandler = { _ in }
 
 	public init(configuration: Configuration) {
 		self.configuration = configuration
@@ -62,7 +64,7 @@ public final class RangeValidator<Content: VersionedContent> {
 		continuation.finish()
 	}
 
-	private func beginMonitoring(_ stream: Sequence) async {
+	private nonisolated func beginMonitoring(_ stream: Sequence) async {
 		for await versionedRange in stream {
 			await self.validateRangeAsync(versionedRange)
 		}
@@ -222,7 +224,7 @@ extension RangeValidator {
 		self.pendingRequests -= 1
 		precondition(pendingRequests >= 0)
 
-		let result = await self.configuration.validationProvider.async(contentRange)
+		let result = await self.configuration.validationProvider.mainActorAsync(contentRange)
 
 		switch result {
 		case .stale:
@@ -251,5 +253,7 @@ extension RangeValidator {
 	private func handleValidatedRange(_ range: NSRange) {
 		pendingSet.remove(integersIn: range)
 		validSet.insert(range: range)
+
+		validationHandler(range)
 	}
 }

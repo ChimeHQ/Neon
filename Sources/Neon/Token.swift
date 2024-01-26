@@ -45,7 +45,7 @@ extension TokenProvider {
 			syncValue: { _ in
 				return TokenApplication(tokens: [])
 			},
-			asyncValue: { _ in
+			asyncValue: { _, _ in
 				return TokenApplication(tokens: [])
 			}
 		)
