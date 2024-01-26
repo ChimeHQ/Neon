@@ -37,3 +37,17 @@ extension TokenApplication: ExpressibleByArrayLiteral {
 }
 
 public typealias TokenProvider = HybridValueProvider<NSRange, TokenApplication>
+
+extension TokenProvider {
+	/// A TokenProvider that returns an empty set of tokens for all requests.
+	public static var none: TokenProvider {
+		.init(
+			syncValue: { _ in
+				return TokenApplication(tokens: [])
+			},
+			asyncValue: { _ in
+				return TokenApplication(tokens: [])
+			}
+		)
+	}
+}
