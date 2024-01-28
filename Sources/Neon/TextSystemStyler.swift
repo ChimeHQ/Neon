@@ -107,4 +107,9 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 	private func applyStyles(for application: TokenApplication) {
 		textSystem.applyStyles(for: application)
 	}
+
+	public var validationHandler: (NSRange) -> Void {
+		get { validator.validationHandler }
+		set { validator.validationHandler = newValue }
+	}
 }
