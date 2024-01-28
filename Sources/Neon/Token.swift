@@ -19,21 +19,22 @@ extension Token: CustomDebugStringConvertible {
 }
 
 public struct TokenApplication: Hashable, Sendable {
+	public enum Action: Sendable, Hashable {
+		case replace
+		case apply
+	}
+
 	public let tokens: [Token]
 	public let range: NSRange?
+	public let action: Action
 
-	public init(tokens: [Token], range: NSRange? = nil) {
+	public init(tokens: [Token], range: NSRange? = nil, action: Action = .replace) {
 		self.tokens = tokens
 		self.range = range
+		self.action = action
 	}
-}
 
-extension TokenApplication: ExpressibleByArrayLiteral {
-	public typealias ArrayLiteralElement = Token
-	
-	public init(arrayLiteral elements: Token...) {
-		self.init(tokens: elements)
-	}
+	public static let noChange = TokenApplication(tokens: [], action: .apply)
 }
 
 public typealias TokenProvider = HybridValueProvider<NSRange, TokenApplication>

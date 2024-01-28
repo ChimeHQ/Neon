@@ -29,7 +29,7 @@ extension TreeSitterClient {
 
 					return TokenApplication(namedRanges: namedRanges, nameMap: nameMap, range: range)
 				} catch {
-					return []
+					return .noChange
 				}
 			},
 			mainActorAsyncValue: { [highlightsProvider] range in
@@ -38,7 +38,7 @@ extension TreeSitterClient {
 
 					return TokenApplication(namedRanges: namedRanges, nameMap: nameMap, range: range)
 				} catch {
-					return []
+					return .noChange
 				}
 			}
 		)
