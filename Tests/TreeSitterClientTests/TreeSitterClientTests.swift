@@ -1,8 +1,55 @@
 import XCTest
+
 import Rearrange
 import SwiftTreeSitter
-@testable import TreeSitterClient
+import TreeSitterClient
 import NeonTestsTreeSitterSwift
+
+final class TreeSitterClientTests: XCTestCase {
+	@MainActor
+	func testSynchronousQuery() throws {
+		let language = Language(tree_sitter_swift())
+
+		let queryText = """
+("func" @a)
+"""
+		let query = try Query(language: language, data: Data(queryText.utf8))
+
+		let languageConfig = LanguageConfiguration(
+			tree_sitter_swift(),
+			name: "Swift",
+			queries: [.highlights: query]
+		)
+
+		let source = """
+func main() {
+	print("hello!")
+}
+"""
+
+		let clientConfig = TreeSitterClient.Configuration(
+			languageProvider: { _ in nil },
+			contentProvider: { _ in .init(string: source) },
+			lengthProvider: { source.utf16.count },
+			invalidationHandler: { _ in },
+			locationTransformer: { _ in nil }
+		)
+
+		let client = try TreeSitterClient(
+			rootLanguageConfig: languageConfig,
+			configuration: clientConfig
+		)
+
+		let provider = source.predicateTextProvider
+
+		let highlights = try client.highlights(in: NSRange(0..<24), provider: provider, mode: .required)
+		let expected = [
+			NamedRange(name: "a", range: NSRange(0..<4), pointRange: Point(row: 0, column: 0)..<Point(row: 0, column: 8))
+		]
+
+		XCTAssertEqual(highlights, expected)
+	}
+}
 
 //final class TreeSitterClientTests: XCTestCase {
 //    func testInsertAffectedRange() {
@@ -59,29 +106,6 @@ import NeonTestsTreeSitterSwift
 //}
 //
 //extension TreeSitterClientTests {
-//	private func makeSwiftClient() throws -> TreeSitterClient {
-//		let language = Language(language: tree_sitter_swift())
-//
-//		return try TreeSitterClient(language: language)
-//	}
-//
-//	func testBasicParse() async throws {
-//		let language = Language(language: tree_sitter_swift())
-//
-//		let client = try TreeSitterClient(language: language)
-//
-//let content = """
-//func main() { print("hello" }
-//"""
-//		await MainActor.run {
-//			client.didChangeContent(to: content, in: .zero, delta: content.utf16.count, limit: content.utf16.count)
-//		}
-//
-//		let tree = try await client.currentTree()
-//		let root = try XCTUnwrap(tree.rootNode)
-//
-//		XCTAssertEqual(root.childCount, 1)
-//	}
 //
 //	func testRegularQuery() async throws {
 //		let language = Language(language: tree_sitter_swift())

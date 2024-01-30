@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/Rearrange",
       "state" : {
-        "revision" : "0fb658e721c68495f6340c211cc6d4719e6b52d8",
-        "version" : "1.6.0"
+        "revision" : "5ff7f3363f7a08f77e0d761e38e6add31c2136e1",
+        "version" : "1.8.1"
       }
     },
     {
@@ -14,7 +14,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/SwiftTreeSitter",
       "state" : {
-        "revision" : "87ed52a71d4ad6b5e6a11185b42f6f74eb5b47da"
+        "revision" : "10cb68c00a9963c2884b30f168a9de377790d812"
       }
     },
     {

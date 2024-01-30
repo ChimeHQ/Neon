@@ -29,8 +29,8 @@ final class BackgroundingLanguageLayerTree {
 	}
 
 	private let queue = DispatchQueue(label: "com.chimehq.QueuedLanguageLayerTree")
-	private var version = 0
-	private var commitedVersion = 0
+	private var currentVersion = 0
+	private var committedVersion = 0
 	private var pendingOldPoint: Point?
 	private let rootLayer: LanguageLayer
 	private let configuration: Configuration
@@ -40,21 +40,18 @@ final class BackgroundingLanguageLayerTree {
 		self.rootLayer = try LanguageLayer(languageConfig: rootLanguageConfig, configuration: configuration.layerConfiguration)
 	}
 
-	private var pendingWork: Bool {
-		version != commitedVersion
-	}
-
-	private func accessTreeSynchronously() -> LanguageLayer? {
-		guard pendingWork == false else { return nil }
+	private func accessTreeSynchronously(version: Int) -> LanguageLayer? {
+		guard version == committedVersion else { return nil }
 
 		return rootLayer
 	}
 
 	private func accessTree<T>(
+		version: Int,
 		operation: @escaping (LanguageLayer) throws -> T,
 		completion: @escaping @MainActor (Result<T, Error>) -> Void
 	) {
-		if let tree = accessTreeSynchronously() {
+		if let tree = accessTreeSynchronously(version: version) {
 			let result = Result(catching: { try operation(tree) })
 			completion(result)
 			return
@@ -77,15 +74,17 @@ final class BackgroundingLanguageLayerTree {
 	public func didChangeContent(_ content: LanguageLayer.Content, in range: NSRange, delta: Int, completion: @escaping @MainActor (IndexSet) -> Void) {
 		let transformer = configuration.locationTransformer
 
-		self.version += 1
+		// here, we know that the text has changed, but accessing the immediately-proceeding version is exactly how re-parsing works and we want that to be ok in this situation.
+		let version = self.currentVersion
+		self.currentVersion += 1
 
 		let oldEndPoint = pendingOldPoint ?? transformer(range.max) ?? .zero
 		let edit = InputEdit(range: range, delta: delta, oldEndPoint: oldEndPoint, transformer: transformer)
 
-		accessTree { tree in
+		accessTree(version: version) { tree in
 			tree.didChangeContent(content, using: edit, resolveSublayers: false)
 		} completion: { result in
-			self.commitedVersion += 1
+			self.committedVersion += 1
 
 			do {
 				completion(try result.get())
@@ -96,7 +95,7 @@ final class BackgroundingLanguageLayerTree {
 	}
 
 	public func languageConfigurationChanged(for name: String, content: LanguageLayer.Content, completion: @escaping @MainActor (Result<IndexSet, Error>) -> Void) {
-		accessTree { tree in
+		accessTree(version: currentVersion) { tree in
 			try tree.languageConfigurationChanged(for: name, content: content)
 		} completion: {
 			completion($0)
@@ -106,7 +105,7 @@ final class BackgroundingLanguageLayerTree {
 
 extension BackgroundingLanguageLayerTree {
 	public func executeQuery(_ queryDef: Query.Definition, in set: IndexSet) throws -> LanguageTreeQueryCursor {
-		guard let tree = accessTreeSynchronously() else {
+		guard let tree = accessTreeSynchronously(version: currentVersion) else {
 			throw BackgroundingLanguageLayerTreeError.unavailable
 		}
 
@@ -115,7 +114,7 @@ extension BackgroundingLanguageLayerTree {
 
 	public func executeQuery(_ queryDef: Query.Definition, in set: IndexSet) async throws -> [QueryMatch] {
 		try await withCheckedThrowingContinuation { continuation in
-			accessTree { tree in
+			accessTree(version: currentVersion) { tree in
 				guard let snapshot = tree.snapshot(in: set) else {
 					throw BackgroundingLanguageLayerTreeError.unableToSnapshot
 				}
@@ -141,7 +140,7 @@ extension BackgroundingLanguageLayerTree {
 
 extension BackgroundingLanguageLayerTree {
 	public func resolveSublayers(with content: LanguageLayer.Content, in set: IndexSet) throws -> IndexSet {
-		guard let tree = accessTreeSynchronously() else {
+		guard let tree = accessTreeSynchronously(version: currentVersion) else {
 			throw BackgroundingLanguageLayerTreeError.unavailable
 		}
 
@@ -150,7 +149,7 @@ extension BackgroundingLanguageLayerTree {
 
 	public func resolveSublayers(with content: LanguageLayer.Content, in set: IndexSet) async throws -> IndexSet {
 		try await withCheckedThrowingContinuation { continuation in
-			accessTree { tree in
+			accessTree(version: currentVersion) { tree in
 				try tree.resolveSublayers(with: content, in: set)
 			} completion: { result in
 				continuation.resume(with: result)
