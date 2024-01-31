@@ -115,9 +115,7 @@ public final class RangeValidator<Content: VersionedContent> {
 	///     range = NSRange(1..<2)
 	///     delta = -1
 	public func contentChanged(in range: NSRange, delta: Int) {
-		let limit = length - delta
-
-		let mutation = RangeMutation(range: range, delta: delta, limit: limit)
+		let mutation = RangeMutation(range: range, delta: delta, limit: length)
 
 		self.validSet = mutation.transform(set: validSet)
 
