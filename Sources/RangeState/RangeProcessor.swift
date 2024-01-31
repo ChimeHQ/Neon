@@ -182,7 +182,12 @@ extension RangeProcessor {
 	}
 
 	public func didChangeContent(in range: NSRange, delta: Int) {
-		let mutation = RangeMutation(range: range, delta: delta)
+		let limit = (maximumProcessedLocation ?? 0) + delta
+
+		precondition(limit >= 0)
+		precondition(limit <= contentLength)
+
+		let mutation = RangeMutation(range: range, delta: delta, limit: limit)
 
         didChangeContent(mutation)
 	}

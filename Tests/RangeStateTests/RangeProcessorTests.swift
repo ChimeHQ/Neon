@@ -3,6 +3,20 @@ import XCTest
 import RangeState
 import Rearrange
 
+@MainActor
+final class MockChangeHandler {
+	var mutations = [RangeMutation]()
+
+	var changeCompleted: @MainActor () -> Void = { }
+
+	func handleChange(_ mutation: RangeMutation, completion: @MainActor @escaping () -> Void) {
+		mutations.append(mutation)
+
+		changeCompleted()
+		completion()
+	}
+}
+
 final class RangeProcessorTests: XCTestCase {
 	@MainActor
 	func testSynchronousFill() {
@@ -50,5 +64,42 @@ final class RangeProcessorTests: XCTestCase {
 		wait(for: [exp], enforceOrder: true)
 
 		XCTAssert(processor.processed(10))
+	}
+
+	@MainActor
+	func testInsertWithEverythingProcessed() {
+		let exp = expectation(description: "mutation")
+		exp.expectedFulfillmentCount = 2
+
+		let handler = MockChangeHandler()
+
+		handler.changeCompleted = {
+			exp.fulfill()
+		}
+
+		var content = StringContent(string: "abcde")
+
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { content.currentLength },
+				changeHandler: handler.handleChange
+			)
+		)
+
+		XCTAssertTrue(processor.processLocation(5, mode: .required))
+		XCTAssertTrue(processor.processed(5))
+
+		// insert a character
+		content.string = "abcdef"
+		processor.didChangeContent(in: NSRange(5..<5), delta: 1)
+
+		wait(for: [exp], enforceOrder: true)
+
+		let expected = [
+			RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil),
+			RangeMutation(range: NSRange(5..<5), delta: 1, limit: 6),
+		]
+
+		XCTAssertEqual(handler.mutations, expected)
 	}
 }
