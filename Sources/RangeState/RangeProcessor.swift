@@ -61,7 +61,6 @@ public final class RangeProcessor {
 	// when starting, we have not even processed zero yet
 	public private(set) var maximumProcessedLocation: Int?
 	private var targetProcessingLocation: Int = -1
-	private var pendingProcessedLocation: Int = -1
 	private var version = 0
 	private var processedVersion = -1
 
@@ -194,9 +193,6 @@ extension RangeProcessor {
 	private func processMutation(_ mutation: RangeMutation) {
 		self.pendingEvents.append(.change(VersionedMutation(mutation, version: version)))
 		self.version += 1
-
-		self.pendingProcessedLocation += mutation.delta
-		precondition(pendingProcessedLocation >= 0)
 
 		// at this point, it is possible that the target location is no longer meaningful. But that's ok, because it will be clamped and possibly overwritten anyways
 

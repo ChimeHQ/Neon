@@ -139,4 +139,41 @@ final class RangeProcessorTests: XCTestCase {
 
 		XCTAssertEqual(handler.mutations, expected)
 	}
+
+	@MainActor
+	func testDeleteEverythingAfterProcessing() {
+		let exp = expectation(description: "mutation")
+		exp.expectedFulfillmentCount = 2
+
+		let handler = MockChangeHandler()
+
+		handler.changeCompleted = {
+			exp.fulfill()
+		}
+
+		let content = StringContent(string: "abcde")
+
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { content.currentLength },
+				changeHandler: handler.handleChange
+			)
+		)
+
+		XCTAssertTrue(processor.processLocation(5, mode: .required))
+		XCTAssertTrue(processor.processed(5))
+
+		// insert a character
+		content.string = ""
+		processor.didChangeContent(in: NSRange(0..<5), delta: -5)
+
+		wait(for: [exp], enforceOrder: true)
+
+		let expected = [
+			RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil),
+			RangeMutation(range: NSRange(0..<5), delta: -5, limit: 5),
+		]
+
+		XCTAssertEqual(handler.mutations, expected)
+	}
 }
