@@ -6,10 +6,10 @@ final class RangeValidatorTests: XCTestCase {
 	typealias StringValidator = RangeValidator<StringContent>
 
 	@MainActor
-	func testContentChange() async {
+	func testContentAddedAtEnd() async {
 		let validationExp = expectation(description: "validation")
 
-		var content = StringContent(string: "abc")
+		let content = StringContent(string: "abc")
 		let provider = StringValidator.ValidationProvider(
 			syncValue: {
 				validationExp.fulfill()
@@ -39,7 +39,7 @@ final class RangeValidatorTests: XCTestCase {
 	func testContentDeleted() async {
 		let validationExp = expectation(description: "validation")
 
-		var content = StringContent(string: "abc")
+		let content = StringContent(string: "abc")
 		let provider = StringValidator.ValidationProvider(
 			syncValue: {
 				validationExp.fulfill()
@@ -63,5 +63,35 @@ final class RangeValidatorTests: XCTestCase {
 
 		content.string = "ac"
 		validator.contentChanged(in: NSRange(1..<2), delta: -1)
+	}
+
+	@MainActor
+	func testContentDeletedAtEnd() async {
+		let validationExp = expectation(description: "validation")
+
+		let content = StringContent(string: "abc")
+		let provider = StringValidator.ValidationProvider(
+			syncValue: {
+				validationExp.fulfill()
+
+				return .success($0.value)
+			},
+			asyncValue: { contentRange, _ in
+				return .success(contentRange.value)
+			})
+
+		let validator = StringValidator(
+			configuration: .init(
+				versionedContent: content,
+				validationProvider: provider
+			)
+		)
+
+		validator.validate(.all)
+
+		await fulfillment(of: [validationExp], timeout: 1.0)
+
+		content.string = "ab"
+		validator.contentChanged(in: NSRange(2..<3), delta: -1)
 	}
 }
