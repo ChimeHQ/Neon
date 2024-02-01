@@ -127,8 +127,6 @@ public final class RangeValidator<Content: VersionedContent> {
 
 		// if we have pending requests, we have to start over
 		self.pendingSet.removeAll()
-
-		makeNextWorkingSetRequest()
 	}
 }
 

@@ -132,6 +132,9 @@ public final class TextViewHighlighter: NSObject {
 extension TextViewHighlighter: NSTextStorageDelegate {
 	public nonisolated func textStorage(_ textStorage: NSTextStorage, willProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
 		MainActor.backport.assumeIsolated {
+			// a change happening, start buffering invalidations
+			buffer.beginBuffering()
+
 			client.willChangeContent(in: editedRange)
 		}
 	}
@@ -146,8 +149,13 @@ extension TextViewHighlighter: NSTextStorageDelegate {
 
 			let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
 
-			styler.didChangeContent(in: adjustedRange, delta: delta)
 			client.didChangeContent(in: adjustedRange, delta: delta)
+			styler.didChangeContent(in: adjustedRange, delta: delta)
+
+			// At this point in mutation processing, it is unsafe to apply style changes. Ideally, we'd have a hook so we can know when it is ok. But, no such system exists for stock TextKit 1/2. So, instead we just let the runloop turn. This is *probably* safe, if the text does not change again, but can also result in flicker.
+			DispatchQueue.main.backport.asyncUnsafe {
+				self.buffer.endBuffering()
+			}
 		}
 	}
 }
