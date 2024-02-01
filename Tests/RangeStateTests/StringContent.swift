@@ -2,7 +2,7 @@ import Foundation
 
 import RangeState
 
-struct StringContent: VersionedContent {
+final class StringContent: VersionedContent {
 	private var version: Int = 0
 	
 	var string: String {
