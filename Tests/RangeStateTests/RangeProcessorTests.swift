@@ -97,7 +97,7 @@ final class RangeProcessorTests: XCTestCase {
 
 		let expected = [
 			RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil),
-			RangeMutation(range: NSRange(5..<5), delta: 1, limit: 6),
+			RangeMutation(range: NSRange(5..<5), delta: 1, limit: 5),
 		]
 
 		XCTAssertEqual(handler.mutations, expected)
