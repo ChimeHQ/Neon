@@ -11,6 +11,8 @@ enum BackgroundingLanguageLayerTreeError: Error {
 
 @MainActor
 final class BackgroundingLanguageLayerTree {
+	public static let synchronousLengthThreshold = 2048
+
 	public struct Configuration {
 		public let locationTransformer: Point.LocationTransformer
 		public let languageProvider: LanguageLayer.LanguageProvider
@@ -48,10 +50,11 @@ final class BackgroundingLanguageLayerTree {
 
 	private func accessTree<T>(
 		version: Int,
+		preferSynchronous: Bool,
 		operation: @escaping (LanguageLayer) throws -> T,
 		completion: @escaping @MainActor (Result<T, Error>) -> Void
 	) {
-		if let tree = accessTreeSynchronously(version: version) {
+		if preferSynchronous, let tree = accessTreeSynchronously(version: version) {
 			let result = Result(catching: { try operation(tree) })
 			completion(result)
 			return
@@ -74,14 +77,17 @@ final class BackgroundingLanguageLayerTree {
 	public func didChangeContent(_ content: LanguageLayer.Content, in range: NSRange, delta: Int, completion: @escaping @MainActor (IndexSet) -> Void) {
 		let transformer = configuration.locationTransformer
 
-		// here, we know that the text has changed, but accessing the immediately-proceeding version is exactly how re-parsing works and we want that to be ok in this situation.
-		let version = self.currentVersion
+		let upToDate = currentVersion == committedVersion
+		let smallChange = delta < Self.synchronousLengthThreshold && range.length < Self.synchronousLengthThreshold
+		let sync = upToDate && smallChange
+
+		let version = currentVersion
 		self.currentVersion += 1
 
 		let oldEndPoint = pendingOldPoint ?? transformer(range.max) ?? .zero
 		let edit = InputEdit(range: range, delta: delta, oldEndPoint: oldEndPoint, transformer: transformer)
 
-		accessTree(version: version) { tree in
+		accessTree(version: version, preferSynchronous: sync) { tree in
 			tree.didChangeContent(content, using: edit, resolveSublayers: false)
 		} completion: { result in
 			self.committedVersion += 1
@@ -95,7 +101,7 @@ final class BackgroundingLanguageLayerTree {
 	}
 
 	public func languageConfigurationChanged(for name: String, content: LanguageLayer.Content, completion: @escaping @MainActor (Result<IndexSet, Error>) -> Void) {
-		accessTree(version: currentVersion) { tree in
+		accessTree(version: currentVersion, preferSynchronous: true) { tree in
 			try tree.languageConfigurationChanged(for: name, content: content)
 		} completion: {
 			completion($0)
@@ -114,7 +120,7 @@ extension BackgroundingLanguageLayerTree {
 
 	public func executeQuery(_ queryDef: Query.Definition, in set: IndexSet) async throws -> [QueryMatch] {
 		try await withCheckedThrowingContinuation { continuation in
-			accessTree(version: currentVersion) { tree in
+			accessTree(version: currentVersion, preferSynchronous: false) { tree in
 				guard let snapshot = tree.snapshot(in: set) else {
 					throw BackgroundingLanguageLayerTreeError.unableToSnapshot
 				}
@@ -149,7 +155,7 @@ extension BackgroundingLanguageLayerTree {
 
 	public func resolveSublayers(with content: LanguageLayer.Content, in set: IndexSet) async throws -> IndexSet {
 		try await withCheckedThrowingContinuation { continuation in
-			accessTree(version: currentVersion) { tree in
+			accessTree(version: currentVersion, preferSynchronous: false) { tree in
 				try tree.resolveSublayers(with: content, in: set)
 			} completion: { result in
 				continuation.resume(with: result)
