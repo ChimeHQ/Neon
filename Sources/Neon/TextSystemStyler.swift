@@ -13,66 +13,25 @@ import RangeState
 public final class TextSystemStyler<Interface: TextSystemInterface> {
 	typealias Validator = RangeValidator<Interface.Content>
 
-	public struct Configuration {
-		public let tokenProvider: TokenProvider
-
-		public init(tokenProvider: TokenProvider) {
-			self.tokenProvider = tokenProvider
-		}
-	}
-
-	private let configuration: Configuration
 	private let textSystem: Interface
-	private lazy var validator = Validator(
-		configuration: .init(
-			versionedContent: textSystem.content,
-			validationProvider: validationProvider,
-			workingRangeProvider: { [textSystem] in textSystem.visibleRange }
-		)
-	)
-
-	public init(textSystem: Interface, configuration: Configuration) {
-		self.textSystem = textSystem
-		self.configuration = configuration
-	}
+	private let validator: Validator
 
 	public init(textSystem: Interface, tokenProvider: TokenProvider) {
 		self.textSystem = textSystem
-		self.configuration = .init(tokenProvider: tokenProvider)
-	}
 
-	private var validationProvider: Validator.ValidationProvider {
-		.init(
-			syncValue: { [weak self] in self?.validate($0) },
-			asyncValue: { [weak self] range, _ in await self?.validate(range) ?? .stale }
+		let tokenValidator = TokenSystemValidator(
+			textSystem: textSystem,
+			tokenProvider: tokenProvider
 		)
-	}
 
-	private var currentVersion: Interface.Content.Version {
-		textSystem.content.currentVersion
-	}
-
-	private func validate(_ range: Validator.ContentRange) -> Validator.Validation? {
-		guard range.version == currentVersion else { return .stale }
-
-		guard let application = configuration.tokenProvider.sync(range.value) else {
-			return nil
-		}
-
-		applyStyles(for: application)
-
-		return .success(range.value)
-	}
-
-	private func validate(_ range: Validator.ContentRange) async -> Validator.Validation {
-		guard range.version == currentVersion else { return .stale }
-
-		// https://github.com/apple/swift/pull/71143
-		let application = await configuration.tokenProvider.mainActorAsync(range.value)
-
-		applyStyles(for: application)
-
-		return .success(range.value)
+		self.validator = Validator(
+			configuration: .init(
+				versionedContent: textSystem.content,
+				validationProvider: tokenValidator.validationProvider,
+				workingRangeProvider: { textSystem.visibleRange },
+				automatic: true
+			)
+		)
 	}
 
 	/// Update internal state in response to an edit.
@@ -102,10 +61,6 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 
 	public func invalidate(_ target: RangeTarget) {
 		validator.invalidate(target)
-	}
-
-	private func applyStyles(for application: TokenApplication) {
-		textSystem.applyStyles(for: application)
 	}
 
 	public var validationHandler: (NSRange) -> Void {

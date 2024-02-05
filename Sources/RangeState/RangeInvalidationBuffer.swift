@@ -1,6 +1,5 @@
 import Foundation
 
-@MainActor
 public final class RangeInvalidationBuffer {
 	public typealias Handler = (RangeTarget) -> Void
 

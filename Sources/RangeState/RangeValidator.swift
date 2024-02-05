@@ -26,15 +26,21 @@ public final class RangeValidator<Content: VersionedContent> {
 		public let versionedContent: Content
 		public let validationProvider: ValidationProvider
 		public let workingRangeProvider: WorkingRangeProvider?
+		/// Perform validation automatically.
+		///
+		/// Control when validation is performed after invalid or stale results are returned. When this is set to false, the validation will never be performed unless the `validate` method is called.
+		public let automatic: Bool
 
 		public init(
 			versionedContent: Content,
 			validationProvider: ValidationProvider,
-			workingRangeProvider: WorkingRangeProvider? = nil
+			workingRangeProvider: WorkingRangeProvider? = nil,
+			automatic: Bool = true
 		) {
 			self.versionedContent = versionedContent
 			self.validationProvider = validationProvider
 			self.workingRangeProvider = workingRangeProvider
+			self.automatic = automatic
 		}
 	}
 
@@ -83,6 +89,8 @@ public final class RangeValidator<Content: VersionedContent> {
 
 		self.version = configuration.versionedContent.currentVersion
 
+		guard configuration.automatic else { return }
+
 		makeNextWorkingSetRequest()
 	}
 
@@ -99,6 +107,17 @@ public final class RangeValidator<Content: VersionedContent> {
 		let set = target.indexSet(with: length)
 
 		makeNextRequest(in: set)
+	}
+
+	public func isValid(_ target: RangeTarget) -> Bool {
+		switch target {
+		case .all:
+			fullSet == validSet
+		case let .range(range):
+			validSet.contains(integersIn: range)
+		case let .set(set):
+			validSet.intersection(set) == set
+		}
 	}
 
 	/// Update internal state in response to a mutation.
@@ -240,6 +259,8 @@ extension RangeValidator {
 		print("RangeStateValidation provider returned stale results")
 
 		pendingSet.removeAll()
+
+		guard configuration.automatic else { return }
 
 		DispatchQueue.main.backport.asyncUnsafe {
 			self.makeNextWorkingSetRequest()
