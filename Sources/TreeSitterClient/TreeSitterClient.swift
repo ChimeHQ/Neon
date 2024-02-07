@@ -16,7 +16,7 @@ enum TreeSitterClientError: Error {
 public final class TreeSitterClient {
 	public typealias TextProvider = SwiftTreeSitter.Predicate.TextProvider
 	public typealias ContentProvider = (Int) -> LanguageLayer.Content
-	private typealias SublayerValidator = OldRangeValidator<UnversionableContent>
+	private typealias SublayerValidator = SinglePhaseRangeValidator<UnversionableContent>
 
 	private static let deltaRange = 128..<Int.max
 #if canImport(os.log)
@@ -64,7 +64,7 @@ public final class TreeSitterClient {
 	private lazy var sublayerValidator = SublayerValidator(
 		configuration: .init(
 			versionedContent: versionedContent,
-			validationProvider: validatorProvider
+			provider: validatorProvider
 		)
 	)
 
@@ -200,7 +200,7 @@ extension TreeSitterClient {
 		}
 	}
 
-	private var validatorProvider: SublayerValidator.ValidationProvider {
+	private var validatorProvider: SublayerValidator.Provider {
 		.init(
 			rangeProcessor: rangeProcessor,
 			inputTransformer: { ($0.value.max, .optional) },
