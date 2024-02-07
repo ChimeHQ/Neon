@@ -71,14 +71,12 @@ public final class ThreePhaseRangeValidator<Content: VersionedContent> {
 
 	/// Manually mark a region as invalid.
 	public func invalidate(_ target: RangeTarget) {
-		print("invalidated: ", target)
 		primaryValidator.invalidate(target)
 		fallbackValidator.invalidate(target)
 		secondaryValidator?.invalidate(target)
 	}
 
 	public func validate(_ target: RangeTarget, prioritizing range: NSRange? = nil) {
-		print("validate")
 		let action = primaryValidator.validate(target, prioritizing: range)
 
 		switch action {
@@ -135,8 +133,6 @@ extension ThreePhaseRangeValidator {
 	private func handlePrimaryValidation(of range: NSRange) {
 		let target = RangeTarget.range(range)
 		let priorityRange = configuration.priorityRangeProvider?() ?? range
-
-		print("handler invalidated: ", target)
 
 		fallbackValidator.invalidate(target)
 		secondaryValidator?.invalidate(target)
