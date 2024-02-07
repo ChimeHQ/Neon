@@ -16,7 +16,7 @@ enum TreeSitterClientError: Error {
 public final class TreeSitterClient {
 	public typealias TextProvider = SwiftTreeSitter.Predicate.TextProvider
 	public typealias ContentProvider = (Int) -> LanguageLayer.Content
-	private typealias SublayerValidator = RangeValidator<UnversionableContent>
+	private typealias SublayerValidator = OldRangeValidator<UnversionableContent>
 
 	private static let deltaRange = 128..<Int.max
 #if canImport(os.log)
@@ -142,6 +142,10 @@ extension TreeSitterClient {
 
 	private func handleInvalidation(_ set: IndexSet, sublayers: Bool) {
 		let transformedSet = set.apply(rangeProcessor.pendingMutations)
+
+		if transformedSet.isEmpty {
+			return
+		}
 
 		configuration.invalidationHandler(transformedSet)
 

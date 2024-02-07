@@ -44,10 +44,10 @@ extension TokenProvider {
 	public static var none: TokenProvider {
 		.init(
 			syncValue: { _ in
-				return TokenApplication(tokens: [])
+				return .noChange
 			},
 			asyncValue: { _, _ in
-				return TokenApplication(tokens: [])
+				return .noChange
 			}
 		)
 	}

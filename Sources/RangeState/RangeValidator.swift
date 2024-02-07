@@ -3,77 +3,39 @@ import Foundation
 import ConcurrencyCompatibility
 import Rearrange
 
+public enum Validation: Sendable, Hashable {
+	case stale
+	case success(NSRange)
+}
+
 /// A type that manages the validation of range-based content.
-///
-/// > Note: If a `WorkingRangeProvider` is not provided, the validator will **only** perform validation manually via the `validate(_:)` method.
-@MainActor
 public final class RangeValidator<Content: VersionedContent> {
-	public typealias Version = Content.Version
-	public typealias ValidationHandler = (NSRange) -> Void
-
-	public enum Validation: Sendable {
-		case stale
-		case success(NSRange)
-	}
-
-	public typealias ContentRange = VersionedRange<Version>
+	public typealias ContentRange = VersionedRange<Content.Version>
 	public typealias ValidationProvider = HybridValueProvider<ContentRange, Validation>
 
-	public typealias WorkingRangeProvider = () -> NSRange
-	private typealias Sequence = AsyncStream<ContentRange>
-
-	public struct Configuration {
-		public let versionedContent: Content
-		public let validationProvider: ValidationProvider
-		public let workingRangeProvider: WorkingRangeProvider?
-		/// Perform validation automatically.
-		///
-		/// Control when validation is performed after invalid or stale results are returned. When this is set to false, the validation will never be performed unless the `validate` method is called.
-		public let automatic: Bool
-
-		public init(
-			versionedContent: Content,
-			validationProvider: ValidationProvider,
-			workingRangeProvider: WorkingRangeProvider? = nil,
-			automatic: Bool = true
-		) {
-			self.versionedContent = versionedContent
-			self.validationProvider = validationProvider
-			self.workingRangeProvider = workingRangeProvider
-			self.automatic = automatic
-		}
+	public enum Action: Sendable {
+		case none
+		case needed(ContentRange)
+		case pending(NSRange)
 	}
 
 	private var validSet = IndexSet()
+	// TODO: this has to be transitioned to an array with a computed set to better prevent overlapping work
 	private var pendingSet = IndexSet()
 	private var pendingRequests = 0
-	private var version: Content.Version
-	private let continuation: Sequence.Continuation
 
-	public let configuration: Configuration
-	public var validationHandler: ValidationHandler = { _ in }
+	public let content: Content
 
-	public init(configuration: Configuration) {
-		self.configuration = configuration
-		self.version = configuration.versionedContent.currentVersion
-
-		let (stream, continuation) = Sequence.makeStream()
-
-		self.continuation = continuation
-
-		Task {
-			await self.beginMonitoring(stream)
-		}
+	public init(content: Content) {
+		self.content = content
 	}
 
-	deinit {
-		continuation.finish()
+	public var hasOutstandingValidations: Bool {
+		pendingRequests > 0
 	}
 
-	private nonisolated func beginMonitoring(_ stream: Sequence) async {
-		for await versionedRange in stream {
-			await self.validateRangeAsync(versionedRange)
-		}
+	private var version: Content.Version {
+		content.currentVersion
 	}
 
 	/// Manually mark a region as invalid.
@@ -86,27 +48,47 @@ public final class RangeValidator<Content: VersionedContent> {
 
 		validSet.subtract(invalidated)
 		pendingSet.subtract(invalidated)
-
-		self.version = configuration.versionedContent.currentVersion
-
-		guard configuration.automatic else { return }
-
-		makeNextWorkingSetRequest()
 	}
 
-	/// Compute the sections of the new working range that need validation.
-	public func workingRangeChanged() {
-		guard let workingSet else { return }
-
-		let set = invalidSet.intersection(workingSet)
-
-		invalidate(.set(set))
-	}
-
-	public func validate(_ target: RangeTarget) {
+	/// Begin a validation pass.
+	///
+	/// This must ultimately be paired with a matching call to `completeValidation(of:with:)`.
+	public func beginValidation(of target: RangeTarget, prioritizing range: NSRange? = nil) -> Action {
 		let set = target.indexSet(with: length)
 
-		makeNextRequest(in: set)
+		guard let neededRange = nextNeededRange(in: set, prioritizing: range) else { return .none }
+
+		if pendingSet.contains(integersIn: neededRange) {
+			return .pending(neededRange)
+		}
+
+		self.pendingSet.insert(range: neededRange)
+		self.pendingRequests += 1
+
+		let contentRange = ContentRange(neededRange, version: version)
+
+		return .needed(contentRange)
+	}
+
+	/// Complete a validation pass.
+	///
+	/// This should only be used to end a matching call to `beginValidation(of:prioritizing:)`.
+	public func completeValidation(of contentRange: ContentRange, with validation: Validation) {
+		self.pendingRequests -= 1
+		precondition(pendingRequests >= 0)
+
+		guard contentRange.version == version else {
+			pendingSet.removeAll()
+			return
+		}
+
+		switch validation {
+		case .stale:
+			pendingSet.remove(integersIn: contentRange.value)
+		case let .success(range):
+			pendingSet.remove(integersIn: range)
+			validSet.insert(range: range)
+		}
 	}
 
 	public func isValid(_ target: RangeTarget) -> Bool {
@@ -138,8 +120,6 @@ public final class RangeValidator<Content: VersionedContent> {
 
 		self.validSet = mutation.transform(set: validSet)
 
-		self.version = configuration.versionedContent.currentVersion
-
 		if pendingSet.isEmpty {
 			return
 		}
@@ -151,19 +131,11 @@ public final class RangeValidator<Content: VersionedContent> {
 
 extension RangeValidator {
 	private var length: Int {
-		configuration.versionedContent.currentLength
+		content.currentLength
 	}
 
 	private var fullSet: IndexSet {
 		IndexSet(integersIn: 0..<length)
-	}
-
-	private var workingRange: NSRange? {
-		configuration.workingRangeProvider?()
-	}
-
-	private var workingSet: IndexSet? {
-		workingRange.map { IndexSet(integersIn: $0) }
 	}
 
 	private var invalidSet: IndexSet {
@@ -173,9 +145,10 @@ extension RangeValidator {
 
 extension RangeValidator {
 	/// Computes the next contiguous invalid range
-	private func nextNeededRange(in set: IndexSet) -> NSRange? {
+	private func nextNeededRange(in set: IndexSet, prioritizing priorityRange: NSRange?) -> NSRange? {
 		// determine what parts of the target set are actually invalid
-		let workingInvalidSet = invalidSet.intersection(set)
+		let workingInvalidSet = invalidSet
+			.intersection(set)
 
 		// here's a trick. Create a set with a single range, and then remove
 		// any pending ranges from it. The result can be used to determine the longest
@@ -188,7 +161,7 @@ extension RangeValidator {
 
 		// We want to prioritize the invalid ranges that are actually in the target set
 		let hasInvalidRanges = set.intersection(invalidSet).isEmpty == false
-		let limit = workingRange?.location ?? 0
+		let limit = priorityRange?.location ?? 0
 
 		// now get back the first range which is the longest continuous
 		// range that includes invalid regions
@@ -200,77 +173,5 @@ extension RangeValidator {
 
 		return range
 	}
-
-	private func makeNextWorkingSetRequest() {
-		guard let workingSet else { return }
-
-		makeNextRequest(in: workingSet)
-	}
-
-	private func makeNextRequest(in set: IndexSet) {
-		guard let range = nextNeededRange(in: set) else { return }
-
-		self.pendingSet.insert(range: range)
-
-		let versionedRange = ContentRange(range, version: version)
-
-		// if we have an outstanding async operation going, force this to be async too
-		if pendingRequests > 0 {
-			enqueueValidation(for: versionedRange)
-			return
-		}
-
-		switch configuration.validationProvider.sync(versionedRange) {
-		case let .success(validatedRange):
-			handleValidatedRange(validatedRange)
-		case .stale:
-			handleStaleResults()
-		case nil:
-			enqueueValidation(for: versionedRange)
-		}
-	}
-
-	private func enqueueValidation(for contentRange: ContentRange) {
-		self.pendingRequests += 1
-		continuation.yield(contentRange)
-	}
-
-	private func validateRangeAsync(_ contentRange: ContentRange) async {
-		self.pendingRequests -= 1
-		precondition(pendingRequests >= 0)
-
-		let result = await self.configuration.validationProvider.mainActorAsync(contentRange)
-
-		switch result {
-		case .stale:
-			handleStaleResults()
-		case let .success(range):
-			// here we must re-validate that the version has remained stable after the await
-			guard contentRange.version == version else {
-				handleStaleResults()
-				break
-			}
-
-			handleValidatedRange(range)
-		}
-	}
-
-	private func handleStaleResults() {
-		print("RangeStateValidation provider returned stale results")
-
-		pendingSet.removeAll()
-
-		guard configuration.automatic else { return }
-
-		DispatchQueue.main.backport.asyncUnsafe {
-			self.makeNextWorkingSetRequest()
-		}
-	}
-
-	private func handleValidatedRange(_ range: NSRange) {
-		pendingSet.remove(integersIn: range)
-		validSet.insert(range: range)
-
-		validationHandler(range)
-	}
 }
+

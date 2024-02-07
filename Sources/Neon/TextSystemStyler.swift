@@ -11,25 +11,24 @@ import RangeState
 /// > Note: A `Styler` must be informed of all text content changes made using `didChangeContent(in:, delta:)` and changes to the content visibility with `contentVisibleRectChanged(_:_`.
 @MainActor
 public final class TextSystemStyler<Interface: TextSystemInterface> {
-	typealias Validator = RangeValidator<Interface.Content>
-
 	private let textSystem: Interface
-	private let validator: Validator
+	private let tokenProvider: TokenProvider
+	private let validator: SinglePhaseRangeValidator<Interface.Content>
 
 	public init(textSystem: Interface, tokenProvider: TokenProvider) {
 		self.textSystem = textSystem
+		self.tokenProvider = tokenProvider
 
 		let tokenValidator = TokenSystemValidator(
 			textSystem: textSystem,
 			tokenProvider: tokenProvider
 		)
 
-		self.validator = Validator(
+		self.validator = SinglePhaseRangeValidator(
 			configuration: .init(
 				versionedContent: textSystem.content,
-				validationProvider: tokenValidator.validationProvider,
-				workingRangeProvider: { textSystem.visibleRange },
-				automatic: true
+				provider: tokenValidator.validationProvider,
+				priorityRangeProvider: { textSystem.visibleRange }
 			)
 		)
 	}
@@ -56,15 +55,13 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 	///
 	/// You should invoke this method when the visible text in your system changes.
 	public func visibleContentDidChange() {
-		validator.workingRangeChanged()
+		let priorityRange = textSystem.visibleRange
+
+		validator.validate(.range(priorityRange), prioritizing: priorityRange)
 	}
+
 
 	public func invalidate(_ target: RangeTarget) {
 		validator.invalidate(target)
-	}
-
-	public var validationHandler: (NSRange) -> Void {
-		get { validator.validationHandler }
-		set { validator.validationHandler = newValue }
 	}
 }

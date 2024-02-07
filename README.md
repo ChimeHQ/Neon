@@ -52,8 +52,10 @@ Neon's lowest-level component is called RangeState. This module contains the cor
 
 - `Hybrid(Throwing)ValueProvider`: a fundamental type that defines work in terms of both synchronous and asynchronous functions
 - `RangeProcessor`: performs on-demand processing of range-based content (think parsing)
-- `RangeValidator`: manages the validation of range-based content (think highlighting)
+- `RangeValidator`: building block for managing the validation of range-based content
 - `RangeInvalidationBuffer`: buffer and consolidate invalidations so they can be applied at the optimal time
+- `SinglePhaseRangeValidator`: performs validation with a single data source (single-phase highlighting)
+- `ThreePhaseRangeValidator`: performs validation with primary, fallback, and secondary data sources (three-phase highlighting)
 
 Many of these support versionable content. If you are working with a backing store structure that supports efficient versioning, like a [piece table](https://en.wikipedia.org/wiki/Piece_table), expressing this to RangeState can improve its efficiency.
 
@@ -78,6 +80,8 @@ The top-level module includes systems for managing text styling. It is also text
 - `TextViewHighlighter`: simple integration between `NSTextView`/`UITextView` and `TreeSitterClient`
 - `TextViewSystemInterface`: implementation of the `TextSystemInterface` protocol for `NSTextView`/`UITextView`
 - `LayoutManagerSystemInterface`, `TextLayoutManagerSystemInterface`, and `TextStorageSystemInterface`: Specialized TextKit 1/2 implementations `TextSystemInterface`
+- `TextSystemStyler`: a style manager that works with a single `TokenProvider`
+- `ThreePhaseTextSystemStyler`: a true three-phase style manager that combines a primary, fallback and secondary token data sources
 
 There is also an example project that demonstrates how to use `TextViewHighlighter` for macOS and iOS.
 

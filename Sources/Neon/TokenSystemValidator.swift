@@ -14,7 +14,7 @@ final class TokenSystemValidator<Interface: TextSystemInterface> {
 		self.tokenProvider = tokenProvider
 	}
 
-	var validationProvider: Validator.ValidationProvider {
+	var validationProvider: HybridValueProvider<Validator.ContentRange, Validation> {
 		.init(
 			syncValue: { self.validate($0) },
 			asyncValue: { range, _ in await self.validate(range)}
@@ -25,7 +25,7 @@ final class TokenSystemValidator<Interface: TextSystemInterface> {
 		textSystem.content.currentVersion
 	}
 
-	private func validate(_ range: Validator.ContentRange) -> Validator.Validation? {
+	private func validate(_ range: Validator.ContentRange) -> Validation? {
 		guard range.version == currentVersion else { return .stale }
 
 		guard let application = tokenProvider.sync(range.value) else {
@@ -37,7 +37,7 @@ final class TokenSystemValidator<Interface: TextSystemInterface> {
 		return .success(range.value)
 	}
 
-	private func validate(_ range: Validator.ContentRange) async -> Validator.Validation {
+	private func validate(_ range: Validator.ContentRange) async -> Validation {
 		guard range.version == currentVersion else { return .stale }
 
 		// https://github.com/apple/swift/pull/71143

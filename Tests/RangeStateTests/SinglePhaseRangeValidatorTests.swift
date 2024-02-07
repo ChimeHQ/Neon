@@ -2,15 +2,15 @@ import XCTest
 
 import RangeState
 
-final class RangeValidatorTests: XCTestCase {
-	typealias StringValidator = RangeValidator<StringContent>
+final class SinglePhaseRangeValidatorTests: XCTestCase {
+	typealias StringValidator = SinglePhaseRangeValidator<StringContent>
 
 	@MainActor
 	func testContentAddedAtEnd() async {
 		let validationExp = expectation(description: "validation")
 
 		let content = StringContent(string: "abc")
-		let provider = StringValidator.ValidationProvider(
+		let provider = StringValidator.Provider(
 			syncValue: {
 				validationExp.fulfill()
 
@@ -23,7 +23,7 @@ final class RangeValidatorTests: XCTestCase {
 		let validator = StringValidator(
 			configuration: .init(
 				versionedContent: content,
-				validationProvider: provider
+				provider: provider
 			)
 		)
 
@@ -40,7 +40,7 @@ final class RangeValidatorTests: XCTestCase {
 		let validationExp = expectation(description: "validation")
 
 		let content = StringContent(string: "abc")
-		let provider = StringValidator.ValidationProvider(
+		let provider = StringValidator.Provider(
 			syncValue: {
 				validationExp.fulfill()
 
@@ -53,7 +53,7 @@ final class RangeValidatorTests: XCTestCase {
 		let validator = StringValidator(
 			configuration: .init(
 				versionedContent: content,
-				validationProvider: provider
+				provider: provider
 			)
 		)
 
@@ -70,7 +70,7 @@ final class RangeValidatorTests: XCTestCase {
 		let validationExp = expectation(description: "validation")
 
 		let content = StringContent(string: "abc")
-		let provider = StringValidator.ValidationProvider(
+		let provider = StringValidator.Provider(
 			syncValue: {
 				validationExp.fulfill()
 
@@ -83,7 +83,7 @@ final class RangeValidatorTests: XCTestCase {
 		let validator = StringValidator(
 			configuration: .init(
 				versionedContent: content,
-				validationProvider: provider
+				provider: provider
 			)
 		)
 
