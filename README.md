@@ -12,7 +12,7 @@ A Swift library for efficient, flexible content-based text styling.
 
 - Lazy content processing
 - Minimal invalidation calculation
-- Support for multiple sources of token data
+- Support for up to three-phase highlighting via fallback, primary, and secondary sources
 - Support for versionable text data storage
 - A hybrid sync/async system for targeting flicker-free styling on keystrokes
 - [tree-sitter](https://tree-sitter.github.io/tree-sitter/) integration
