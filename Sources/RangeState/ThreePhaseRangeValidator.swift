@@ -82,10 +82,7 @@ public final class ThreePhaseRangeValidator<Content: VersionedContent> {
 		switch action {
 		case .none:
 			scheduleSecondaryValidation(of: target, prioritizing: range)
-		case let .pending(pendingRange):
-			fallbackValidate(pendingRange, prioritizing: range)
 		case let .needed(contentRange):
-			// same as above
 			fallbackValidate(contentRange.value, prioritizing: range)
 		}
 	}
@@ -98,8 +95,6 @@ public final class ThreePhaseRangeValidator<Content: VersionedContent> {
 		switch action {
 		case .none:
 			return
-		case .pending:
-			preconditionFailure("It makes no sense for this to be pending")
 		case let .needed(contentRange):
 			provider(contentRange.value)
 
@@ -169,7 +164,7 @@ extension ThreePhaseRangeValidator {
 		let action = validator.beginValidation(of: target, prioritizing: range)
 
 		switch action {
-		case .none, .pending:
+		case .none:
 			return
 		case let .needed(contentRange):
 			let validation = await provider(contentRange)

@@ -5,6 +5,7 @@ import Rearrange
 
 @MainActor
 public final class SinglePhaseRangeValidator<Content: VersionedContent> {
+
 	public typealias ContentRange = RangeValidator<Content>.ContentRange
 	public typealias Provider = HybridValueProvider<ContentRange, Validation>
 	public typealias PriorityRangeProvider = () -> NSRange
@@ -68,25 +69,26 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 
 		let action = primaryValidator.beginValidation(of: target, prioritizing: range)
 
-		guard case let .needed(contentRange) = action else {
-			return action
+		switch action {
+		case .none:
+			return .none
+		case let .needed(contentRange):
+			// if we have an outstanding async operation going, force this to be async too
+			if outstanding {
+				enqueueValidation(for: contentRange)
+				return action
+			}
+
+			guard let validation = configuration.provider.sync(contentRange) else {
+				enqueueValidation(for: contentRange)
+
+				return action
+			}
+
+			completePrimaryValidation(of: contentRange, with: validation)
+
+			return .none
 		}
-
-		// if we have an outstanding async operation going, force this to be async too
-		if outstanding {
-			enqueueValidation(for: contentRange)
-			return action
-		}
-
-		guard let validation = configuration.provider.sync(contentRange) else {
-			enqueueValidation(for: contentRange)
-
-			return .pending(contentRange.value)
-		}
-
-		completePrimaryValidation(of: contentRange, with: validation)
-
-		return .none
 	}
 
 	private func completePrimaryValidation(of contentRange: ContentRange, with validation: Validation) {

@@ -13,10 +13,9 @@ public final class RangeValidator<Content: VersionedContent> {
 	public typealias ContentRange = VersionedRange<Content.Version>
 	public typealias ValidationProvider = HybridValueProvider<ContentRange, Validation>
 
-	public enum Action: Sendable {
+	public enum Action: Sendable, Equatable {
 		case none
 		case needed(ContentRange)
-		case pending(NSRange)
 	}
 
 	private var validSet = IndexSet()
@@ -57,10 +56,6 @@ public final class RangeValidator<Content: VersionedContent> {
 		let set = target.indexSet(with: length)
 
 		guard let neededRange = nextNeededRange(in: set, prioritizing: range) else { return .none }
-
-		if pendingSet.contains(integersIn: neededRange) {
-			return .pending(neededRange)
-		}
 
 		self.pendingSet.insert(range: neededRange)
 		self.pendingRequests += 1
@@ -175,3 +170,4 @@ extension RangeValidator {
 	}
 }
 
+extension RangeValidator.Action: Hashable where Content.Version: Hashable {}

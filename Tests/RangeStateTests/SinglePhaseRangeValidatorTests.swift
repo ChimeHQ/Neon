@@ -73,12 +73,13 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 		let provider = StringValidator.Provider(
 			syncValue: {
 				validationExp.fulfill()
-
+				
 				return .success($0.value)
 			},
 			asyncValue: { contentRange, _ in
 				return .success(contentRange.value)
-			})
+			}
+		)
 
 		let validator = StringValidator(
 			configuration: .init(
