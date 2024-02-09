@@ -61,18 +61,6 @@ Many of these support versionable content. If you are working with a backing sto
 
 It might be surprising to see that many of the types in RangeState are marked `@MainActor`. Right now, I have found no way to both support the hybrid sync/async functionality while also not being tied to a global actor. I think this is the most resonable trade-off, but I would very much like to lift this restriction. However, I believe it will require [language changes](https://forums.swift.org/t/isolation-assumptions/69514/47).
 
-### TreeSitterClient
-
-This library is a hybrid sync/async interface to [SwiftTreeSitter][SwiftTreeSitter]. It features:
-
-- UTF-16 code-point (`NSString`-compatible) API for edits, invalidations, and queries
-- Processing edits of `String` objects, or raw bytes
-- Invalidation translation to the current content state regardless of background processing
-- On-demand nested language resolution via tree-sitter's injection system
-- Background processing when needed to scale to large documents
-
-Tree-sitter uses separate compiled parsers for each language. There are a variety of ways to use tree-sitter parsers with SwiftTreeSitter. Check out that project for details.
-
 ### Neon
 
 The top-level module includes systems for managing text styling. It is also text-system independent. It makes very few assumptions about how text is stored, displayed, or styled. It also includes some components for use with stock AppKit and UIKit systems. These are provided for easy integration, not maximum performance. 
@@ -84,6 +72,18 @@ The top-level module includes systems for managing text styling. It is also text
 - `ThreePhaseTextSystemStyler`: a true three-phase style manager that combines a primary, fallback and secondary token data sources
 
 There is also an example project that demonstrates how to use `TextViewHighlighter` for macOS and iOS.
+
+### TreeSitterClient
+
+This library is a hybrid sync/async interface to [SwiftTreeSitter][SwiftTreeSitter]. It features:
+
+- UTF-16 code-point (`NSString`-compatible) API for edits, invalidations, and queries
+- Processing edits of `String` objects, or raw bytes
+- Invalidation translation to the current content state regardless of background processing
+- On-demand nested language resolution via tree-sitter's injection system
+- Background processing when needed to scale to large documents
+
+Tree-sitter uses separate compiled parsers for each language. There are a variety of ways to use tree-sitter parsers with SwiftTreeSitter. Check out that project for details.
 
 ### Token Data Sources
 
@@ -104,6 +104,8 @@ This separation makes it very easy for you to do this look-up in a way that make
 In a traditional `NSTextStorage`-backed system (TextKit 1 and 2), it can be challenging to achieve flicker-free on-keypress highlighting. You need to know when a text change has been processed by enough of the system that styling is possible. This point in the text change lifecycle is not natively supported by `NSTextStorage` or `NSLayoutManager`. It requires an `NSTextStorage` subclass. Such a subclass, `TSYTextStorage` is available in [TextStory](https://github.com/ChimeHQ/TextStory).
 
 But, even that isn't quite enough unfortunately. You still need to precisely control the timing of invalidation and styling. This is where `RangeInvalidationBuffer` comes in.
+
+I have not yet figured out a way to do this with TextKit 2, and it may not be possible without new API.
 
 ## Usage
 
