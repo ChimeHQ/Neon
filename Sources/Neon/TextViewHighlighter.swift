@@ -155,6 +155,7 @@ extension TextViewHighlighter: NSTextStorageDelegate {
 			// At this point in mutation processing, it is unsafe to apply style changes. Ideally, we'd have a hook so we can know when it is ok. But, no such system exists for stock TextKit 1/2. So, instead we just let the runloop turn. This is *probably* safe, if the text does not change again, but can also result in flicker.
 			DispatchQueue.main.backport.asyncUnsafe {
 				self.buffer.endBuffering()
+				self.styler.validate()
 			}
 		}
 	}

@@ -64,4 +64,16 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 	public func invalidate(_ target: RangeTarget) {
 		validator.invalidate(target)
 	}
+
+	public func validate(_ target: RangeTarget) {
+		let priorityRange = textSystem.visibleRange
+
+		validator.validate(target, prioritizing: priorityRange)
+	}
+
+	public func validate() {
+		let priorityRange = textSystem.visibleRange
+
+		validator.validate(.range(priorityRange), prioritizing: priorityRange)
+	}
 }
