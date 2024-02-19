@@ -33,16 +33,16 @@ extension NSTextView {
 	}
 
 	public var visibleTextRange: NSRange {
-        guard
-            #available(macOS 12.0, *),
-            let textLayoutManager,
-            let viewportRange = textLayoutManager.textViewportLayoutController.viewportRange,
-            let textContentManager = textLayoutManager.textContentManager
-        else {
-            return textRange(for: visibleRect)
-        }
-        
-        return NSRange(viewportRange, provider: textContentManager)
+		guard
+			#available(macOS 12.0, *),
+			let textLayoutManager,
+			let viewportRange = textLayoutManager.textViewportLayoutController.viewportRange,
+			let textContentManager = textLayoutManager.textContentManager
+		else {
+			return textRange(for: visibleRect)
+		}
+
+		return NSRange(viewportRange, provider: textContentManager)
 	}
 }
 #endif
