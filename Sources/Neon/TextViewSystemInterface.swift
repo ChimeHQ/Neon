@@ -57,14 +57,14 @@ public struct TextViewSystemInterface {
 
 extension TextViewSystemInterface: TextSystemInterface {
 	private var effectiveInterface: (any TextSystemInterface)? {
-		let provider = { textView.visibleTextRange }
+		let provider = { IndexSet(textView.visibleTextRange) }
 
 		if #available(macOS 12.0, iOS 16.0, tvOS 16.0, *) {
 			if let textLayoutManager {
 				return TextLayoutManagerSystemInterface(
 					textLayoutManager: textLayoutManager,
 					attributeProvider: attributeProvider,
-					visibleRangeProvider: provider
+					visibleSetProvider: provider
 				)
 			}
 		}
@@ -74,7 +74,7 @@ extension TextViewSystemInterface: TextSystemInterface {
 			return LayoutManagerSystemInterface(
 				layoutManager: layoutManager,
 				attributeProvider: attributeProvider,
-				visibleRangeProvider: provider
+				visibleSetProvider: provider
 			)
 		}
 #endif
@@ -89,8 +89,8 @@ extension TextViewSystemInterface: TextSystemInterface {
 		effectiveInterface?.applyStyles(for: application)
 	}
 
-	public var visibleRange: NSRange {
-		return textView.visibleTextRange
+	public var visibleSet: IndexSet {
+		IndexSet(textView.visibleTextRange)
 	}
 
 	public var content: NSTextStorage {
@@ -106,19 +106,19 @@ extension TextViewSystemInterface: TextSystemInterface {
 public struct LayoutManagerSystemInterface {
 	public let layoutManager: NSLayoutManager
 	public let attributeProvider: TokenAttributeProvider
-	public let visibleRangeProvider: () -> NSRange
+	public let visibleSetProvider: () -> IndexSet
 	private let placeholderStorage = NSTextStorage()
 
-	public init(layoutManager: NSLayoutManager, attributeProvider: @escaping TokenAttributeProvider, visibleRangeProvider: @escaping () -> NSRange) {
+	public init(layoutManager: NSLayoutManager, attributeProvider: @escaping TokenAttributeProvider, visibleSetProvider: @escaping () -> IndexSet) {
 		self.layoutManager = layoutManager
 		self.attributeProvider = attributeProvider
-		self.visibleRangeProvider = visibleRangeProvider
+		self.visibleSetProvider = visibleSetProvider
 	}
 
 	public init?(textView: TextView, attributeProvider: @escaping TokenAttributeProvider) {
 		guard let layoutManager = textView.layoutManager else { return nil }
 		self.layoutManager = layoutManager
-		self.visibleRangeProvider = { textView.visibleTextRange }
+		self.visibleSetProvider = { IndexSet(textView.visibleTextRange) }
 		self.attributeProvider = attributeProvider
 	}
 }
@@ -141,8 +141,8 @@ extension LayoutManagerSystemInterface: TextSystemInterface {
 		}
 	}
 
-	public var visibleRange: NSRange {
-		visibleRangeProvider()
+	public var visibleSet: IndexSet {
+		visibleSetProvider()
 	}
 
 	public var content: NSTextStorage {
@@ -158,19 +158,19 @@ extension LayoutManagerSystemInterface: TextSystemInterface {
 public struct TextLayoutManagerSystemInterface {
 	public let textLayoutManager: NSTextLayoutManager
 	public let attributeProvider: TokenAttributeProvider
-	public let visibleRangeProvider: () -> NSRange
+	public let visibleSetProvider: () -> IndexSet
 	private let placholderContent = NSTextContentManager()
 
-	public init(textLayoutManager: NSTextLayoutManager, attributeProvider: @escaping TokenAttributeProvider, visibleRangeProvider: @escaping () -> NSRange) {
+	public init(textLayoutManager: NSTextLayoutManager, attributeProvider: @escaping TokenAttributeProvider, visibleSetProvider: @escaping () -> IndexSet) {
 		self.textLayoutManager = textLayoutManager
 		self.attributeProvider = attributeProvider
-		self.visibleRangeProvider = visibleRangeProvider
+		self.visibleSetProvider = visibleSetProvider
 	}
 
 	public init?(textView: TextView, attributeProvider: @escaping TokenAttributeProvider) {
 		guard let textLayoutManager = textView.textLayoutManager else { return nil }
 		self.textLayoutManager = textLayoutManager
-		self.visibleRangeProvider = { textView.visibleTextRange }
+		self.visibleSetProvider = { IndexSet(textView.visibleTextRange) }
 		self.attributeProvider = attributeProvider
 	}
 }
@@ -205,8 +205,8 @@ extension TextLayoutManagerSystemInterface: TextSystemInterface {
 		}
 	}
 
-	public var visibleRange: NSRange {
-		visibleRangeProvider()
+	public var visibleSet: IndexSet {
+		visibleSetProvider()
 	}
 
 	public var content: NSTextContentManager {
@@ -220,17 +220,17 @@ public struct TextStorageSystemInterface {
 	private let textStorage: NSTextStorage
 	public let attributeProvider: TokenAttributeProvider
 	public let defaultAttributesProvider: () -> [NSAttributedString.Key : Any]
-	public let visibleRangeProvider: () -> NSRange
+	public let visibleSetProvider: () -> IndexSet
 
 	public init(
 		textStorage: NSTextStorage,
 		attributeProvider: @escaping TokenAttributeProvider,
-		visibleRangeProvider: @escaping () -> NSRange,
+		visibleSetProvider: @escaping () -> IndexSet,
 		defaultAttributesProvider: @escaping () -> [NSAttributedString.Key : Any]
 	) {
 		self.textStorage = textStorage
 		self.attributeProvider = attributeProvider
-		self.visibleRangeProvider = visibleRangeProvider
+		self.visibleSetProvider = visibleSetProvider
 		self.defaultAttributesProvider = defaultAttributesProvider
 	}
 
@@ -240,7 +240,7 @@ public struct TextStorageSystemInterface {
 #else
 		self.textStorage = textView.textStorage
 #endif
-		self.visibleRangeProvider = { textView.visibleTextRange }
+		self.visibleSetProvider = { IndexSet(textView.visibleTextRange) }
 		self.attributeProvider = attributeProvider
 		self.defaultAttributesProvider = { textView.typingAttributes }
 	}
@@ -264,8 +264,8 @@ extension TextStorageSystemInterface: TextSystemInterface {
 		}
 	}
 
-	public var visibleRange: NSRange {
-		visibleRangeProvider()
+	public var visibleSet: IndexSet {
+		visibleSetProvider()
 	}
 
 	public var content: some VersionedContent {

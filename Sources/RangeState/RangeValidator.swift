@@ -52,10 +52,10 @@ public final class RangeValidator<Content: VersionedContent> {
 	/// Begin a validation pass.
 	///
 	/// This must ultimately be paired with a matching call to `completeValidation(of:with:)`.
-	public func beginValidation(of target: RangeTarget, prioritizing range: NSRange? = nil) -> Action {
+	public func beginValidation(of target: RangeTarget, prioritizing set: IndexSet? = nil) -> Action {
 		let set = target.indexSet(with: length)
 
-		guard let neededRange = nextNeededRange(in: set, prioritizing: range) else { return .none }
+		guard let neededRange = nextNeededRange(in: set, prioritizing: set) else { return .none }
 
 		self.pendingSet.insert(range: neededRange)
 		self.pendingRequests += 1
@@ -140,33 +140,19 @@ extension RangeValidator {
 
 extension RangeValidator {
 	/// Computes the next contiguous invalid range
-	private func nextNeededRange(in set: IndexSet, prioritizing priorityRange: NSRange?) -> NSRange? {
-		// determine what parts of the target set are actually invalid
+	private func nextNeededRange(in set: IndexSet, prioritizing prioritySet: IndexSet?) -> NSRange? {
+		let prioritySet = prioritySet ?? fullSet
+
+		// the candidate set is:
+		// - invalid
+		// - within our priority (or everything if we have none)
+		// - not already pending
 		let workingInvalidSet = invalidSet
 			.intersection(set)
+			.intersection(prioritySet)
+			.subtracting(pendingSet)
 
-		// here's a trick. Create a set with a single range, and then remove
-		// any pending ranges from it. The result can be used to determine the longest
-		// ranges that do not overlap pending.
-		let spanSet = workingInvalidSet
-			.limitSpanningRange
-			.map({ IndexSet(integersIn: $0) }) ?? IndexSet()
-
-		let candidateSet = spanSet.subtracting(pendingSet)
-
-		// We want to prioritize the invalid ranges that are actually in the target set
-		let hasInvalidRanges = set.intersection(invalidSet).isEmpty == false
-		let limit = priorityRange?.location ?? 0
-
-		// now get back the first range which is the longest continuous
-		// range that includes invalid regions
-		let range = candidateSet.nsRangeView.first { range in
-			guard hasInvalidRanges else { return true }
-
-			return range.max > limit
-		}
-
-		return range
+		return workingInvalidSet.nsRangeView.first
 	}
 }
 

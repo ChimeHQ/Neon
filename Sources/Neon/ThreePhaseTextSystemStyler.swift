@@ -30,7 +30,7 @@ public final class ThreePhaseTextSystemStyler<Interface: TextSystemInterface> {
 				fallbackHandler: textSystem.validatorFallbackHandler(with: fallbackHandler),
 				secondaryProvider: textSystem.validatorSecondaryHandler(with: secondaryValidationProvider),
 				secondaryValidationDelay: 3.0,
-				priorityRangeProvider: { textSystem.visibleRange }
+				prioritySetProvider: { textSystem.visibleSet }
 			)
 		)
 	}
@@ -44,14 +44,14 @@ public final class ThreePhaseTextSystemStyler<Interface: TextSystemInterface> {
 	}
 
 	public func validate(_ target: RangeTarget) {
-		let priorityRange = textSystem.visibleRange
+		let prioritySet = textSystem.visibleSet
 
-		validator.validate(target, prioritizing: priorityRange)
+		validator.validate(target, prioritizing: prioritySet)
 	}
 
 	public func validate() {
-		let priorityRange = textSystem.visibleRange
+		let prioritySet = textSystem.visibleSet
 
-		validator.validate(.range(priorityRange), prioritizing: priorityRange)
+		validator.validate(.set(prioritySet), prioritizing: prioritySet)
 	}
 }

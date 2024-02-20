@@ -28,7 +28,7 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 			configuration: .init(
 				versionedContent: textSystem.content,
 				provider: tokenValidator.validationProvider,
-				priorityRangeProvider: { textSystem.visibleRange }
+				prioritySetProvider: { textSystem.visibleSet }
 			)
 		)
 	}
@@ -55,9 +55,9 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 	///
 	/// You should invoke this method when the visible text in your system changes.
 	public func visibleContentDidChange() {
-		let priorityRange = textSystem.visibleRange
+		let prioritySet = textSystem.visibleSet
 
-		validator.validate(.range(priorityRange), prioritizing: priorityRange)
+		validator.validate(.set(prioritySet), prioritizing: prioritySet)
 	}
 
 
@@ -66,14 +66,14 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 	}
 
 	public func validate(_ target: RangeTarget) {
-		let priorityRange = textSystem.visibleRange
+		let prioritySet = textSystem.visibleSet
 
-		validator.validate(target, prioritizing: priorityRange)
+		validator.validate(target, prioritizing: prioritySet)
 	}
 
 	public func validate() {
-		let priorityRange = textSystem.visibleRange
+		let prioritySet = textSystem.visibleSet
 
-		validator.validate(.range(priorityRange), prioritizing: priorityRange)
+		validator.validate(.set(prioritySet), prioritizing: prioritySet)
 	}
 }

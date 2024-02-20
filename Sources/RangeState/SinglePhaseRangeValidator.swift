@@ -8,23 +8,23 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 
 	public typealias ContentRange = RangeValidator<Content>.ContentRange
 	public typealias Provider = HybridValueProvider<ContentRange, Validation>
-	public typealias PriorityRangeProvider = () -> NSRange
+	public typealias PrioritySetProvider = () -> IndexSet
 
 	private typealias Sequence = AsyncStream<ContentRange>
 
 	public struct Configuration {
 		public let versionedContent: Content
 		public let provider: Provider
-		public let priorityRangeProvider: PriorityRangeProvider?
+		public let prioritySetProvider: PrioritySetProvider?
 
 		public init(
 			versionedContent: Content,
 			provider: Provider,
-			priorityRangeProvider: PriorityRangeProvider? = nil
+			prioritySetProvider: PrioritySetProvider? = nil
 		) {
 			self.versionedContent = versionedContent
 			self.provider = provider
-			self.priorityRangeProvider = priorityRangeProvider
+			self.prioritySetProvider = prioritySetProvider
 		}
 	}
 
@@ -63,11 +63,11 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	}
 
 	@discardableResult
-	public func validate(_ target: RangeTarget, prioritizing range: NSRange? = nil) -> RangeValidator<Content>.Action {
+	public func validate(_ target: RangeTarget, prioritizing set: IndexSet? = nil) -> RangeValidator<Content>.Action {
 		// capture this first, because we're about to start one
 		let outstanding = primaryValidator.hasOutstandingValidations
 
-		let action = primaryValidator.beginValidation(of: target, prioritizing: range)
+		let action = primaryValidator.beginValidation(of: target, prioritizing: set)
 
 		switch action {
 		case .none:
@@ -97,9 +97,9 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 		switch validation {
 		case .stale:
 			DispatchQueue.main.backport.asyncUnsafe {
-				let priorityRange = self.configuration.priorityRangeProvider?() ?? contentRange.value
+				let prioritySet = self.configuration.prioritySetProvider?() ?? IndexSet(contentRange.value)
 
-				self.validate(.range(priorityRange))
+				self.validate(.set(prioritySet))
 			}
 		case let .success(range):
 			validationHandler(range)
