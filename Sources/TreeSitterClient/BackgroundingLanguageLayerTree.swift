@@ -12,21 +12,25 @@ enum BackgroundingLanguageLayerTreeError: Error {
 @MainActor
 final class BackgroundingLanguageLayerTree {
 	public static let synchronousLengthThreshold = 2048
+	public static let synchronousDocumentSize = 2048*512
 
 	public struct Configuration {
 		public let locationTransformer: Point.LocationTransformer
 		public let languageProvider: LanguageLayer.LanguageProvider
+		public let maximumLanguageDepth: Int
 
 		public init(
 			locationTransformer: @escaping Point.LocationTransformer,
-			languageProvider: @escaping LanguageLayer.LanguageProvider = { _ in nil }
+			languageProvider: @escaping LanguageLayer.LanguageProvider = { _ in nil },
+			maximumLanguageDepth: Int
 		) {
 			self.locationTransformer = locationTransformer
 			self.languageProvider = languageProvider
+			self.maximumLanguageDepth = maximumLanguageDepth
 		}
 
 		var layerConfiguration: LanguageLayer.Configuration {
-			.init(languageProvider: languageProvider)
+			.init(maximumLanguageDepth: maximumLanguageDepth, languageProvider: languageProvider)
 		}
 	}
 
@@ -79,7 +83,8 @@ final class BackgroundingLanguageLayerTree {
 
 		let upToDate = currentVersion == committedVersion
 		let smallChange = delta < Self.synchronousLengthThreshold && range.length < Self.synchronousLengthThreshold
-		let sync = upToDate && smallChange
+		let smallDoc = range.max < Self.synchronousDocumentSize
+		let sync = upToDate && smallChange && smallDoc
 
 		let version = currentVersion
 		self.currentVersion += 1

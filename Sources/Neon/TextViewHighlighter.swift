@@ -68,6 +68,10 @@ public final class TextViewHighlighter: NSObject {
 	private let client: TreeSitterClient
 	private let buffer = RangeInvalidationBuffer()
 
+#if os(iOS) || os(visionOS)
+	private var frameObservation: NSKeyValueObservation?
+#endif
+
 	public init(
 		textView: TextView,
 		configuration: Configuration
@@ -98,25 +102,45 @@ public final class TextViewHighlighter: NSObject {
 
 		super.init()
 
-		buffer.invalidationHandler = { [styler] in styler.invalidate($0) }
+		buffer.invalidationHandler = { [styler] in
+			styler.invalidate($0)
+			styler.validate()
+		}
 
 		try textView.getTextStorage().delegate = self
 
-#if os(macOS) && !targetEnvironment(macCatalyst)
-		guard let scrollView = textView.enclosingScrollView else { return }
-
-		NotificationCenter.default.addObserver(self,
-											   selector: #selector(visibleContentChanged(_:)),
-											   name: NSView.frameDidChangeNotification,
-											   object: scrollView)
-
-		NotificationCenter.default.addObserver(self,
-											   selector: #selector(visibleContentChanged(_:)),
-											   name: NSView.boundsDidChangeNotification,
-											   object: scrollView.contentView)
-#endif
+		observeEnclosingScrollView()
 
 		invalidate(.all)
+	}
+
+	public func observeEnclosingScrollView() {
+#if os(macOS) && !targetEnvironment(macCatalyst)
+		guard let scrollView = textView.enclosingScrollView else {
+			print("warning: there is no enclosing scroll view")
+			return
+		}
+
+		NotificationCenter.default.addObserver(
+			self,
+			selector: #selector(visibleContentChanged(_:)),
+			name: NSView.frameDidChangeNotification,
+			object: scrollView
+		)
+
+		NotificationCenter.default.addObserver(
+			self,
+			selector: #selector(visibleContentChanged(_:)),
+			name: NSView.boundsDidChangeNotification,
+			object: scrollView.contentView
+		)
+#elseif os(iOS) || os(visionOS)
+		self.frameObservation = textView.observe(\.contentOffset) { [styler] view, _ in
+			MainActor.assumeIsolated {
+				styler.visibleContentDidChange()
+			}
+		}
+#endif
 	}
 
 	@objc private func visibleContentChanged(_ notification: NSNotification) {
@@ -127,11 +151,17 @@ public final class TextViewHighlighter: NSObject {
 	public func invalidate(_ target: RangeTarget) {
 		buffer.invalidate(target)
 	}
+
+	public func languageConfigurationChanged(for name: String) {
+		client.languageConfigurationChanged(for: name)
+	}
 }
 
 extension TextViewHighlighter: NSTextStorageDelegate {
 	public nonisolated func textStorage(_ textStorage: NSTextStorage, willProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
 		MainActor.backport.assumeIsolated {
+			guard editedMask.contains(.editedCharacters) else { return }
+			
 			// a change happening, start buffering invalidations
 			buffer.beginBuffering()
 
@@ -153,9 +183,8 @@ extension TextViewHighlighter: NSTextStorageDelegate {
 			styler.didChangeContent(in: adjustedRange, delta: delta)
 
 			// At this point in mutation processing, it is unsafe to apply style changes. Ideally, we'd have a hook so we can know when it is ok. But, no such system exists for stock TextKit 1/2. So, instead we just let the runloop turn. This is *probably* safe, if the text does not change again, but can also result in flicker.
-			DispatchQueue.main.backport.asyncUnsafe {
+			DispatchQueue.main.async {
 				self.buffer.endBuffering()
-				self.styler.validate()
 			}
 		}
 	}

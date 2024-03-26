@@ -254,6 +254,8 @@ extension TextStorageSystemInterface: TextSystemInterface {
 	}
 
 	public func applyStyles(for application: TokenApplication) {
+		textStorage.beginEditing()
+
 		if let range = application.range {
 			setAttributes(defaultAttributesProvider(), in: range)
 		}
@@ -262,6 +264,8 @@ extension TextStorageSystemInterface: TextSystemInterface {
 			let attrs = attributeProvider(token)
 			setAttributes(attrs, in: token.range)
 		}
+
+		textStorage.endEditing()
 	}
 
 	public var visibleSet: IndexSet {

@@ -29,6 +29,7 @@ public final class TreeSitterClient {
 		public let lengthProvider: RangeProcessor.LengthProvider
 		public let invalidationHandler: (IndexSet) -> Void
 		public let locationTransformer: (Int) -> Point?
+		public let maximumLanguageDepth: Int
 
 		/// Create the client configuration.
 		///
@@ -42,17 +43,19 @@ public final class TreeSitterClient {
 			contentProvider: @escaping (Int) -> LanguageLayer.Content,
 			lengthProvider: @escaping RangeProcessor.LengthProvider,
 			invalidationHandler: @escaping (IndexSet) -> Void,
-			locationTransformer: @escaping (Int) -> Point?
+			locationTransformer: @escaping (Int) -> Point?,
+			maximumLanguageDepth: Int = 4
 		) {
 			self.languageProvider = languageProvider
 			self.contentProvider = contentProvider
 			self.lengthProvider = lengthProvider
 			self.invalidationHandler = invalidationHandler
 			self.locationTransformer = locationTransformer
+			self.maximumLanguageDepth = maximumLanguageDepth
 		}
 	}
 
-	private var versionedContent: UnversionableContent
+	private let versionedContent: UnversionableContent
 	private let configuration: Configuration
 	private lazy var rangeProcessor = RangeProcessor(
 		configuration: .init(
@@ -78,7 +81,8 @@ public final class TreeSitterClient {
 			rootLanguageConfig: rootLanguageConfig,
 			configuration: .init(
 				locationTransformer: configuration.locationTransformer,
-				languageProvider: configuration.languageProvider
+				languageProvider: configuration.languageProvider,
+				maximumLanguageDepth: configuration.maximumLanguageDepth
 			)
 		)
 	}
@@ -152,10 +156,6 @@ extension TreeSitterClient {
 		if sublayers {
 			sublayerValidator.invalidate(.set(transformedSet))
 		}
-	}
-
-	private func languageConfig(for name: String) -> LanguageConfiguration? {
-		configuration.languageProvider(name)
 	}
 }
 

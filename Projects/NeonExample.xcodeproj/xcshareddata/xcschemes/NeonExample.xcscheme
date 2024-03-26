@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1500"
+   LastUpgradeVersion = "1530"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      buildArchitectures = "Automatic">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C9A60F8128C68FD9006883EC"
+               BlueprintIdentifier = "C9E075EE2BB3040B005ED81E"
                BuildableName = "NeonExample.app"
                BlueprintName = "NeonExample"
                ReferencedContainer = "container:NeonExample.xcodeproj">
@@ -26,13 +27,8 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
-      <TestPlans>
-         <TestPlanReference
-            reference = "container:NeonExample.xctestplan"
-            default = "YES">
-         </TestPlanReference>
-      </TestPlans>
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      shouldAutocreateTestPlan = "YES">
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -48,7 +44,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C9A60F8128C68FD9006883EC"
+            BlueprintIdentifier = "C9E075EE2BB3040B005ED81E"
             BuildableName = "NeonExample.app"
             BlueprintName = "NeonExample"
             ReferencedContainer = "container:NeonExample.xcodeproj">
@@ -65,7 +61,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C9A60F8128C68FD9006883EC"
+            BlueprintIdentifier = "C9E075EE2BB3040B005ED81E"
             BuildableName = "NeonExample.app"
             BlueprintName = "NeonExample"
             ReferencedContainer = "container:NeonExample.xcodeproj">

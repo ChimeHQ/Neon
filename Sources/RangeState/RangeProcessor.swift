@@ -105,22 +105,28 @@ extension RangeProcessor {
 		return RangeMutation(range: range, delta: delta)
 	}
 
+	/// Ensure that a location has been processed
+	///
+	/// - Returns: true if the location has been processed
+
 	@discardableResult
 	public func processLocation(_ location: Int, mode: RangeFillMode = .required) -> Bool {
-		guard let mutation = fillMutationNeeded(for: location, mode: mode) else {
-			return true
-		}
-
 		switch mode {
 		case .none:
-			return false
+			break
 		case .optional:
 			// update our target
 			self.targetProcessingLocation = max(location, targetProcessingLocation)
 			
 			scheduleFilling()
 		case .required:
-			processMutation(mutation)
+			if hasPendingChanges {
+				break
+			}
+
+			if let mutation = fillMutationNeeded(for: location, mode: mode) {
+				processMutation(mutation)
+			}
 		}
 
 		// could have been done synchronously, so check here for convenience

@@ -23,7 +23,8 @@ extension TreeSitterClient {
 		TokenProvider(
 			syncValue: { [highlightsProvider] range in
 				do {
-					guard let namedRanges = try highlightsProvider.sync(.init(range: range, textProvider: provider)) else {
+					let params = TreeSitterClient.ClientQueryParams(range: range, textProvider: provider)
+					guard let namedRanges = try highlightsProvider.sync(params) else {
 						return nil
 					}
 
@@ -34,7 +35,8 @@ extension TreeSitterClient {
 			},
 			mainActorAsyncValue: { [highlightsProvider] range in
 				do {
-					let namedRanges = try await highlightsProvider.mainActorAsync(.init(range: range, textProvider: provider))
+					let params = TreeSitterClient.ClientQueryParams(range: range, textProvider: provider)
+					let namedRanges = try await highlightsProvider.mainActorAsync(params)
 
 					return TokenApplication(namedRanges: namedRanges, nameMap: nameMap, range: range)
 				} catch {

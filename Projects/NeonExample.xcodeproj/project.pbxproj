@@ -7,77 +7,56 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C9610B3528C6AD4F008ADDE6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9610B3428C6AD4F008ADDE6 /* AppDelegate.swift */; };
-		C9610B3728C6AD4F008ADDE6 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9610B3628C6AD4F008ADDE6 /* SceneDelegate.swift */; };
-		C9610B3928C6AD4F008ADDE6 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9610B3828C6AD4F008ADDE6 /* ViewController.swift */; };
-		C9610B3C28C6AD4F008ADDE6 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C9610B3A28C6AD4F008ADDE6 /* Main.storyboard */; };
-		C9610B3E28C6AD50008ADDE6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9610B3D28C6AD50008ADDE6 /* Assets.xcassets */; };
-		C9610B4128C6AD50008ADDE6 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C9610B3F28C6AD50008ADDE6 /* LaunchScreen.storyboard */; };
-		C9610B4C28C6B01C008ADDE6 /* Neon in Frameworks */ = {isa = PBXBuildFile; productRef = C9610B4B28C6B01C008ADDE6 /* Neon */; };
-		C9610B4E28C6B01C008ADDE6 /* TreeSitterSwift in Frameworks */ = {isa = PBXBuildFile; productRef = C9610B4D28C6B01C008ADDE6 /* TreeSitterSwift */; };
-		C9A60F8628C68FD9006883EC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A60F8528C68FD9006883EC /* AppDelegate.swift */; };
-		C9A60F8828C68FDA006883EC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9A60F8728C68FDA006883EC /* Assets.xcassets */; };
-		C9A60F8B28C68FDA006883EC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = C9A60F8928C68FDA006883EC /* MainMenu.xib */; };
-		C9A60F9428C6903E006883EC /* Neon in Frameworks */ = {isa = PBXBuildFile; productRef = C9A60F9328C6903E006883EC /* Neon */; };
-		C9A60F9728C6923E006883EC /* TreeSitterSwift in Frameworks */ = {isa = PBXBuildFile; productRef = C9A60F9628C6923E006883EC /* TreeSitterSwift */; };
-		C9A60F9928C692B0006883EC /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A60F9828C692B0006883EC /* ViewController.swift */; };
+		C94ACAC92BB3389B0041F2B7 /* big_test.code in Resources */ = {isa = PBXBuildFile; fileRef = C94ACAC82BB3389B0041F2B7 /* big_test.code */; };
+		C9BFA1982BB5D9FB00E86487 /* TreeSitterMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = C9BFA1972BB5D9FB00E86487 /* TreeSitterMarkdown */; };
+		C9BFA19A2BB5DA7600E86487 /* big_test.md in Resources */ = {isa = PBXBuildFile; fileRef = C9BFA1992BB5DA7600E86487 /* big_test.md */; };
+		C9BFA19C2BB5FCF800E86487 /* test.code in Resources */ = {isa = PBXBuildFile; fileRef = C9BFA19B2BB5FCF800E86487 /* test.code */; };
+		C9C7DEE42BB307A700AC4F9D /* Neon in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7DEE32BB307A700AC4F9D /* Neon */; };
+		C9C7DEE62BB307AA00AC4F9D /* TreeSitterSwift in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7DEE52BB307AA00AC4F9D /* TreeSitterSwift */; };
+		C9C7DEE82BB307DD00AC4F9D /* TextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C7DEE72BB307DD00AC4F9D /* TextViewController.swift */; };
+		C9C7DEEB2BB3088A00AC4F9D /* NSUI in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7DEEA2BB3088A00AC4F9D /* NSUI */; };
+		C9C7DEF22BB30DCE00AC4F9D /* TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C7DEF12BB30DCE00AC4F9D /* TextView.swift */; };
+		C9E075F22BB3040B005ED81E /* NeonExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E075F12BB3040B005ED81E /* NeonExampleApp.swift */; };
+		C9E075F42BB3040B005ED81E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E075F32BB3040B005ED81E /* ContentView.swift */; };
+		C9E075F62BB3040C005ED81E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9E075F52BB3040C005ED81E /* Assets.xcassets */; };
+		C9E075FA2BB3040C005ED81E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9E075F92BB3040C005ED81E /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		5077D7FF2B08D1F1000A15B8 /* Neon */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = Neon; path = ..; sourceTree = "<group>"; };
-		5077D8012B08DF5D000A15B8 /* NeonExample.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = NeonExample.xctestplan; sourceTree = "<group>"; };
-		C9610B3228C6AD4F008ADDE6 /* NeonExample-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NeonExample-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		C9610B3428C6AD4F008ADDE6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		C9610B3628C6AD4F008ADDE6 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
-		C9610B3828C6AD4F008ADDE6 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		C9610B3B28C6AD4F008ADDE6 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		C9610B3D28C6AD50008ADDE6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		C9610B4028C6AD50008ADDE6 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		C9610B4228C6AD50008ADDE6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		C9A60F8228C68FD9006883EC /* NeonExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeonExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		C9A60F8528C68FD9006883EC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		C9A60F8728C68FDA006883EC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		C9A60F8A28C68FDA006883EC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		C9A60F8C28C68FDA006883EC /* NeonExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NeonExample.entitlements; sourceTree = "<group>"; };
-		C9A60F9828C692B0006883EC /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		C94ACAC82BB3389B0041F2B7 /* big_test.code */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = big_test.code; sourceTree = "<group>"; };
+		C9BFA1992BB5DA7600E86487 /* big_test.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = big_test.md; sourceTree = "<group>"; };
+		C9BFA19B2BB5FCF800E86487 /* test.code */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test.code; sourceTree = "<group>"; };
+		C9C7DEE72BB307DD00AC4F9D /* TextViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextViewController.swift; sourceTree = "<group>"; };
+		C9C7DEF12BB30DCE00AC4F9D /* TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextView.swift; sourceTree = "<group>"; };
+		C9C7DEF32BB330C400AC4F9D /* SwiftTreeSitter */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftTreeSitter; path = ../../SwiftTreeSitter; sourceTree = "<group>"; };
+		C9E075EF2BB3040B005ED81E /* NeonExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeonExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9E075F12BB3040B005ED81E /* NeonExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeonExampleApp.swift; sourceTree = "<group>"; };
+		C9E075F32BB3040B005ED81E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C9E075F52BB3040C005ED81E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C9E075F72BB3040C005ED81E /* NeonExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NeonExample.entitlements; sourceTree = "<group>"; };
+		C9E075F92BB3040C005ED81E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		C9E075FF2BB30482005ED81E /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Project.xcconfig; sourceTree = "<group>"; };
+		C9E076002BB304C7005ED81E /* Project-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Project-Debug.xcconfig"; sourceTree = "<group>"; };
+		C9E076012BB304E7005ED81E /* Multiplatform.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Multiplatform.xcconfig; sourceTree = "<group>"; };
+		C9E076022BB30503005ED81E /* NeonExample.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = NeonExample.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C9610B2F28C6AD4F008ADDE6 /* Frameworks */ = {
+		C9E075EC2BB3040B005ED81E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C9610B4C28C6B01C008ADDE6 /* Neon in Frameworks */,
-				C9610B4E28C6B01C008ADDE6 /* TreeSitterSwift in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		C9A60F7F28C68FD9006883EC /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				C9A60F9428C6903E006883EC /* Neon in Frameworks */,
-				C9A60F9728C6923E006883EC /* TreeSitterSwift in Frameworks */,
+				C9BFA1982BB5D9FB00E86487 /* TreeSitterMarkdown in Frameworks */,
+				C9C7DEE42BB307A700AC4F9D /* Neon in Frameworks */,
+				C9C7DEEB2BB3088A00AC4F9D /* NSUI in Frameworks */,
+				C9C7DEE62BB307AA00AC4F9D /* TreeSitterSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		C9610B3328C6AD4F008ADDE6 /* NeonExample-iOS */ = {
-			isa = PBXGroup;
-			children = (
-				C9610B3428C6AD4F008ADDE6 /* AppDelegate.swift */,
-				C9610B3628C6AD4F008ADDE6 /* SceneDelegate.swift */,
-				C9610B3828C6AD4F008ADDE6 /* ViewController.swift */,
-				C9610B3A28C6AD4F008ADDE6 /* Main.storyboard */,
-				C9610B3D28C6AD50008ADDE6 /* Assets.xcassets */,
-				C9610B3F28C6AD50008ADDE6 /* LaunchScreen.storyboard */,
-				C9610B4228C6AD50008ADDE6 /* Info.plist */,
-			);
-			path = "NeonExample-iOS";
-			sourceTree = "<group>";
-		};
 		C9610B4A28C6B01C008ADDE6 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -88,10 +67,10 @@
 		C9A60F7928C68FD9006883EC = {
 			isa = PBXGroup;
 			children = (
-				5077D8012B08DF5D000A15B8 /* NeonExample.xctestplan */,
+				C9C7DEF32BB330C400AC4F9D /* SwiftTreeSitter */,
 				5077D7FF2B08D1F1000A15B8 /* Neon */,
-				C9A60F8428C68FD9006883EC /* NeonExample */,
-				C9610B3328C6AD4F008ADDE6 /* NeonExample-iOS */,
+				C9E075FE2BB3044C005ED81E /* Configurations */,
+				C9E075F02BB3040B005ED81E /* NeonExample */,
 				C9A60F8328C68FD9006883EC /* Products */,
 				C9610B4A28C6B01C008ADDE6 /* Frameworks */,
 			);
@@ -101,71 +80,74 @@
 		C9A60F8328C68FD9006883EC /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				C9A60F8228C68FD9006883EC /* NeonExample.app */,
-				C9610B3228C6AD4F008ADDE6 /* NeonExample-iOS.app */,
+				C9E075EF2BB3040B005ED81E /* NeonExample.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		C9A60F8428C68FD9006883EC /* NeonExample */ = {
+		C9E075F02BB3040B005ED81E /* NeonExample */ = {
 			isa = PBXGroup;
 			children = (
-				C9A60F8528C68FD9006883EC /* AppDelegate.swift */,
-				C9A60F8728C68FDA006883EC /* Assets.xcassets */,
-				C9A60F8928C68FDA006883EC /* MainMenu.xib */,
-				C9A60F8C28C68FDA006883EC /* NeonExample.entitlements */,
-				C9A60F9828C692B0006883EC /* ViewController.swift */,
+				C9BFA19B2BB5FCF800E86487 /* test.code */,
+				C9BFA1992BB5DA7600E86487 /* big_test.md */,
+				C94ACAC82BB3389B0041F2B7 /* big_test.code */,
+				C9E075F12BB3040B005ED81E /* NeonExampleApp.swift */,
+				C9E075F32BB3040B005ED81E /* ContentView.swift */,
+				C9E075F52BB3040C005ED81E /* Assets.xcassets */,
+				C9E075F72BB3040C005ED81E /* NeonExample.entitlements */,
+				C9E075F82BB3040C005ED81E /* Preview Content */,
+				C9C7DEE72BB307DD00AC4F9D /* TextViewController.swift */,
+				C9C7DEF12BB30DCE00AC4F9D /* TextView.swift */,
 			);
 			path = NeonExample;
+			sourceTree = "<group>";
+		};
+		C9E075F82BB3040C005ED81E /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				C9E075F92BB3040C005ED81E /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		C9E075FE2BB3044C005ED81E /* Configurations */ = {
+			isa = PBXGroup;
+			children = (
+				C9E075FF2BB30482005ED81E /* Project.xcconfig */,
+				C9E076002BB304C7005ED81E /* Project-Debug.xcconfig */,
+				C9E076012BB304E7005ED81E /* Multiplatform.xcconfig */,
+				C9E076022BB30503005ED81E /* NeonExample.xcconfig */,
+			);
+			path = Configurations;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		C9610B3128C6AD4F008ADDE6 /* NeonExample-iOS */ = {
+		C9E075EE2BB3040B005ED81E /* NeonExample */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C9610B4528C6AD50008ADDE6 /* Build configuration list for PBXNativeTarget "NeonExample-iOS" */;
+			buildConfigurationList = C9E075FB2BB3040C005ED81E /* Build configuration list for PBXNativeTarget "NeonExample" */;
 			buildPhases = (
-				C9610B2E28C6AD4F008ADDE6 /* Sources */,
-				C9610B2F28C6AD4F008ADDE6 /* Frameworks */,
-				C9610B3028C6AD4F008ADDE6 /* Resources */,
+				C9E075EB2BB3040B005ED81E /* Sources */,
+				C9E075EC2BB3040B005ED81E /* Frameworks */,
+				C9E075ED2BB3040B005ED81E /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				C9610B4728C6B017008ADDE6 /* PBXTargetDependency */,
-				C9610B4928C6B017008ADDE6 /* PBXTargetDependency */,
-			);
-			name = "NeonExample-iOS";
-			packageProductDependencies = (
-				C9610B4B28C6B01C008ADDE6 /* Neon */,
-				C9610B4D28C6B01C008ADDE6 /* TreeSitterSwift */,
-			);
-			productName = "NeonExample-iOS";
-			productReference = C9610B3228C6AD4F008ADDE6 /* NeonExample-iOS.app */;
-			productType = "com.apple.product-type.application";
-		};
-		C9A60F8128C68FD9006883EC /* NeonExample */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = C9A60F8F28C68FDA006883EC /* Build configuration list for PBXNativeTarget "NeonExample" */;
-			buildPhases = (
-				C9A60F7E28C68FD9006883EC /* Sources */,
-				C9A60F7F28C68FD9006883EC /* Frameworks */,
-				C9A60F8028C68FD9006883EC /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				C9A60F9D28C69551006883EC /* PBXTargetDependency */,
-				C9A60F9B28C6954E006883EC /* PBXTargetDependency */,
+				C9C7DEED2BB3089300AC4F9D /* PBXTargetDependency */,
+				C9C7DEE22BB307A100AC4F9D /* PBXTargetDependency */,
+				C9C7DEE02BB3079E00AC4F9D /* PBXTargetDependency */,
 			);
 			name = NeonExample;
 			packageProductDependencies = (
-				C9A60F9328C6903E006883EC /* Neon */,
-				C9A60F9628C6923E006883EC /* TreeSitterSwift */,
+				C9C7DEE32BB307A700AC4F9D /* Neon */,
+				C9C7DEE52BB307AA00AC4F9D /* TreeSitterSwift */,
+				C9C7DEEA2BB3088A00AC4F9D /* NSUI */,
+				C9BFA1972BB5D9FB00E86487 /* TreeSitterMarkdown */,
 			);
 			productName = NeonExample;
-			productReference = C9A60F8228C68FD9006883EC /* NeonExample.app */;
+			productReference = C9E075EF2BB3040B005ED81E /* NeonExample.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -175,14 +157,11 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1400;
+				LastSwiftUpdateCheck = 1530;
 				LastUpgradeCheck = 1400;
 				TargetAttributes = {
-					C9610B3128C6AD4F008ADDE6 = {
-						CreatedOnToolsVersion = 14.0;
-					};
-					C9A60F8128C68FD9006883EC = {
-						CreatedOnToolsVersion = 14.0;
+					C9E075EE2BB3040B005ED81E = {
+						CreatedOnToolsVersion = 15.3;
 					};
 				};
 			};
@@ -198,350 +177,112 @@
 			packageReferences = (
 				C9A60F9228C6903E006883EC /* XCRemoteSwiftPackageReference "Neon" */,
 				C9A60F9528C6923E006883EC /* XCRemoteSwiftPackageReference "tree-sitter-swift" */,
+				C9C7DEE92BB3088A00AC4F9D /* XCRemoteSwiftPackageReference "nsui" */,
+				C9BFA1962BB5D9FB00E86487 /* XCRemoteSwiftPackageReference "tree-sitter-markdown" */,
 			);
 			productRefGroup = C9A60F8328C68FD9006883EC /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				C9A60F8128C68FD9006883EC /* NeonExample */,
-				C9610B3128C6AD4F008ADDE6 /* NeonExample-iOS */,
+				C9E075EE2BB3040B005ED81E /* NeonExample */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		C9610B3028C6AD4F008ADDE6 /* Resources */ = {
+		C9E075ED2BB3040B005ED81E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C9610B4128C6AD50008ADDE6 /* LaunchScreen.storyboard in Resources */,
-				C9610B3E28C6AD50008ADDE6 /* Assets.xcassets in Resources */,
-				C9610B3C28C6AD4F008ADDE6 /* Main.storyboard in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		C9A60F8028C68FD9006883EC /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				C9A60F8828C68FDA006883EC /* Assets.xcassets in Resources */,
-				C9A60F8B28C68FDA006883EC /* MainMenu.xib in Resources */,
+				C9E075FA2BB3040C005ED81E /* Preview Assets.xcassets in Resources */,
+				C94ACAC92BB3389B0041F2B7 /* big_test.code in Resources */,
+				C9E075F62BB3040C005ED81E /* Assets.xcassets in Resources */,
+				C9BFA19C2BB5FCF800E86487 /* test.code in Resources */,
+				C9BFA19A2BB5DA7600E86487 /* big_test.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C9610B2E28C6AD4F008ADDE6 /* Sources */ = {
+		C9E075EB2BB3040B005ED81E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C9610B3928C6AD4F008ADDE6 /* ViewController.swift in Sources */,
-				C9610B3528C6AD4F008ADDE6 /* AppDelegate.swift in Sources */,
-				C9610B3728C6AD4F008ADDE6 /* SceneDelegate.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		C9A60F7E28C68FD9006883EC /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				C9A60F9928C692B0006883EC /* ViewController.swift in Sources */,
-				C9A60F8628C68FD9006883EC /* AppDelegate.swift in Sources */,
+				C9E075F42BB3040B005ED81E /* ContentView.swift in Sources */,
+				C9C7DEF22BB30DCE00AC4F9D /* TextView.swift in Sources */,
+				C9E075F22BB3040B005ED81E /* NeonExampleApp.swift in Sources */,
+				C9C7DEE82BB307DD00AC4F9D /* TextViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		C9610B4728C6B017008ADDE6 /* PBXTargetDependency */ = {
+		C9C7DEE02BB3079E00AC4F9D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = C9610B4628C6B017008ADDE6 /* Neon */;
+			productRef = C9C7DEDF2BB3079E00AC4F9D /* Neon */;
 		};
-		C9610B4928C6B017008ADDE6 /* PBXTargetDependency */ = {
+		C9C7DEE22BB307A100AC4F9D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = C9610B4828C6B017008ADDE6 /* TreeSitterSwift */;
+			productRef = C9C7DEE12BB307A100AC4F9D /* TreeSitterSwift */;
 		};
-		C9A60F9B28C6954E006883EC /* PBXTargetDependency */ = {
+		C9C7DEED2BB3089300AC4F9D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = C9A60F9A28C6954E006883EC /* Neon */;
-		};
-		C9A60F9D28C69551006883EC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = C9A60F9C28C69551006883EC /* TreeSitterSwift */;
+			productRef = C9C7DEEC2BB3089300AC4F9D /* NSUI */;
 		};
 /* End PBXTargetDependency section */
 
-/* Begin PBXVariantGroup section */
-		C9610B3A28C6AD4F008ADDE6 /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				C9610B3B28C6AD4F008ADDE6 /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
-		C9610B3F28C6AD50008ADDE6 /* LaunchScreen.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				C9610B4028C6AD50008ADDE6 /* Base */,
-			);
-			name = LaunchScreen.storyboard;
-			sourceTree = "<group>";
-		};
-		C9A60F8928C68FDA006883EC /* MainMenu.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				C9A60F8A28C68FDA006883EC /* Base */,
-			);
-			name = MainMenu.xib;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
-
 /* Begin XCBuildConfiguration section */
-		C9610B4328C6AD50008ADDE6 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 77X93NZ3G2;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "NeonExample-iOS/Info.plist";
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.yourcompany.NeonExample-iOS";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		C9610B4428C6AD50008ADDE6 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 77X93NZ3G2;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "NeonExample-iOS/Info.plist";
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.yourcompany.NeonExample-iOS";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
 		C9A60F8D28C68FDA006883EC /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C9E076002BB304C7005ED81E /* Project-Debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
 		C9A60F8E28C68FDA006883EC /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C9E075FF2BB30482005ED81E /* Project.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
-				SDKROOT = macosx;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Release;
 		};
-		C9A60F9028C68FDA006883EC /* Debug */ = {
+		C9E075FC2BB3040C005ED81E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C9E076022BB30503005ED81E /* NeonExample.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = NeonExample/NeonExample.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainNibFile = MainMenu;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.NeonExample;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				DEVELOPMENT_TEAM = 5GXRS83U4Z;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 			};
 			name = Debug;
 		};
-		C9A60F9128C68FDA006883EC /* Release */ = {
+		C9E075FD2BB3040C005ED81E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C9E076022BB30503005ED81E /* NeonExample.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = NeonExample/NeonExample.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainNibFile = MainMenu;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.NeonExample;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				DEVELOPMENT_TEAM = 5GXRS83U4Z;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C9610B4528C6AD50008ADDE6 /* Build configuration list for PBXNativeTarget "NeonExample-iOS" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				C9610B4328C6AD50008ADDE6 /* Debug */,
-				C9610B4428C6AD50008ADDE6 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		C9A60F7D28C68FD9006883EC /* Build configuration list for PBXProject "NeonExample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -551,11 +292,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C9A60F8F28C68FDA006883EC /* Build configuration list for PBXNativeTarget "NeonExample" */ = {
+		C9E075FB2BB3040C005ED81E /* Build configuration list for PBXNativeTarget "NeonExample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C9A60F9028C68FDA006883EC /* Debug */,
-				C9A60F9128C68FDA006883EC /* Release */,
+				C9E075FC2BB3040C005ED81E /* Debug */,
+				C9E075FD2BB3040C005ED81E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -579,48 +320,59 @@
 				kind = branch;
 			};
 		};
+		C9BFA1962BB5D9FB00E86487 /* XCRemoteSwiftPackageReference "tree-sitter-markdown" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MDeiml/tree-sitter-markdown";
+			requirement = {
+				branch = split_parser;
+				kind = branch;
+			};
+		};
+		C9C7DEE92BB3088A00AC4F9D /* XCRemoteSwiftPackageReference "nsui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mattmassicotte/nsui.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		C9610B4628C6B017008ADDE6 /* Neon */ = {
+		C9BFA1972BB5D9FB00E86487 /* TreeSitterMarkdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C9BFA1962BB5D9FB00E86487 /* XCRemoteSwiftPackageReference "tree-sitter-markdown" */;
+			productName = TreeSitterMarkdown;
+		};
+		C9C7DEDF2BB3079E00AC4F9D /* Neon */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C9A60F9228C6903E006883EC /* XCRemoteSwiftPackageReference "Neon" */;
 			productName = Neon;
 		};
-		C9610B4828C6B017008ADDE6 /* TreeSitterSwift */ = {
+		C9C7DEE12BB307A100AC4F9D /* TreeSitterSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C9A60F9528C6923E006883EC /* XCRemoteSwiftPackageReference "tree-sitter-swift" */;
 			productName = TreeSitterSwift;
 		};
-		C9610B4B28C6B01C008ADDE6 /* Neon */ = {
+		C9C7DEE32BB307A700AC4F9D /* Neon */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C9A60F9228C6903E006883EC /* XCRemoteSwiftPackageReference "Neon" */;
 			productName = Neon;
 		};
-		C9610B4D28C6B01C008ADDE6 /* TreeSitterSwift */ = {
+		C9C7DEE52BB307AA00AC4F9D /* TreeSitterSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C9A60F9528C6923E006883EC /* XCRemoteSwiftPackageReference "tree-sitter-swift" */;
 			productName = TreeSitterSwift;
 		};
-		C9A60F9328C6903E006883EC /* Neon */ = {
+		C9C7DEEA2BB3088A00AC4F9D /* NSUI */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = C9A60F9228C6903E006883EC /* XCRemoteSwiftPackageReference "Neon" */;
-			productName = Neon;
+			package = C9C7DEE92BB3088A00AC4F9D /* XCRemoteSwiftPackageReference "nsui" */;
+			productName = NSUI;
 		};
-		C9A60F9628C6923E006883EC /* TreeSitterSwift */ = {
+		C9C7DEEC2BB3089300AC4F9D /* NSUI */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = C9A60F9528C6923E006883EC /* XCRemoteSwiftPackageReference "tree-sitter-swift" */;
-			productName = TreeSitterSwift;
-		};
-		C9A60F9A28C6954E006883EC /* Neon */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C9A60F9228C6903E006883EC /* XCRemoteSwiftPackageReference "Neon" */;
-			productName = Neon;
-		};
-		C9A60F9C28C69551006883EC /* TreeSitterSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C9A60F9528C6923E006883EC /* XCRemoteSwiftPackageReference "tree-sitter-swift" */;
-			productName = TreeSitterSwift;
+			package = C9C7DEE92BB3088A00AC4F9D /* XCRemoteSwiftPackageReference "nsui" */;
+			productName = NSUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

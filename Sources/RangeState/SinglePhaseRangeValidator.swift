@@ -96,7 +96,12 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 
 		switch validation {
 		case .stale:
-			DispatchQueue.main.backport.asyncUnsafe {
+			DispatchQueue.main.async {
+				if contentRange.version == self.version {
+					print("version unchanged after stale results, stopping validation")
+					return
+				}
+				
 				let prioritySet = self.configuration.prioritySetProvider?() ?? IndexSet(contentRange.value)
 
 				self.validate(.set(prioritySet))

@@ -40,7 +40,7 @@ extension VersionedContent {
 }
 
 /// Content where only the current version is valid.
-public struct UnversionableContent: VersionedContent {
+public final class UnversionableContent: VersionedContent {
 	private let lengthProvider: () -> Int
 	public private(set) var currentVersion: Int = 0
 
@@ -54,7 +54,7 @@ public struct UnversionableContent: VersionedContent {
 		return lengthProvider()
 	}
 
-	public mutating func contentChanged() {
+	public func contentChanged() {
 		self.currentVersion += 1
 	}
 }

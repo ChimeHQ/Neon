@@ -1,0 +1,10 @@
+#include "Configurations/MultiPlatform.xcconfig"
+
+CODE_SIGN_ENTITLEMENTS = ${TARGET_NAME}/${TARGET_NAME}.entitlements
+DEVELOPMENT_ASSET_PATHS = ${TARGET_NAME}/Preview\ Content
+GENERATE_INFOPLIST_FILE = YES
+//INFOPLIST_FILE = ${TARGET_NAME}/Info.plist
+INFOPLIST_KEY_WKWatchOnly[sdk=watch*] = YES
+LD_RUNPATH_SEARCH_PATHS = @executable_path/Frameworks
+LD_RUNPATH_SEARCH_PATHS[sdk=macosx*] = @executable_path/../Frameworks
+SKIP_INSTALL = NO

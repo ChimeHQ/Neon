@@ -1,0 +1,21 @@
+// add support for all platforms
+SUPPORTED_PLATFORMS = macosx iphonesimulator iphoneos appletvsimulator appletvos xrsimulator xros watchsimulator watchos
+
+// support all devices types:
+// 1: iPhone
+// 2: iPad
+// 3: TV
+// 4: Watch
+// 5: ???
+// 6: Unscaled Catalyst
+// 7: Vision
+TARGETED_DEVICE_FAMILY = 1,2,3,4,6,7
+
+//:configuration = Debug
+INFOPLIST_KEY_UISupportedInterfaceOrientations[sdk=watch*] = UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
+INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad[sdk=iphone*] = UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone[sdk=iphone*] = UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+
+SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES
+SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES
+
