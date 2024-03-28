@@ -73,6 +73,18 @@ The top-level module includes systems for managing text styling. It is also text
 
 There is also an example project that demonstrates how to use `TextViewHighlighter` for macOS and iOS.
 
+#### TextKit Integration
+
+In a traditional `NSTextStorage`-backed system (TextKit 1 and 2), it can be challenging to achieve flicker-free on-keypress highlighting. You need to know when a text change has been processed by enough of the system that styling is possible. This point in the text change lifecycle is not natively supported by `NSTextStorage` or `NSLayoutManager`. It requires an `NSTextStorage` subclass. Such a subclass, `TSYTextStorage` is available in [TextStory](https://github.com/ChimeHQ/TextStory).
+
+But, even that isn't quite enough unfortunately. You still need to precisely control the timing of invalidation and styling. This is where `RangeInvalidationBuffer` comes in.
+
+I have not yet figured out a way to do this with TextKit 2, and it may not be possible without new API.
+
+#### Performance
+
+Neon's performance is highly dependant on the text system integration. Every aspect is important as there are performance cliffs all around. But, priority range calcations (the visible set for most text views) are of particular importance. This is surprisingly challenging to do correctly with TextKit 1, and extremely hard with TextKit 2.
+
 ### TreeSitterClient
 
 This library is a hybrid sync/async interface to [SwiftTreeSitter][SwiftTreeSitter]. It features:
@@ -98,14 +110,6 @@ Neon was designed to accept and overlay token data from multiple sources simulta
 A highlighting theme is really just a mapping from semantic labels to styles. Token data sources apply the semantic labels and the `TextSystemInterface` uses those labels to look up styling.
 
 This separation makes it very easy for you to do this look-up in a way that makes the most sense for whatever theming formats you'd like to support. This is also a convenient spot to adapt/modify the semantic labels coming from your data sources into a normalized form.
-
-### TextKit Integration
-
-In a traditional `NSTextStorage`-backed system (TextKit 1 and 2), it can be challenging to achieve flicker-free on-keypress highlighting. You need to know when a text change has been processed by enough of the system that styling is possible. This point in the text change lifecycle is not natively supported by `NSTextStorage` or `NSLayoutManager`. It requires an `NSTextStorage` subclass. Such a subclass, `TSYTextStorage` is available in [TextStory](https://github.com/ChimeHQ/TextStory).
-
-But, even that isn't quite enough unfortunately. You still need to precisely control the timing of invalidation and styling. This is where `RangeInvalidationBuffer` comes in.
-
-I have not yet figured out a way to do this with TextKit 2, and it may not be possible without new API.
 
 ## Usage
 
