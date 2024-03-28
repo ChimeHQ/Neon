@@ -136,7 +136,7 @@ public final class TextViewHighlighter: NSObject {
 		)
 #elseif os(iOS) || os(visionOS)
 		self.frameObservation = textView.observe(\.contentOffset) { [styler] view, _ in
-			MainActor.assumeIsolated {
+			MainActor.backport.assumeIsolated {
 				styler.visibleContentDidChange()
 			}
 		}
