@@ -29,7 +29,6 @@
 		C9BFA19B2BB5FCF800E86487 /* test.code */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test.code; sourceTree = "<group>"; };
 		C9C7DEE72BB307DD00AC4F9D /* TextViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextViewController.swift; sourceTree = "<group>"; };
 		C9C7DEF12BB30DCE00AC4F9D /* TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextView.swift; sourceTree = "<group>"; };
-		C9C7DEF32BB330C400AC4F9D /* SwiftTreeSitter */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftTreeSitter; path = ../../SwiftTreeSitter; sourceTree = "<group>"; };
 		C9E075EF2BB3040B005ED81E /* NeonExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeonExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9E075F12BB3040B005ED81E /* NeonExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeonExampleApp.swift; sourceTree = "<group>"; };
 		C9E075F32BB3040B005ED81E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -67,7 +66,6 @@
 		C9A60F7928C68FD9006883EC = {
 			isa = PBXGroup;
 			children = (
-				C9C7DEF32BB330C400AC4F9D /* SwiftTreeSitter */,
 				5077D7FF2B08D1F1000A15B8 /* Neon */,
 				C9E075FE2BB3044C005ED81E /* Configurations */,
 				C9E075F02BB3040B005ED81E /* NeonExample */,

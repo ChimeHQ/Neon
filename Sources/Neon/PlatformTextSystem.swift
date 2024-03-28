@@ -41,7 +41,6 @@ extension NSTextContentManager: VersionedContent {
 		return NSRange(documentRange, provider: self).length
 	}
 }
-#endif
 
 extension NSTextContainer {
 	func textRange(for rect: CGRect) -> NSRange? {
@@ -90,3 +89,5 @@ extension TextView {
 		tk2VisibleTextRange ?? tk1VisibleTextRange ?? .zero
 	}
 }
+
+#endif
