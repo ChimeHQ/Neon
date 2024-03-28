@@ -12,12 +12,18 @@ import Neon
 import NSUI
 
 final class TextViewController: NSUIViewController {
-	let textView = NSUITextView(usingTextLayoutManager: false)
-	let highlighter: TextViewHighlighter
+	private let textView: NSUITextView
+	private let highlighter: TextViewHighlighter
 
 	init() {
+		if #available(iOS 16.0, *) {
+			self.textView = NSUITextView(usingTextLayoutManager: false)
+		} else {
+			self.textView = NSUITextView()
+		}
+
 		// enable non-continguous layout for TextKit 1
-		if textView.textLayoutManager == nil {
+		if #available(macOS 12.0, iOS 16.0, *), textView.textLayoutManager == nil {
 #if canImport(AppKit) && !targetEnvironment(macCatalyst)
 			textView.layoutManager?.allowsNonContiguousLayout = true
 #else
