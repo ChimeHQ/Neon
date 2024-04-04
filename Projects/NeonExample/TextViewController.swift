@@ -22,18 +22,14 @@ final class TextViewController: NSUIViewController {
 			self.textView = NSUITextView()
 		}
 
-		// enable non-continguous layout for TextKit 1
-		if #available(macOS 12.0, iOS 16.0, *), textView.textLayoutManager == nil {
-#if canImport(AppKit) && !targetEnvironment(macCatalyst)
-			textView.layoutManager?.allowsNonContiguousLayout = true
-#else
-			textView.layoutManager.allowsNonContiguousLayout = true
-#endif
-		}
-
 		self.highlighter = try! Self.makeHighlighter(for: textView)
 
 		super.init(nibName: nil, bundle: nil)
+
+		// enable non-continguous layout for TextKit 1
+		if #available(macOS 12.0, iOS 16.0, *), textView.textLayoutManager == nil {
+			textView.nsuiLayoutManager?.allowsNonContiguousLayout = true
+		}
 	}
 
 	@available(*, unavailable)
@@ -44,13 +40,9 @@ final class TextViewController: NSUIViewController {
 	private static func makeHighlighter(for textView: NSUITextView) throws -> TextViewHighlighter {
 		let regularFont = NSUIFont.monospacedSystemFont(ofSize: 16, weight: .regular)
 		let boldFont = NSUIFont.monospacedSystemFont(ofSize: 16, weight: .bold)
-		let italicDescriptor = regularFont.fontDescriptor.withSymbolicTraits(.traitItalic)
+		let italicDescriptor = regularFont.fontDescriptor.nsuiWithSymbolicTraits(.traitItalic) ?? regularFont.fontDescriptor
 
-#if canImport(AppKit) && !targetEnvironment(macCatalyst)
-		let italicFont = NSUIFont(descriptor: italicDescriptor, size: 16) ?? regularFont
-#elseif canImport(UIKit)
-		let italicFont = NSUIFont(descriptor: italicDescriptor ?? regularFont.fontDescriptor, size: 16)
-#endif
+		let italicFont = NSUIFont(nsuiDescriptor: italicDescriptor, size: 16) ?? regularFont
 
 		// Set the default styles. This is applied by stock `NSTextStorage`s during
 		// so-called "attribute fixing" when you type, and we emulate that as
@@ -124,13 +116,13 @@ final class TextViewController: NSUIViewController {
 		textView.isRichText = false  // Discards any attributes when pasting.
 
 		self.view = scrollView
+#else
+		self.view = textView
+#endif
 
 		// this has to be done after the textview has been embedded in the scrollView if
 		// it wasn't that way on creation
 		highlighter.observeEnclosingScrollView()
-#else
-		self.view = textView
-#endif
 
 		regularTest()
 	}

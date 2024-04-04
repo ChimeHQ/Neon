@@ -5,8 +5,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mattmassicotte/nsui.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "783dce536c266956b3471ae77fb3b8a755184858"
+        "revision" : "d000e76f5587a1b7843717872b2f4a2318b0efbf"
       }
     },
     {
@@ -23,7 +22,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/SwiftTreeSitter",
       "state" : {
-        "revision" : "1ee3af86c3973c900a30e15507d117c58ed5acb2"
+        "revision" : "b01904a3737649c1d8520106bbb285724fe5b0bb"
       }
     },
     {

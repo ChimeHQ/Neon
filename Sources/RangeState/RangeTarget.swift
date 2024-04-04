@@ -81,3 +81,17 @@ extension RangeTarget {
 		}
 	}
 }
+
+extension RangeTarget: CustomDebugStringConvertible {
+	public var debugDescription: String {
+		switch self {
+		case .all:
+			"all"
+		case let .range(range):
+			range.debugDescription
+		case let .set(set):
+			set.nsRangeView.debugDescription
+		}
+	}
+}
+

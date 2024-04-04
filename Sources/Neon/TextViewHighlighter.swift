@@ -38,7 +38,7 @@ extension TextView {
 /// for a TextView. The created instance will become the delegate of the
 /// view's `NSTextStorage`.
 @MainActor
-public final class TextViewHighlighter: NSObject {
+public final class TextViewHighlighter {
 	private typealias Styler = TextSystemStyler<TextViewSystemInterface>
 
 	public struct Configuration {
@@ -67,9 +67,11 @@ public final class TextViewHighlighter: NSObject {
 	private let interface: TextViewSystemInterface
 	private let client: TreeSitterClient
 	private let buffer = RangeInvalidationBuffer()
+	private let storageDelegate = TextStorageDelegate()
 
 #if os(iOS) || os(visionOS)
 	private var frameObservation: NSKeyValueObservation?
+	private var lastVisibleRange = NSRange.zero
 #endif
 
 	public init(
@@ -100,20 +102,51 @@ public final class TextViewHighlighter: NSObject {
 			tokenProvider: tokenProvider
 		)
 
-		super.init()
-
 		buffer.invalidationHandler = { [styler] in
 			styler.invalidate($0)
+
 			styler.validate()
 		}
 
-		try textView.getTextStorage().delegate = self
+		storageDelegate.willChangeContent = { [buffer, client] range, _ in
+			// a change happening, start buffering invalidations
+			buffer.beginBuffering()
+
+			client.willChangeContent(in: range)
+		}
+
+		storageDelegate.didChangeContent = { [buffer, client, styler] range, delta in
+			let adjustedRange = NSRange(location: range.location, length: range.length - delta)
+
+			client.didChangeContent(in: adjustedRange, delta: delta)
+			styler.didChangeContent(in: adjustedRange, delta: delta)
+
+			// At this point in mutation processing, it is unsafe to apply style changes. Ideally, we'd have a hook so we can know when it is ok. But, no such system exists for stock TextKit 1/2. So, instead we just let the runloop turn. This is *probably* safe, if the text does not change again, but can also result in flicker.
+			DispatchQueue.main.async {
+				buffer.endBuffering()
+			}
+
+		}
+
+		try textView.getTextStorage().delegate = storageDelegate
 
 		observeEnclosingScrollView()
 
 		invalidate(.all)
 	}
 
+	/// Perform manual invalidation on the underlying highlighter
+	public func invalidate(_ target: RangeTarget) {
+		buffer.invalidate(target)
+	}
+
+	/// Inform the client that calls to languageConfiguration may change.
+	public func languageConfigurationChanged(for name: String) {
+		client.languageConfigurationChanged(for: name)
+	}
+}
+
+extension TextViewHighlighter {
 	public func observeEnclosingScrollView() {
 #if os(macOS) && !targetEnvironment(macCatalyst)
 		guard let scrollView = textView.enclosingScrollView else {
@@ -135,9 +168,17 @@ public final class TextViewHighlighter: NSObject {
 			object: scrollView.contentView
 		)
 #elseif os(iOS) || os(visionOS)
-		self.frameObservation = textView.observe(\.contentOffset) { [styler] view, _ in
+		self.frameObservation = textView.observe(\.contentOffset) { [weak self] view, _ in
 			MainActor.backport.assumeIsolated {
-				styler.visibleContentDidChange()
+				guard let self = self else { return }
+
+				self.lastVisibleRange = self.textView.visibleTextRange
+
+				DispatchQueue.main.async {
+					guard self.textView.visibleTextRange == self.lastVisibleRange else { return }
+
+					self.styler.visibleContentDidChange()
+				}
 			}
 		}
 #endif
@@ -145,48 +186,6 @@ public final class TextViewHighlighter: NSObject {
 
 	@objc private func visibleContentChanged(_ notification: NSNotification) {
 		styler.visibleContentDidChange()
-	}
-
-	/// Perform manual invalidation on the underlying highlighter
-	public func invalidate(_ target: RangeTarget) {
-		buffer.invalidate(target)
-	}
-
-	public func languageConfigurationChanged(for name: String) {
-		client.languageConfigurationChanged(for: name)
-	}
-}
-
-extension TextViewHighlighter: NSTextStorageDelegate {
-	public nonisolated func textStorage(_ textStorage: NSTextStorage, willProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
-		MainActor.backport.assumeIsolated {
-			guard editedMask.contains(.editedCharacters) else { return }
-			
-			// a change happening, start buffering invalidations
-			buffer.beginBuffering()
-
-			client.willChangeContent(in: editedRange)
-		}
-	}
-
-	public nonisolated func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: TextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
-		MainActor.backport.assumeIsolated {
-			// Avoid potential infinite loop in synchronous highlighting. If attributes
-			// are stored in `textStorage`, that applies `.editedAttributes` only.
-			// We don't need to re-apply highlighting in that case.
-			// (With asynchronous highlighting, it's not blocking, but also never stops.)
-			guard editedMask.contains(.editedCharacters) else { return }
-
-			let adjustedRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
-
-			client.didChangeContent(in: adjustedRange, delta: delta)
-			styler.didChangeContent(in: adjustedRange, delta: delta)
-
-			// At this point in mutation processing, it is unsafe to apply style changes. Ideally, we'd have a hook so we can know when it is ok. But, no such system exists for stock TextKit 1/2. So, instead we just let the runloop turn. This is *probably* safe, if the text does not change again, but can also result in flicker.
-			DispatchQueue.main.async {
-				self.buffer.endBuffering()
-			}
-		}
 	}
 }
 

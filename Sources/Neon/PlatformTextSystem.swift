@@ -5,12 +5,10 @@ import RangeState
 #if os(macOS) && !targetEnvironment(macCatalyst)
 import AppKit
 
-public typealias TextStorageEditActions = NSTextStorageEditActions
 public typealias TextView = NSTextView
 #elseif os(iOS) || os(visionOS)
 import UIKit
 
-public typealias TextStorageEditActions = NSTextStorage.EditActions
 public typealias TextView = UITextView
 #endif
 
