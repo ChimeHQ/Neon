@@ -133,13 +133,16 @@ extension RangeProcessor {
 		return processed(location)
 	}
 
-    public func processed(_ location: Int) -> Bool {
+	/// Check for the processed state of a location.
+	///
+	/// This method will not cause any processing to occur.
+	public func processed(_ location: Int) -> Bool {
 		precondition(location >= 0)
 
 		guard let maximumProcessedLocation else { return false }
 
 		return maximumProcessedLocation >= location
-    }
+	}
 
 	public func processed(_ range: NSRange) -> Bool {
 		processed(range.location)
