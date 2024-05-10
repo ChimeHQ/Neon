@@ -176,4 +176,53 @@ final class RangeProcessorTests: XCTestCase {
 
 		XCTAssertEqual(handler.mutations, expected)
 	}
+
+	@MainActor
+	func testInsertWithNothingProcessed() {
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { 10 },
+				changeHandler: { _, _ in fatalError() }
+			)
+		)
+
+		processor.didChangeContent(in: NSRange(0..<10), delta: 10)
+	}
+
+	@MainActor
+	func testChangeThatOverlapsUnprocessedRegion() {
+		let exp = expectation(description: "mutation")
+		exp.expectedFulfillmentCount = 2
+
+		let handler = MockChangeHandler()
+
+		handler.changeCompleted = {
+			exp.fulfill()
+		}
+
+		let content = StringContent(string: "abcdefghij")
+
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { content.currentLength },
+				changeHandler: handler.handleChange
+			)
+		)
+
+		// process half
+		XCTAssertTrue(processor.processLocation(5, mode: .required))
+		XCTAssertTrue(processor.processed(5))
+
+		// change everything
+		processor.didChangeContent(in: NSRange(0..<10), delta: 0)
+
+		wait(for: [exp], enforceOrder: true)
+
+		let expected = [
+			RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil),
+			RangeMutation(range: NSRange(0..<5), delta: 0, limit: 5),
+		]
+
+		XCTAssertEqual(handler.mutations, expected)
+	}
 }

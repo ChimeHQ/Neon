@@ -184,19 +184,40 @@ extension RangeProcessor {
 	}
 
 	public func didChangeContent(_ mutation: RangeMutation) {
-		guard processed(mutation.range) else { return }
-
-		processMutation(mutation)
+		didChangeContent(in: mutation.range, delta: mutation.delta)
 	}
 
 	public func didChangeContent(in range: NSRange, delta: Int) {
-		let limit = maximumProcessedLocation ?? 0
+		if processed(range.location) == false {
+			return
+		}
+
+		guard let limit = maximumProcessedLocation else {
+			return
+		}
 
 		precondition(limit >= 0)
 
-		let mutation = RangeMutation(range: range, delta: delta, limit: limit)
+		let visibleRange = range.clamped(to: limit)
+		let effectiveLimit = limit
+		let clampLength = range.upperBound - visibleRange.upperBound
 
-        didChangeContent(mutation)
+		precondition(clampLength >= 0)
+
+		// The logic to adjust the delta is pretty tricky.
+		let visibleDelta: Int
+
+		if clampLength == 0 {
+			visibleDelta = delta
+		} else if delta < 0 {
+			visibleDelta = max(delta + clampLength, 0)
+		} else {
+			visibleDelta = 0
+		}
+
+		let mutation = RangeMutation(range: visibleRange, delta: visibleDelta, limit: effectiveLimit)
+
+		processMutation(mutation)
 	}
 
 	private func processMutation(_ mutation: RangeMutation) {
