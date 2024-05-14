@@ -6,10 +6,12 @@ import RangeState
 import AppKit
 
 public typealias TextView = NSTextView
+typealias PlatformColor = NSColor
 #elseif os(iOS) || os(visionOS)
 import UIKit
 
 public typealias TextView = UITextView
+typealias PlatformColor = UIColor
 #endif
 
 #if os(macOS) || os(iOS) || os(visionOS)

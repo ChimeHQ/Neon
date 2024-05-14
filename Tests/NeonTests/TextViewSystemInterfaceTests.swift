@@ -4,8 +4,6 @@ import XCTest
 #if os(macOS)
 import AppKit
 
-typealias PlatformColor = NSColor
-
 extension NSTextView {
 	var text: String {
 		get { return string }
@@ -31,7 +29,6 @@ extension NSTextView {
 #elseif os(iOS)
 import UIKit
 
-typealias PlatformColor = UIColor
 #endif
 
 //final class TextViewSystemInterfaceTests: XCTestCase {

@@ -174,6 +174,27 @@ let highlights = try client.highlights(in: NSRange(0..<24), provider: provider, 
 print("highlights:", highlights)
 ```
 
+TreeSitterClient can also perform static highlighting. This can be handy for applying style to a string.
+
+```swift
+let languageConfig = try LanguageConfiguration(
+    tree_sitter_swift(),
+    name: "Swift"
+)
+
+let attrProvider: TokenAttributeProvider = { token in
+    return [.foregroundColor: NSColor.red]
+}
+
+// produce an AttributedString
+let highlightedSource = try await TreeSitterClient.highlight(
+    string: source,
+    attributeProvider: attrProvider,
+    rootLanguageConfig: languageConfig,
+    languageProvider: { _ in nil }
+)
+```
+
 ## Contributing and Collaboration
 
 I would love to hear from you! Issues or pull requests work great. A [Discord server][discord] is also available for live help, but I have a strong bias towards answering in the form of documentation.
