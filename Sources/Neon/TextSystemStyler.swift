@@ -6,9 +6,9 @@ import RangeState
 ///
 /// This is the main component that coordinates the styling and invalidation of text. It interfaces with the text system via `TextSystemInterface`. Actual token information is provided from a `TokenProvider`.
 ///
-/// The `TextSystemInterface` is what to update, but it is up to you to tell it when that updating is needed. This is done via the `invalidate(_:)` call, as well as `visibleContentDidChange`. It will be also be done automatically when the content changes.
+/// The `TextSystemInterface` is what to update, but it is up to you to tell it when that updating is needed. This is done via the `invalidate(_:)` call, as well as `visibleContentDidChange()`. It will be also be done automatically when the content changes.
 ///
-/// > Note: A `Styler` must be informed of all text content changes made using `didChangeContent(in:, delta:)` and changes to the content visibility with `contentVisibleRectChanged(_:_`.
+/// > Note: A `TextSystemStyler` must be informed of all text content changes made using `didChangeContent(in:, delta:)`.
 @MainActor
 public final class TextSystemStyler<Interface: TextSystemInterface> {
 	private let textSystem: Interface
