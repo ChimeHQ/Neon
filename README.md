@@ -71,7 +71,7 @@ The top-level module includes systems for managing text styling. It is also text
 - `TextSystemStyler`: a style manager that works with a single `TokenProvider`
 - `ThreePhaseTextSystemStyler`: a true three-phase style manager that combines a primary, fallback and secondary token data sources
 
-There is also an example project that demonstrates how to use `TextViewHighlighter` for macOS and iOS.
+There is also an [example project](/Projects/) that demonstrates how to use `TextViewHighlighter` for macOS and iOS.
 
 #### TextKit Integration
 
