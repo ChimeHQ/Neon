@@ -18,9 +18,12 @@ extension Token: CustomDebugStringConvertible {
 	}
 }
 
+/// Describes the semantic meaning of a range of text and any style operations that should be applied.
 public struct TokenApplication: Hashable, Sendable {
 	public enum Action: Sendable, Hashable {
+		// Replace any existing styling with this application.
 		case replace
+		// Apply styling without first removing any existing styles.
 		case apply
 	}
 
@@ -37,6 +40,9 @@ public struct TokenApplication: Hashable, Sendable {
 	public static let noChange = TokenApplication(tokens: [], action: .apply)
 }
 
+/// A function that assigns semantic value to a range of text.
+///
+/// The input will be an `NSRange` representing the text that needs styling, and the output is a `TokenApplication`.
 public typealias TokenProvider = HybridValueProvider<NSRange, TokenApplication>
 
 extension TokenProvider {
