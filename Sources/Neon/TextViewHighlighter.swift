@@ -34,9 +34,7 @@ extension TextView {
 
 /// A class that can connect `NSTextView`/`UITextView` to `TreeSitterClient`
 ///
-/// This class is a minimal implementation that can help perform highlighting
-/// for a TextView. The created instance will become the delegate of the
-/// view's `NSTextStorage`.
+/// This class is a minimal implementation that can help perform highlighting for a TextView. It is compatible with both TextKit 1 and 2 views, and uses single-phase pass with tree-sitter. The created instance will become the delegate of the view's `NSTextStorage`.
 @MainActor
 public final class TextViewHighlighter {
 	private typealias Styler = TextSystemStyler<TextViewSystemInterface>
