@@ -22,7 +22,8 @@ Neon has a strong focus on efficiency and flexibility. It sits in-between your t
 
 Many people are looking for a drop-in editor View subclass that does it all. This is a lower-level library. You could, however, use Neon to drive highlighting for a view like this.
 
-> Warning: The code on the main branch is still in beta. It differs significantly from the 0.6.x releases. Both your patience and bug reports are very appreciated.
+> [!NOTE]
+> The code on the main branch is still not quite ready for release. But, all documentation and development effort is there, and it should be considered very usable.
 
 ## Installation
 
