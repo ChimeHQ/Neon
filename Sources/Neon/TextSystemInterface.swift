@@ -15,5 +15,6 @@ public protocol TextSystemInterface {
     var content: Content { get }
 }
 
+/// A function that translates a semantic `Token` into styling attributes.
 public typealias TokenAttributeProvider = (Token) -> [NSAttributedString.Key: Any]
 
