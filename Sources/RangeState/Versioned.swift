@@ -16,6 +16,9 @@ extension Versioned: Hashable where Version : Hashable, Value : Hashable {}
 
 public typealias VersionedRange<Version> = Versioned<Version, NSRange>
 
+/// Describes a linear span of content that can be changed over time.
+///
+/// This can be used to model text storage. If your backing store supports versioning, this can be used to improve efficiency.
 public protocol VersionedContent<Version> {
     associatedtype Version: Equatable & Sendable
 
