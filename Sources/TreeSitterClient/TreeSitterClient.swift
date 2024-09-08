@@ -12,6 +12,11 @@ enum TreeSitterClientError: Error {
 	case languageUnavailable(String)
 }
 
+/// Interface with the tree-sitter parsing query system.
+///
+/// TreeSitterClient supports arbitrary language nesting and unified queries across the document.
+///
+/// Tree-sitter ultimately resolves to a single semantic view of the text, and is considered a single phase. However, it may require numerous validation/invalidation passes before fully resolving a document's content.
 @MainActor
 public final class TreeSitterClient {
 	public typealias TextProvider = SwiftTreeSitter.Predicate.TextProvider
