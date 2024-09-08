@@ -2,19 +2,19 @@ import Foundation
 
 import RangeState
 
-#if os(macOS) && !targetEnvironment(macCatalyst)
+#if os(macOS)
 import AppKit
 
 public typealias TextView = NSTextView
 typealias PlatformColor = NSColor
-#elseif os(iOS) || os(visionOS)
+#elseif os(iOS) || os(visionOS) || os(tvOS)
 import UIKit
 
 public typealias TextView = UITextView
 typealias PlatformColor = UIColor
 #endif
 
-#if os(macOS) || os(iOS) || os(visionOS)
+#if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)
 extension NSTextStorage: VersionedContent {
 	public var currentVersion: Int {
 		let value = hashValue
