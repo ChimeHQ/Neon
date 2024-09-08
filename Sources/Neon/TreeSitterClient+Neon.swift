@@ -67,7 +67,7 @@ extension TextViewSystemInterface {
 }
 #endif
 
-@available(macOS 12, *)
+@available(macOS 12.0, macCatalyst 15.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
 extension TreeSitterClient {
 	/// Highlight an input string.
 	public static func highlight(
