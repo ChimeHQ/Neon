@@ -72,6 +72,9 @@ public final class TextViewHighlighter {
 	private var lastVisibleRange = NSRange.zero
 #endif
 
+	/// Create a instance.
+	///
+	/// This method will also invoke `observeEnclosingScrollView` if `textView` is within a scroll view. If not, you can invoke it directly after the view has been placed into a scroll view.
 	public init(
 		textView: TextView,
 		configuration: Configuration
@@ -128,7 +131,9 @@ public final class TextViewHighlighter {
 
 		try textView.getTextStorage().delegate = storageDelegate
 
-		observeEnclosingScrollView()
+		if textView.enclosingScrollView != nil {
+			observeEnclosingScrollView()
+		}
 
 		invalidate(.all)
 	}
@@ -145,6 +150,9 @@ public final class TextViewHighlighter {
 }
 
 extension TextViewHighlighter {
+	/// Begin monitoring for containing scroll view changes.
+	///
+	/// This method sets up all the necessary monitoring so the highlighter can react to scrolling. It should be called only once the view heirarchy is fully established.
 	public func observeEnclosingScrollView() {
 #if os(macOS) && !targetEnvironment(macCatalyst)
 		guard let scrollView = textView.enclosingScrollView else {
