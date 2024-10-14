@@ -5,6 +5,7 @@ import SwiftTreeSitter
 import Neon
 import NSUI
 
+@MainActor
 final class TextViewController: NSUIViewController {
 	private let textView: NSUITextView
 	private let highlighter: TextViewHighlighter
