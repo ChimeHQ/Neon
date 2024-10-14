@@ -90,7 +90,7 @@ extension TextViewSystemInterface: TextSystemInterface {
 	}
 
 	public var visibleSet: IndexSet {
-		IndexSet(textView.visibleTextRange)
+		IndexSet(integersIn: textView.visibleTextRange)
 	}
 
 	public var content: NSTextStorage {
@@ -118,7 +118,7 @@ public struct LayoutManagerSystemInterface {
 	public init?(textView: TextView, attributeProvider: @escaping TokenAttributeProvider) {
 		guard let layoutManager = textView.layoutManager else { return nil }
 		self.layoutManager = layoutManager
-		self.visibleSetProvider = { IndexSet(textView.visibleTextRange) }
+		self.visibleSetProvider = { IndexSet(integersIn: textView.visibleTextRange) }
 		self.attributeProvider = attributeProvider
 	}
 }
@@ -170,7 +170,7 @@ public struct TextLayoutManagerSystemInterface {
 	public init?(textView: TextView, attributeProvider: @escaping TokenAttributeProvider) {
 		guard let textLayoutManager = textView.textLayoutManager else { return nil }
 		self.textLayoutManager = textLayoutManager
-		self.visibleSetProvider = { IndexSet(textView.visibleTextRange) }
+		self.visibleSetProvider = { IndexSet(integersIn: textView.visibleTextRange) }
 		self.attributeProvider = attributeProvider
 	}
 }
@@ -240,7 +240,7 @@ public struct TextStorageSystemInterface {
 #else
 		self.textStorage = textView.textStorage
 #endif
-		self.visibleSetProvider = { IndexSet(textView.visibleTextRange) }
+		self.visibleSetProvider = { IndexSet(integersIn: textView.visibleTextRange) }
 		self.attributeProvider = attributeProvider
 		self.defaultAttributesProvider = { textView.typingAttributes }
 	}
