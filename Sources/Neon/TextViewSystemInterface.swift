@@ -57,7 +57,7 @@ public struct TextViewSystemInterface {
 
 extension TextViewSystemInterface: TextSystemInterface {
 	private var effectiveInterface: (any TextSystemInterface)? {
-		let provider = { IndexSet(textView.visibleTextRange) }
+		let provider = { visibleSet }
 
 		if #available(macOS 12.0, iOS 16.0, tvOS 16.0, *) {
 			if let textLayoutManager {
