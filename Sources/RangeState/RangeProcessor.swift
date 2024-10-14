@@ -18,7 +18,6 @@ public enum RangeFillMode: Sendable, Hashable {
 }
 
 /// A type that can perform on-demand processing of range-based data.
-@MainActor
 public final class RangeProcessor {
 	private typealias Continuation = CheckedContinuation<(), Never>
 	private typealias VersionedMutation = Versioned<Int, RangeMutation>
