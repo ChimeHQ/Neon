@@ -1,6 +1,45 @@
 import Foundation
 
 /// A type that can perform work both synchronously and asynchronously.
+public struct HybridSyncAsyncValueProvider<Input, Output, Failure: Error> {
+	public typealias SyncValueProvider = (sending Input) throws(Failure) -> sending Output?
+	public typealias AsyncValueProvider = (isolated (any Actor)?, sending Input) async throws(Failure) -> sending Output
+
+	public let syncValueProvider: SyncValueProvider
+	public let asyncValueProvider: AsyncValueProvider
+
+	public init(
+		syncValue: @escaping SyncValueProvider = { _ in nil },
+		asyncValue: @escaping AsyncValueProvider
+	) {
+		self.syncValueProvider = syncValue
+		self.asyncValueProvider = asyncValue
+	}
+
+	public func async(isolation: (any Actor)? = #isolation, _ input: sending Input) async throws(Failure) -> sending Output {
+		try await asyncValueProvider(isolation, input)
+	}
+
+
+	public func sync(_ input: sending Input) throws(Failure) -> sending Output? {
+		try syncValueProvider(input)
+	}
+}
+
+extension HybridSyncAsyncValueProvider {
+	/// Create an instance that can statically prove to the compiler that asyncValueProvider is isolated to the MainActor.
+	public init(
+		syncValue: @escaping SyncValueProvider = { _ in nil },
+		mainActorAsyncValue: @escaping @MainActor (Input) async throws(Failure) -> sending Output
+	) {
+		self.syncValueProvider = syncValue
+		self.asyncValueProvider = { (_, input) async throws(Failure) in
+			try await mainActorAsyncValue(input)
+		}
+	}
+}
+
+/// A type that can perform work both synchronously and asynchronously.
 public struct HybridValueProvider<Input: Sendable, Output: Sendable> {
 	public typealias SyncValueProvider = (Input) -> Output?
 	public typealias AsyncValueProvider = (Input, isolated any Actor) async -> Output
