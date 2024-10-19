@@ -269,8 +269,7 @@ extension RangeProcessor {
 
 	private func scheduleFilling(in isolation: isolated (any Actor)?) {
 		Task {
-			_ = isolation
-			self.continueFillingIfNeeded()
+			self.continueFillingIfNeeded(isolation: isolation)
 		}
 	}
 }
