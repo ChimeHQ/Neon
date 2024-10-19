@@ -39,33 +39,41 @@ extension HybridSyncAsyncValueProvider {
 	}
 }
 
-// I'm not 100% sure these both work yet right yet.
+// I've not yet gotten these working right, but I think there could be something here.
 extension HybridSyncAsyncValueProvider {
 	// Returns a new `HybridSyncAsyncValueProvider` with a new output type.
-	func map<T>(_ transform: @escaping (isolated (any Actor)?, Output) throws -> T) -> HybridSyncAsyncValueProvider<Input, T, any Error> {
-		.init(
-			syncValue: { input in try self.sync(input).map({ try transform(nil, $0) }) },
-			asyncValue: { try transform($0, try await self.async(isolation: $0, $1)) }
-		)
-	}
+//	func map<T>(_ transform: @escaping (isolated (any Actor)?, Output) throws -> T) -> HybridSyncAsyncValueProvider<Input, T, any Error> {
+//		.init(
+//			syncValue: { input in
+//				guard let output = try sync(input) else {
+//					return nil
+//				}
+//
+//				return try transform(#isolation, output)
+//			},
+//			asyncValue: { (isolation, input) in
+//				try transform(isolation, try await self.async(isolation: isolation, input))
+//			}
+//		)
+//	}
 
-	/// Transforms the `Failure` type of `HybridSyncAsyncValueProvider` to `Never`,
-	func catching(_ block: @escaping (Input, Error) -> Output) -> HybridSyncAsyncValueProvider<Input, Output, Never> {
-		.init(
-			syncValue: {
-				do {
-					return try self.sync($0)
-				} catch {
-					return block($0, error)
-				}
-			},
-			asyncValue: {
-				do {
-					return try await self.async(isolation: $0, $1)
-				} catch {
-					return block($1, error)
-				}
-			}
-		)
-	}
+//	/// Transforms the `Failure` type of `HybridSyncAsyncValueProvider` to `Never`,
+//	func catching(_ block: @escaping (Input, Error) -> Output) -> HybridSyncAsyncValueProvider<Input, Output, Never> {
+//		.init(
+//			syncValue: {
+//				do {
+//					return try self.sync($0)
+//				} catch {
+//					return block($0, error)
+//				}
+//			},
+//			asyncValue: {
+//				do {
+//					return try await self.async(isolation: $0, $1)
+//				} catch {
+//					return block($1, error)
+//				}
+//			}
+//		)
+//	}
 }
