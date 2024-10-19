@@ -15,7 +15,7 @@ typealias PlatformColor = UIColor
 #endif
 
 #if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)
-extension NSTextStorage: @retroactive VersionedContent {
+extension NSTextStorage: VersionedContent {
 	public var currentVersion: Int {
 		let value = hashValue
 
@@ -30,7 +30,7 @@ extension NSTextStorage: @retroactive VersionedContent {
 }
 
 @available(macOS 12.0, iOS 16.0, tvOS 16.0, *)
-extension NSTextContentManager: @retroactive VersionedContent {
+extension NSTextContentManager: VersionedContent {
 	public var currentVersion: Int {
 		hashValue
 	}
