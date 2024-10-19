@@ -9,7 +9,7 @@ final class MockChangeHandler {
 
 	var changeCompleted: @MainActor () -> Void = { }
 
-	func handleChange(_ mutation: RangeMutation, completion: @MainActor @escaping () -> Void) {
+	func handleChange(_ mutation: RangeMutation, completion: @escaping () -> Void) {
 		mutations.append(mutation)
 
 		changeCompleted()
