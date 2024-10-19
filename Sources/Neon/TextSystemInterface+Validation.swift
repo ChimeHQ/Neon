@@ -44,7 +44,10 @@ extension TextSystemInterface {
 				return validation(for: application, in: contentRange)
 			},
 			mainActorAsyncValue: { contentRange in
-				return await asyncValidate(contentRange, provider: provider.mainActorAsync)
+				await asyncValidate(
+					contentRange,
+					provider: { await provider.async(isolation: MainActor.shared, $0) }
+				)
 			}
 		)
 	}

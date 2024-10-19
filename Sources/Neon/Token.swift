@@ -48,7 +48,7 @@ public struct TokenApplication: Hashable, Sendable {
 /// The underlying parsing system must be able to translate a request for tokens expressed as an `NSRange` into a `TokenApplication`.
 ///
 /// This would be a lot easier to implement if the interface was purely asynchronous. However, Neon provides a fully synchronous styling path. Avoiding the need for an async context can be very useful, and makes it possible to provide a flicker-free guarantee if the underlying parsing system can process the work required in reasonable time. Your actual implementation, however, does not actually have to implement the synchronous path if that's too difficult.
-public typealias TokenProvider = HybridValueProvider<NSRange, TokenApplication>
+public typealias TokenProvider = HybridSyncAsyncValueProvider<NSRange, TokenApplication, Never>
 
 extension TokenProvider {
 	/// A TokenProvider that returns an empty set of tokens for all requests.

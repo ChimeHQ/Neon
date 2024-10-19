@@ -16,7 +16,7 @@ public struct HybridSyncAsyncValueProvider<Input, Output, Failure: Error> {
 		self.asyncValueProvider = asyncValue
 	}
 
-	public func async(isolation: (any Actor)? = #isolation, _ input: sending Input) async throws(Failure) -> sending Output {
+	public func async(isolation: isolated (any Actor)? = #isolation, _ input: sending Input) async throws(Failure) -> sending Output {
 		try await asyncValueProvider(isolation, input)
 	}
 
@@ -33,100 +33,100 @@ extension HybridSyncAsyncValueProvider {
 		mainActorAsyncValue: @escaping @MainActor (Input) async throws(Failure) -> sending Output
 	) {
 		self.syncValueProvider = syncValue
-		self.asyncValueProvider = { (_, input) async throws(Failure) in
+		self.asyncValueProvider = { _, input async throws(Failure) in
 			try await mainActorAsyncValue(input)
 		}
 	}
 }
 
 /// A type that can perform work both synchronously and asynchronously.
-public struct HybridValueProvider<Input: Sendable, Output: Sendable> {
-	public typealias SyncValueProvider = (Input) -> Output?
-	public typealias AsyncValueProvider = (Input, isolated any Actor) async -> Output
+//public struct HybridValueProvider<Input: Sendable, Output: Sendable> {
+//	public typealias SyncValueProvider = (Input) -> Output?
+//	public typealias AsyncValueProvider = (Input, isolated any Actor) async -> Output
+//
+//	public let syncValueProvider: SyncValueProvider
+//	public let asyncValueProvider: AsyncValueProvider
+//
+//	public init(
+//		syncValue: @escaping SyncValueProvider = { _ in nil },
+//		asyncValue: @escaping AsyncValueProvider
+//	) {
+//		self.syncValueProvider = syncValue
+//		self.asyncValueProvider = asyncValue
+//	}
+//
+//	public func async(_ input: Input, isolatedTo actor: any Actor) async -> Output {
+//		await asyncValueProvider(input, actor)
+//	}
+//
+//
+//	public func sync(_ input: Input) -> Output? {
+//		syncValueProvider(input)
+//	}
+//}
 
-	public let syncValueProvider: SyncValueProvider
-	public let asyncValueProvider: AsyncValueProvider
-
-	public init(
-		syncValue: @escaping SyncValueProvider = { _ in nil },
-		asyncValue: @escaping AsyncValueProvider
-	) {
-		self.syncValueProvider = syncValue
-		self.asyncValueProvider = asyncValue
-	}
-
-	public func async(_ input: Input, isolatedTo actor: any Actor) async -> Output {
-		await asyncValueProvider(input, actor)
-	}
-
-
-	public func sync(_ input: Input) -> Output? {
-		syncValueProvider(input)
-	}
-}
-
-extension HybridValueProvider {
-	/// Create an instance that can statically prove to the compiler that asyncValueProvider is isolated to the MainActor.
-	public init(
-		syncValue: @escaping SyncValueProvider = { _ in nil },
-		mainActorAsyncValue: @escaping @MainActor (Input) async -> Output
-	) {
-		self.syncValueProvider = syncValue
-		self.asyncValueProvider = { input, _ in
-			return await mainActorAsyncValue(input)
-		}
-	}
-
-	/// Hopefully temporary until https://github.com/apple/swift/pull/71143 is available.
-	@MainActor
-	public func mainActorAsync(_ input: Input) async -> Output {
-		await asyncValueProvider(input, MainActor.shared)
-	}
-}
+//extension HybridValueProvider {
+//	/// Create an instance that can statically prove to the compiler that asyncValueProvider is isolated to the MainActor.
+//	public init(
+//		syncValue: @escaping SyncValueProvider = { _ in nil },
+//		mainActorAsyncValue: @escaping @MainActor (Input) async -> Output
+//	) {
+//		self.syncValueProvider = syncValue
+//		self.asyncValueProvider = { input, _ in
+//			return await mainActorAsyncValue(input)
+//		}
+//	}
+//
+//	/// Hopefully temporary until https://github.com/apple/swift/pull/71143 is available.
+//	@MainActor
+//	public func mainActorAsync(_ input: Input) async -> Output {
+//		await asyncValueProvider(input, MainActor.shared)
+//	}
+//}
 
 /// A type that can perform failable work both synchronously and asynchronously.
-public struct HybridThrowingValueProvider<Input: Sendable, Output: Sendable> {
-	public typealias SyncValueProvider = (Input) throws -> Output?
-	public typealias AsyncValueProvider = (Input, isolated any Actor) async throws -> Output
+//public struct HybridThrowingValueProvider<Input: Sendable, Output: Sendable> {
+//	public typealias SyncValueProvider = (Input) throws -> Output?
+//	public typealias AsyncValueProvider = (Input, isolated any Actor) async throws -> Output
+//
+//	public let syncValueProvider: SyncValueProvider
+//	public let asyncValueProvider: AsyncValueProvider
+//
+//	public init(
+//		syncValue: @escaping SyncValueProvider = { _ in nil },
+//		asyncValue: @escaping AsyncValueProvider
+//	) {
+//		self.syncValueProvider = syncValue
+//		self.asyncValueProvider = asyncValue
+//	}
+//
+//	public func async(_ input: Input, isolatedTo actor: any Actor) async throws -> Output {
+//		try await asyncValueProvider(input, actor)
+//	}
+//
+//	public func sync(_ input: Input) throws -> Output? {
+//		try syncValueProvider(input)
+//	}
+//}
 
-	public let syncValueProvider: SyncValueProvider
-	public let asyncValueProvider: AsyncValueProvider
-
-	public init(
-		syncValue: @escaping SyncValueProvider = { _ in nil },
-		asyncValue: @escaping AsyncValueProvider
-	) {
-		self.syncValueProvider = syncValue
-		self.asyncValueProvider = asyncValue
-	}
-
-	public func async(_ input: Input, isolatedTo actor: any Actor) async throws -> Output {
-		try await asyncValueProvider(input, actor)
-	}
-
-	public func sync(_ input: Input) throws -> Output? {
-		try syncValueProvider(input)
-	}
-}
-
-extension HybridThrowingValueProvider {
-	/// Create an instance that can statically prove to the compiler that asyncValueProvider is isolated to the MainActor.
-	public init(
-		syncValue: @escaping SyncValueProvider = { _ in nil },
-		mainActorAsyncValue: @escaping @MainActor (Input) async -> Output
-	) {
-		self.syncValueProvider = syncValue
-		self.asyncValueProvider = { input, _ in
-			return await mainActorAsyncValue(input)
-		}
-	}
-
-	/// Hopefully temporary until https://github.com/apple/swift/pull/71143 is available.
-	@MainActor
-	public func mainActorAsync(_ input: Input) async throws -> Output {
-		try await asyncValueProvider(input, MainActor.shared)
-	}
-}
+//extension HybridThrowingValueProvider {
+//	/// Create an instance that can statically prove to the compiler that asyncValueProvider is isolated to the MainActor.
+//	public init(
+//		syncValue: @escaping SyncValueProvider = { _ in nil },
+//		mainActorAsyncValue: @escaping @MainActor (Input) async -> Output
+//	) {
+//		self.syncValueProvider = syncValue
+//		self.asyncValueProvider = { input, _ in
+//			return await mainActorAsyncValue(input)
+//		}
+//	}
+//
+//	/// Hopefully temporary until https://github.com/apple/swift/pull/71143 is available.
+//	@MainActor
+//	public func mainActorAsync(_ input: Input) async throws -> Output {
+//		try await asyncValueProvider(input, MainActor.shared)
+//	}
+//}
 
 // I believe these may still be implementable when https://github.com/apple/swift/pull/71143 is available.
 //extension HybridValueProvider {
