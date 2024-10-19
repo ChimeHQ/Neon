@@ -1,13 +1,12 @@
 import Foundation
 
-import ConcurrencyCompatibility
+//import ConcurrencyCompatibility
 import Rearrange
 
 @MainActor
 public final class SinglePhaseRangeValidator<Content: VersionedContent> {
-
 	public typealias ContentRange = RangeValidator<Content>.ContentRange
-	public typealias Provider = HybridValueProvider<ContentRange, Validation>
+	public typealias Provider = HybridSyncAsyncValueProvider<ContentRange, Validation, Never>
 	public typealias PrioritySetProvider = () -> IndexSet
 
 	private typealias Sequence = AsyncStream<ContentRange>
@@ -133,7 +132,7 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	}
 
 	private func validateRangeAsync(_ contentRange: ContentRange) async {
-		let validation = await self.configuration.provider.mainActorAsync(contentRange)
+		let validation = await self.configuration.provider.async(contentRange)
 
 		completePrimaryValidation(of: contentRange, with: validation)
 	}

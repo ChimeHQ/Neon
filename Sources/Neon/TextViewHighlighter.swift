@@ -167,7 +167,7 @@ extension TextViewHighlighter {
 		)
 #elseif os(iOS) || os(visionOS)
 		self.frameObservation = textView.observe(\.contentOffset) { [weak self] view, _ in
-			MainActor.backport.assumeIsolated {
+			MainActor.assumeIsolated {
 				guard let self = self else { return }
 
 				self.lastVisibleRange = self.textView.visibleTextRange

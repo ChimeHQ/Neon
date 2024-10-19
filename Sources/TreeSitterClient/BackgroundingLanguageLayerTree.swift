@@ -1,6 +1,6 @@
 import Foundation
 
-import ConcurrencyCompatibility
+//import ConcurrencyCompatibility
 import SwiftTreeSitter
 import SwiftTreeSitterLayer
 
@@ -133,18 +133,22 @@ extension BackgroundingLanguageLayerTree {
 				return snapshot
 			} completion: { result in
 				DispatchQueue.global().backport.asyncUnsafe {
-					let cursorResult = result.flatMap { snapshot in
-						Result(catching: {
-							let cursor = try snapshot.executeQuery(queryDef, in: set)
-
-							// this prefetches results in the background
-							return cursor.map { $0 }
-						})
-					}
+					let cursorResult = self.doTheThing(queryDef, in: set, input: result)
 
 					continuation.resume(with: cursorResult)
 				}
 			}
+		}
+	}
+
+	private nonisolated func doTheThing(_ queryDef: Query.Definition, in set: IndexSet, input: Result<LanguageLayerTreeSnapshot, any Error>) -> sending Result<[QueryMatch], any Error> {
+		input.flatMap { snapshot in
+			Result(catching: {
+				let cursor = try snapshot.executeQuery(queryDef, in: set)
+
+				// this prefetches results in the background
+				return cursor.map { $0 }
+			})
 		}
 	}
 }

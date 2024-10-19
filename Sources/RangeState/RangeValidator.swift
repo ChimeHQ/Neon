@@ -1,6 +1,6 @@
 import Foundation
 
-import ConcurrencyCompatibility
+//import ConcurrencyCompatibility
 import Rearrange
 
 public enum Validation: Sendable, Hashable {
@@ -11,7 +11,7 @@ public enum Validation: Sendable, Hashable {
 /// A type that manages the validation of range-based content.
 public final class RangeValidator<Content: VersionedContent> {
 	public typealias ContentRange = VersionedRange<Content.Version>
-	public typealias ValidationProvider = HybridValueProvider<ContentRange, Validation>
+	public typealias ValidationProvider = HybridSyncAsyncValueProvider<ContentRange, Validation, Never>
 
 	public enum Action: Sendable, Equatable {
 		case none

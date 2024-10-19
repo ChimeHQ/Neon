@@ -21,6 +21,7 @@ enum TreeSitterClientError: Error {
 public final class TreeSitterClient {
 	public typealias TextProvider = SwiftTreeSitter.Predicate.TextProvider
 	public typealias ContentProvider = (Int) -> LanguageLayer.Content
+	public typealias HighlightsProvider = HybridSyncAsyncValueProvider<ClientQueryParams, [NamedRange], any Error>
 	private typealias SublayerValidator = SinglePhaseRangeValidator<UnversionableContent>
 
 	private static let deltaRange = 128..<Int.max
@@ -138,7 +139,7 @@ extension TreeSitterClient {
 		rangeProcessor.hasPendingChanges
 	}
 
-	private func didChange(_ mutation: RangeMutation, completion: @MainActor @escaping () -> Void) {
+	private func didChange(_ mutation: RangeMutation, completion: @escaping () -> Void) {
 		let limit = mutation.postApplyLimit
 
 		let content = configuration.contentProvider(limit)
@@ -299,7 +300,7 @@ extension TreeSitterClient {
 		return matches.resolve(with: .init(textProvider: clientQuery.params.textProvider))
 	}
 
-	public var highlightsProvider: HybridThrowingValueProvider<ClientQueryParams, [NamedRange]> {
+	public var highlightsProvider: HighlightsProvider {
 		.init(
 			rangeProcessor: rangeProcessor,
 			inputTransformer: { ($0.maxLocation, $0.mode) },
@@ -323,7 +324,7 @@ extension TreeSitterClient {
 extension TreeSitterClient {
 	/// Execute a standard highlights.scm query.
 	public func highlights(in set: IndexSet, provider: @escaping TextProvider, mode: RangeFillMode = .required) async throws -> [NamedRange] {
-		try await highlightsProvider.mainActorAsync(.init(indexSet: set, textProvider: provider, mode: mode))
+		try await highlightsProvider.async(.init(indexSet: set, textProvider: provider, mode: mode))
 	}
 
 	/// Execute a standard highlights.scm query.
@@ -333,6 +334,6 @@ extension TreeSitterClient {
 
 	/// Execute a standard highlights.scm query.
 	public func highlights(in range: NSRange, provider: @escaping TextProvider, mode: RangeFillMode = .required) async throws -> [NamedRange] {
-		try await highlightsProvider.mainActorAsync(.init(range: range, textProvider: provider, mode: mode))
+		try await highlightsProvider.async(.init(range: range, textProvider: provider, mode: mode))
 	}
 }

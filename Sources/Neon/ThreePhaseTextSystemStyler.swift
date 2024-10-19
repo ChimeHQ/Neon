@@ -5,7 +5,7 @@ import RangeState
 @MainActor
 public final class ThreePhaseTextSystemStyler<Interface: TextSystemInterface> {
 	public typealias FallbackTokenProvider = (NSRange) -> TokenApplication
-	public typealias SecondaryValidationProvider = (NSRange) async -> TokenApplication
+	public typealias SecondaryValidationProvider = @Sendable (NSRange) async -> TokenApplication
 
 	private let textSystem: Interface
 	private let validator: ThreePhaseRangeValidator<Interface.Content>

@@ -16,7 +16,7 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 
 				return .success($0.value)
 			},
-			asyncValue: { contentRange, _ in
+			asyncValue: { _, contentRange in
 				return .success(contentRange.value)
 			})
 
@@ -46,7 +46,7 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 
 				return .success($0.value)
 			},
-			asyncValue: { contentRange, _ in
+			asyncValue: { _, contentRange in
 				return .success(contentRange.value)
 			})
 
@@ -76,7 +76,7 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 				
 				return .success($0.value)
 			},
-			asyncValue: { contentRange, _ in
+			asyncValue: { _, contentRange in
 				return .success(contentRange.value)
 			}
 		)

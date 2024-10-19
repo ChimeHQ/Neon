@@ -1,4 +1,4 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 5.10
 
 import PackageDescription
 
@@ -19,13 +19,13 @@ let package = Package(
 		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.8.1"),
 	],
 	targets: [
-        .target(name: "ConcurrencyCompatibility"),
-		.target(name: "RangeState", dependencies: ["ConcurrencyCompatibility", "Rearrange"]),
+//        .target(name: "ConcurrencyCompatibility"),
+		.target(name: "RangeState", dependencies: [/*"ConcurrencyCompatibility", */"Rearrange"]),
 		.testTarget(name: "RangeStateTests", dependencies: ["RangeState"]),
 		.target(
 			name: "Neon",
 			dependencies: [
-                "ConcurrencyCompatibility",
+//                "ConcurrencyCompatibility",
                 "RangeState",
                 "Rearrange",
                 "TreeSitterClient",
@@ -35,7 +35,7 @@ let package = Package(
 		.target(
 			name: "TreeSitterClient",
 			dependencies: [
-                "ConcurrencyCompatibility",
+//                "ConcurrencyCompatibility",
 				"RangeState",
 				"Rearrange",
 				"SwiftTreeSitter",
@@ -54,12 +54,15 @@ let package = Package(
 	]
 )
 
-let swiftSettings: [SwiftSetting] = [
-    .enableExperimentalFeature("StrictConcurrency")
-]
-
-for target in package.targets {
-    var settings = target.swiftSettings ?? []
-    settings.append(contentsOf: swiftSettings)
-    target.swiftSettings = settings
-}
+//let swiftSettings: [SwiftSetting] = [
+//    .enableExperimentalFeature("StrictConcurrency"),
+//	.enableUpcomingFeature("GlobalActorIsolatedTypesUsability"),
+//	.enableUpcomingFeature("InferSendableFromCaptures"),
+//	.enableUpcomingFeature("DisableOutwardActorInference"),
+//]
+//
+//for target in package.targets {
+//    var settings = target.swiftSettings ?? []
+//    settings.append(contentsOf: swiftSettings)
+//    target.swiftSettings = settings
+//}

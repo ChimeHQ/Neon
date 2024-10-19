@@ -43,7 +43,7 @@ public struct TokenApplication: Hashable, Sendable {
 /// A function that assigns semantic value to a range of text.
 ///
 /// The input will be an `NSRange` representing the text that needs styling, and the output is a `TokenApplication`.
-public typealias TokenProvider = HybridValueProvider<NSRange, TokenApplication>
+public typealias TokenProvider = HybridSyncAsyncValueProvider<NSRange, TokenApplication, Never>
 
 extension TokenProvider {
 	/// A TokenProvider that returns an empty set of tokens for all requests.
