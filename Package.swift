@@ -19,13 +19,11 @@ let package = Package(
 		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.8.1"),
 	],
 	targets: [
-//        .target(name: "ConcurrencyCompatibility"),
-		.target(name: "RangeState", dependencies: [/*"ConcurrencyCompatibility", */"Rearrange"]),
+		.target(name: "RangeState", dependencies: ["Rearrange"]),
 		.testTarget(name: "RangeStateTests", dependencies: ["RangeState"]),
 		.target(
 			name: "Neon",
 			dependencies: [
-//                "ConcurrencyCompatibility",
                 "RangeState",
                 "Rearrange",
                 "TreeSitterClient",
@@ -35,7 +33,6 @@ let package = Package(
 		.target(
 			name: "TreeSitterClient",
 			dependencies: [
-//                "ConcurrencyCompatibility",
 				"RangeState",
 				"Rearrange",
 				"SwiftTreeSitter",
@@ -53,16 +50,3 @@ let package = Package(
 		.testTarget(name: "TreeSitterClientTests", dependencies: ["TreeSitterClient", "NeonTestsTreeSitterSwift"])
 	]
 )
-
-//let swiftSettings: [SwiftSetting] = [
-//    .enableExperimentalFeature("StrictConcurrency"),
-//	.enableUpcomingFeature("GlobalActorIsolatedTypesUsability"),
-//	.enableUpcomingFeature("InferSendableFromCaptures"),
-//	.enableUpcomingFeature("DisableOutwardActorInference"),
-//]
-//
-//for target in package.targets {
-//    var settings = target.swiftSettings ?? []
-//    settings.append(contentsOf: swiftSettings)
-//    target.swiftSettings = settings
-//}
