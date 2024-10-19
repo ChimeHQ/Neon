@@ -50,16 +50,3 @@ let package = Package(
 		.testTarget(name: "TreeSitterClientTests", dependencies: ["TreeSitterClient", "NeonTestsTreeSitterSwift"])
 	]
 )
-
-//let swiftSettings: [SwiftSetting] = [
-//    .enableExperimentalFeature("StrictConcurrency"),
-//	.enableUpcomingFeature("GlobalActorIsolatedTypesUsability"),
-//	.enableUpcomingFeature("InferSendableFromCaptures"),
-//	.enableUpcomingFeature("DisableOutwardActorInference"),
-//]
-//
-//for target in package.targets {
-//    var settings = target.swiftSettings ?? []
-//    settings.append(contentsOf: swiftSettings)
-//    target.swiftSettings = settings
-//}
