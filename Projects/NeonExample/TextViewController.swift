@@ -22,7 +22,7 @@ final class TextViewController: NSUIViewController {
 		super.init(nibName: nil, bundle: nil)
 
 		// enable non-continguous layout for TextKit 1
-		if #available(macOS 12.0, iOS 16.0, *), textView.textLayoutManager == nil {
+        if #available(macOS 12.0, iOS 16.0, tvOS 15.0, *), textView.textLayoutManager == nil {
 			textView.nsuiLayoutManager?.allowsNonContiguousLayout = true
 		}
 	}

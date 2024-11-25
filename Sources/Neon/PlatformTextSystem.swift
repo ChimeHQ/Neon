@@ -44,7 +44,7 @@ extension NSTextContentManager: VersionedContent {
 
 extension NSTextContainer {
 	func textRange(for rect: CGRect) -> NSRange? {
-		if #available(macOS 12.0, iOS 15.0, *), textLayoutManager != nil {
+		if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *), textLayoutManager != nil {
 			return nil
 		}
 		
@@ -59,7 +59,7 @@ extension NSTextContainer {
 extension TextView {
 	var tk2VisibleTextRange: NSRange? {
 		guard
-			#available(macOS 12.0, iOS 16.0, *),
+			#available(macOS 12.0, iOS 16.0, tvOS 15.0, *),
 			let textLayoutManager,
 			let viewportRange = textLayoutManager.textViewportLayoutController.viewportRange,
 			let textContentManager = textLayoutManager.textContentManager
