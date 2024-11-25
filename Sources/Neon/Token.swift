@@ -43,9 +43,11 @@ public struct TokenApplication: Hashable, Sendable {
 	public static let noChange = TokenApplication(tokens: [], action: .apply)
 }
 
-/// A type that assigns semantic value to a range of text either syncrhonously or asychrnoously.
+/// A type that assigns semantic value to a range of text either synchronously or asynchronously.
 ///
-/// The input will be an `NSRange` representing the text that needs styling, and the output is a `TokenApplication`.
+/// The underlying parsing system must be able to translate a request for tokens expressed as an `NSRange` into a `TokenApplication`.
+///
+/// This would be a lot easier to implement if the interface was purely asynchronous. However, Neon provides a fully synchronous styling path. Avoiding the need for an async context can be very useful, and makes it possible to provide a flicker-free guarantee if the underlying parsing system can process the work required in reasonable time. Your actual implementation, however, does not actually have to implement the synchronous path if that's too difficult.
 public typealias TokenProvider = HybridValueProvider<NSRange, TokenApplication>
 
 extension TokenProvider {
