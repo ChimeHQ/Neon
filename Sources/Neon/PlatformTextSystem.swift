@@ -78,7 +78,7 @@ extension TextView {
 		let offsetRect = visibleRect.offsetBy(dx: -origin.x, dy: -origin.y)
 
 		return textContainer?.textRange(for: offsetRect) ?? NSRange(0..<length)
-#elseif os(iOS) || os(visionOS)
+#elseif os(iOS) || os(visionOS) || os(tvOS)
 		let visibleRect = CGRect(origin: contentOffset, size: bounds.size)
 
 		return textContainer.textRange(for: visibleRect)
