@@ -15,17 +15,15 @@ let package = Package(
 		.library(name: "Neon", targets: ["Neon"]),
 	],
 	dependencies: [
-		.package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", revision: "f01316eaf3aae07e30478f8afa76192ab4a96420"),
+		.package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.9.0"),
 		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.8.1"),
 	],
 	targets: [
-        .target(name: "ConcurrencyCompatibility"),
-		.target(name: "RangeState", dependencies: ["ConcurrencyCompatibility", "Rearrange"]),
+		.target(name: "RangeState", dependencies: ["Rearrange"]),
 		.testTarget(name: "RangeStateTests", dependencies: ["RangeState"]),
 		.target(
 			name: "Neon",
 			dependencies: [
-                "ConcurrencyCompatibility",
                 "RangeState",
                 "Rearrange",
                 "TreeSitterClient",
@@ -35,7 +33,6 @@ let package = Package(
 		.target(
 			name: "TreeSitterClient",
 			dependencies: [
-                "ConcurrencyCompatibility",
 				"RangeState",
 				"Rearrange",
 				"SwiftTreeSitter",

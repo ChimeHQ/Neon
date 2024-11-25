@@ -1,6 +1,5 @@
 import Foundation
 
-import ConcurrencyCompatibility
 import Rearrange
 
 public enum Validation: Sendable, Hashable {

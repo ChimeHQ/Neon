@@ -1,6 +1,5 @@
 import Foundation
 
-import ConcurrencyCompatibility
 import Rearrange
 
 @MainActor

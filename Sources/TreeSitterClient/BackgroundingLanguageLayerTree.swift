@@ -1,6 +1,5 @@
 import Foundation
 
-import ConcurrencyCompatibility
 import SwiftTreeSitter
 import SwiftTreeSitterLayer
 
