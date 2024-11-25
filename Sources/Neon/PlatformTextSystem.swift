@@ -59,7 +59,7 @@ extension NSTextContainer {
 extension TextView {
 	var tk2VisibleTextRange: NSRange? {
 		guard
-			#available(macOS 12.0, iOS 16.0, tvOS 15.0, *),
+			#available(macOS 12.0, iOS 16.0, tvOS 16.0, *),
 			let textLayoutManager,
 			let viewportRange = textLayoutManager.textViewportLayoutController.viewportRange,
 			let textContentManager = textLayoutManager.textContentManager
