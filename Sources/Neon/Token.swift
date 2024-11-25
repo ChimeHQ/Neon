@@ -2,6 +2,9 @@ import Foundation
 
 import RangeState
 
+/// A semantic label and range pair.
+///
+/// This type represents a range of text that has semantic meaning.
 public struct Token: Hashable, Sendable {
 	public let name: String
 	public let range: NSRange
