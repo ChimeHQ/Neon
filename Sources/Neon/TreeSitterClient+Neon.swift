@@ -59,7 +59,7 @@ extension LanguageLayer.Content {
 	}
 }
 
-#if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)
+#if os(macOS) || os(iOS) || os(visionOS)
 extension TextViewSystemInterface {
 	func languageLayerContent(with limit: Int) -> LanguageLayer.Content {
 		LanguageLayer.Content(string: textStorage.string, limit: limit)
