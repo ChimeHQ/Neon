@@ -65,7 +65,6 @@ extension TextViewSystemInterface {
 		LanguageLayer.Content(string: textStorage.string, limit: limit)
 	}
 }
-#endif
 
 @available(macOS 12.0, macCatalyst 15.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
 extension TreeSitterClient {
@@ -107,4 +106,4 @@ extension TreeSitterClient {
 		return attributedString
 	}
 }
-
+#endif
