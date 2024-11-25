@@ -43,7 +43,7 @@ public struct TokenApplication: Hashable, Sendable {
 	public static let noChange = TokenApplication(tokens: [], action: .apply)
 }
 
-/// A function that assigns semantic value to a range of text.
+/// A type that assigns semantic value to a range of text either syncrhonously or asychrnoously.
 ///
 /// The input will be an `NSRange` representing the text that needs styling, and the output is a `TokenApplication`.
 public typealias TokenProvider = HybridValueProvider<NSRange, TokenApplication>
