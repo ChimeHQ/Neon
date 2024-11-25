@@ -90,7 +90,8 @@ public final class TextViewHighlighter {
 				lengthProvider: { [interface] in interface.content.currentLength },
 				invalidationHandler: { [buffer] in buffer.invalidate(.set($0)) },
 				locationTransformer: configuration.locationTransformer
-			)
+			),
+            isolation: MainActor.shared
 		)
 
 		// this level of indirection is necessary so when the TextProvider is accessed it always uses the current version of the content

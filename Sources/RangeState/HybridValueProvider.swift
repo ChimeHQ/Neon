@@ -2,7 +2,7 @@ import Foundation
 
 /// A type that can perform work both synchronously and asynchronously.
 public struct HybridSyncAsyncValueProvider<Input, Output, Failure: Error> {
-	public typealias SyncValueProvider = (sending Input) throws(Failure) -> sending Output?
+	public typealias SyncValueProvider = (Input) throws(Failure) -> Output?
 	public typealias AsyncValueProvider = (isolated (any Actor)?, sending Input) async throws(Failure) -> sending Output
 
 	public let syncValueProvider: SyncValueProvider
@@ -21,7 +21,7 @@ public struct HybridSyncAsyncValueProvider<Input, Output, Failure: Error> {
 	}
 
 
-	public func sync(_ input: sending Input) throws(Failure) -> sending Output? {
+	public func sync(_ input: Input) throws(Failure) -> Output? {
 		try syncValueProvider(input)
 	}
 }

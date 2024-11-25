@@ -74,7 +74,8 @@ public final class TreeSitterClient {
 		configuration: .init(
 			versionedContent: versionedContent,
 			provider: validatorProvider
-		)
+		),
+        isolation: MainActor.shared
 	)
 
 	private let layerTree: BackgroundingLanguageLayerTree
@@ -194,7 +195,7 @@ extension TreeSitterClient {
 		let content = self.maximumProcessedContent
 
 		do {
-			let invalidatedSet = try await self.layerTree.resolveSublayers(with: content, in: set)
+            let invalidatedSet = try await self.layerTree.resolveSublayers(with: content, in: set, isolation: MainActor.shared)
 
 			self.handleInvalidation(invalidatedSet, sublayers: false)
 		} catch {
@@ -285,7 +286,7 @@ extension TreeSitterClient {
 	}
 
 	private func validateSublayers(in set: IndexSet) {
-		sublayerValidator.validate(.set(set))
+        sublayerValidator.validate(.set(set), isolation: MainActor.shared)
 	}
 
 	private func executeQuery(_ clientQuery: ClientQuery) async throws -> some Sequence<QueryMatch> {
@@ -295,7 +296,7 @@ extension TreeSitterClient {
 
 		validateSublayers(in: clientQuery.params.indexSet)
 
-		let matches = try await layerTree.executeQuery(clientQuery.query, in: clientQuery.params.indexSet)
+        let matches = try await layerTree.executeQuery(clientQuery.query, in: clientQuery.params.indexSet, isolation: MainActor.shared)
 
 		return matches.resolve(with: .init(textProvider: clientQuery.params.textProvider))
 	}

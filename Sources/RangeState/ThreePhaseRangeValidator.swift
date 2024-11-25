@@ -2,7 +2,6 @@ import Foundation
 
 import Rearrange
 
-@MainActor
 public final class ThreePhaseRangeValidator<Content: VersionedContent> {
 	public typealias PrimaryValidator = SinglePhaseRangeValidator<Content>
 	private typealias InternalValidator = RangeValidator<Content>
@@ -48,20 +47,25 @@ public final class ThreePhaseRangeValidator<Content: VersionedContent> {
 
 	public let configuration: Configuration
 
-	public init(configuration: Configuration) {
+	public init(configuration: Configuration, isolation: isolated (any Actor) = MainActor.shared) {
 		self.configuration = configuration
 		self.primaryValidator = PrimaryValidator(
 			configuration: .init(
 				versionedContent: configuration.versionedContent,
 				provider: configuration.provider,
 				prioritySetProvider: configuration.prioritySetProvider
-			)
+			),
+            isolation: isolation
 		)
 
 		self.fallbackValidator = InternalValidator(content: configuration.versionedContent)
 		self.secondaryValidator = InternalValidator(content: configuration.versionedContent)
 
-		primaryValidator.validationHandler = { [unowned self] in self.handlePrimaryValidation(of: $0) }
+        func _validationHandler(_ range: NSRange) {
+            handlePrimaryValidation(of: range, isolation: isolation)
+        }
+        
+        primaryValidator.validationHandler = _validationHandler
 	}
 
 	private var version: Content.Version {
@@ -75,12 +79,12 @@ public final class ThreePhaseRangeValidator<Content: VersionedContent> {
 		secondaryValidator?.invalidate(target)
 	}
 
-	public func validate(_ target: RangeTarget, prioritizing set: IndexSet? = nil) {
-		let action = primaryValidator.validate(target, prioritizing: set)
+	public func validate(_ target: RangeTarget, prioritizing set: IndexSet? = nil, isolation: isolated (any Actor) = MainActor.shared) {
+        let action = primaryValidator.validate(target, prioritizing: set, isolation: isolation)
 
 		switch action {
 		case .none:
-			scheduleSecondaryValidation(of: target, prioritizing: set)
+            scheduleSecondaryValidation(of: target, prioritizing: set, isolation: isolation)
 		case let .needed(contentRange):
 			fallbackValidate(contentRange.value, prioritizing: set)
 		}
@@ -124,17 +128,17 @@ public final class ThreePhaseRangeValidator<Content: VersionedContent> {
 }
 
 extension ThreePhaseRangeValidator {
-	private func handlePrimaryValidation(of range: NSRange) {
+	private func handlePrimaryValidation(of range: NSRange, isolation: isolated (any Actor)) {
 		let target = RangeTarget.range(range)
 		let prioritySet = configuration.prioritySetProvider?() ?? IndexSet(range)
 
 		fallbackValidator.invalidate(target)
 		secondaryValidator?.invalidate(target)
 
-		scheduleSecondaryValidation(of: target, prioritizing: prioritySet)
+        scheduleSecondaryValidation(of: target, prioritizing: prioritySet, isolation: isolation)
 	}
 
-	private func scheduleSecondaryValidation(of target: RangeTarget, prioritizing set: IndexSet?) {
+	private func scheduleSecondaryValidation(of target: RangeTarget, prioritizing set: IndexSet?, isolation: isolated (any Actor)) {
 		if configuration.secondaryProvider == nil || secondaryValidator == nil {
 			return
 		}
@@ -145,6 +149,8 @@ extension ThreePhaseRangeValidator {
 		let delay = max(UInt64(configuration.secondaryValidationDelay * 1_000_000_000), 0)
 
 		self.task = Task {
+            _ = isolation
+            
 			try await Task.sleep(nanoseconds: delay)
 
 			await secondaryValidate(target: target, requestingVersion: requestingVersion, prioritizing: set)

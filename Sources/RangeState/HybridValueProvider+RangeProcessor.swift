@@ -10,7 +10,7 @@ extension HybridSyncAsyncValueProvider {
 		asyncValue: @escaping (Input) async throws(Failure) -> sending Output
 	) {
 		// bizarre local-function workaround https://github.com/swiftlang/swift/issues/77067
-		func _syncVersion(input: sending Input) throws(Failure) -> sending Output? {
+		func _syncVersion(input: Input) throws(Failure) -> Output? {
 			let (location, fill) = inputTransformer(input)
 
 			if rangeProcessor.processLocation(isolation: isolation, location, mode: fill) {

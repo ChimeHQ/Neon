@@ -8,7 +8,6 @@ enum BackgroundingLanguageLayerTreeError: Error {
 	case unableToSnapshot
 }
 
-@MainActor
 final class BackgroundingLanguageLayerTree {
 	public static let synchronousLengthThreshold = 2048
 	public static let synchronousDocumentSize = 2048*512
@@ -33,7 +32,7 @@ final class BackgroundingLanguageLayerTree {
 		}
 	}
 
-	private let queue = DispatchQueue(label: "com.chimehq.QueuedLanguageLayerTree")
+	private let queue = DispatchQueue(label: "com.chimehq.BackgroundingLanguageLayerTree")
 	private var currentVersion = 0
 	private var committedVersion = 0
 	private var pendingOldPoint: Point?
@@ -55,7 +54,7 @@ final class BackgroundingLanguageLayerTree {
 		version: Int,
 		preferSynchronous: Bool,
 		operation: @escaping (LanguageLayer) throws -> T,
-		completion: @escaping @MainActor (Result<T, Error>) -> Void
+		completion: @escaping (Result<T, Error>) -> Void
 	) {
 		if preferSynchronous, let tree = accessTreeSynchronously(version: version) {
 			let result = Result(catching: { try operation(tree) })
@@ -63,7 +62,7 @@ final class BackgroundingLanguageLayerTree {
 			return
 		}
 
-		// this must be unsafe because LanguageLayerTree is not Sendable. However access is gated through the main actor/queue.
+		// this must be unsafe because LanguageLayer is not Sendable. However access is gated through the main actor/queue.
 		queue.backport.asyncUnsafe { [rootLayer] in
 			let result = Result(catching: { try operation(rootLayer) })
 
@@ -77,7 +76,7 @@ final class BackgroundingLanguageLayerTree {
 		self.pendingOldPoint = configuration.locationTransformer(range.max)
 	}
 
-	public func didChangeContent(_ content: LanguageLayer.Content, in range: NSRange, delta: Int, completion: @escaping @MainActor (IndexSet) -> Void) {
+	public func didChangeContent(_ content: LanguageLayer.Content, in range: NSRange, delta: Int, completion: @escaping (IndexSet) -> Void) {
 		let transformer = configuration.locationTransformer
 
 		let upToDate = currentVersion == committedVersion
@@ -104,7 +103,7 @@ final class BackgroundingLanguageLayerTree {
 		}
 	}
 
-	public func languageConfigurationChanged(for name: String, content: LanguageLayer.Content, completion: @escaping @MainActor (Result<IndexSet, Error>) -> Void) {
+	public func languageConfigurationChanged(for name: String, content: LanguageLayer.Content, completion: @escaping (Result<IndexSet, Error>) -> Void) {
 		accessTree(version: currentVersion, preferSynchronous: true) { tree in
 			try tree.languageConfigurationChanged(for: name, content: content)
 		} completion: {
@@ -122,7 +121,7 @@ extension BackgroundingLanguageLayerTree {
 		return try tree.executeQuery(queryDef, in: set)
 	}
 
-	public func executeQuery(_ queryDef: Query.Definition, in set: IndexSet) async throws -> [QueryMatch] {
+    public func executeQuery(_ queryDef: Query.Definition, in set: IndexSet, isolation: isolated (any Actor)) async throws -> [QueryMatch] {
 		try await withCheckedThrowingContinuation { continuation in
 			accessTree(version: currentVersion, preferSynchronous: false) { tree in
 				guard let snapshot = tree.snapshot(in: set) else {
@@ -140,6 +139,7 @@ extension BackgroundingLanguageLayerTree {
 		}
 	}
 
+	// workaround for https://github.com/swiftlang/swift/issues/77090
 	private nonisolated func doTheThing(_ queryDef: Query.Definition, in set: IndexSet, input: Result<LanguageLayerTreeSnapshot, any Error>) -> sending Result<[QueryMatch], any Error> {
 		input.flatMap { snapshot in
 			Result(catching: {
@@ -161,7 +161,7 @@ extension BackgroundingLanguageLayerTree {
 		return try tree.resolveSublayers(with: content, in: set)
 	}
 
-	public func resolveSublayers(with content: LanguageLayer.Content, in set: IndexSet) async throws -> IndexSet {
+    public func resolveSublayers(with content: LanguageLayer.Content, in set: IndexSet, isolation: isolated (any Actor)) async throws -> IndexSet {
 		try await withCheckedThrowingContinuation { continuation in
 			accessTree(version: currentVersion, preferSynchronous: false) { tree in
 				try tree.resolveSublayers(with: content, in: set)

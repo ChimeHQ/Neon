@@ -16,7 +16,7 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.9.0"),
-		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.8.1"),
+		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "2.0.0"),
 	],
 	targets: [
 		.target(name: "RangeState", dependencies: ["Rearrange"]),

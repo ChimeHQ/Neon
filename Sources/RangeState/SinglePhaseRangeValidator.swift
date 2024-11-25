@@ -2,7 +2,6 @@ import Foundation
 
 import Rearrange
 
-@MainActor
 public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	public typealias ContentRange = RangeValidator<Content>.ContentRange
 	public typealias Provider = HybridSyncAsyncValueProvider<ContentRange, Validation, Never>
@@ -32,7 +31,7 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	public let configuration: Configuration
 	public var validationHandler: (NSRange) -> Void = { _ in }
 
-	public init(configuration: Configuration) {
+    public init(configuration: Configuration, isolation: isolated (any Actor) = MainActor.shared) {
 		self.configuration = configuration
 		self.primaryValidator = RangeValidator<Content>(content: configuration.versionedContent)
 
@@ -41,8 +40,10 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 		self.continuation = continuation
 
 		Task { [weak self] in
+            _ = isolation
+            
 			for await versionedRange in stream {
-				await self?.validateRangeAsync(versionedRange)
+                await self?.validateRangeAsync(versionedRange, isolation: isolation)
 			}
 		}
 	}
@@ -61,7 +62,11 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	}
 
 	@discardableResult
-	public func validate(_ target: RangeTarget, prioritizing set: IndexSet? = nil) -> RangeValidator<Content>.Action {
+    public func validate(
+        _ target: RangeTarget,
+        prioritizing set: IndexSet? = nil,
+        isolation: isolated (any Actor) = MainActor.shared
+    ) -> RangeValidator<Content>.Action {
 		// capture this first, because we're about to start one
 		let outstanding = primaryValidator.hasOutstandingValidations
 
@@ -83,27 +88,30 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 				return action
 			}
 
-			completePrimaryValidation(of: contentRange, with: validation)
+            completePrimaryValidation(of: contentRange, with: validation, isolation: isolation)
 
 			return .none
 		}
 	}
 
-	private func completePrimaryValidation(of contentRange: ContentRange, with validation: Validation) {
+	private func completePrimaryValidation(of contentRange: ContentRange, with validation: Validation, isolation: isolated (any Actor)) {
 		primaryValidator.completeValidation(of: contentRange, with: validation)
 
 		switch validation {
 		case .stale:
-			DispatchQueue.main.async {
-				if contentRange.version == self.version {
-					print("version unchanged after stale results, stopping validation")
-					return
-				}
-				
-				let prioritySet = self.configuration.prioritySetProvider?() ?? IndexSet(contentRange.value)
+            Task {
+                _ = isolation
+                
+                if contentRange.version == self.version {
+                    print("version unchanged after stale results, stopping validation")
+                    return
+                }
+                
+                let prioritySet = self.configuration.prioritySetProvider?() ?? IndexSet(contentRange.value)
 
-				self.validate(.set(prioritySet))
-			}
+                self.validate(.set(prioritySet), isolation: isolation)
+
+            }
 		case let .success(range):
 			validationHandler(range)
 		}
@@ -130,9 +138,9 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 		continuation.yield(contentRange)
 	}
 
-	private func validateRangeAsync(_ contentRange: ContentRange) async {
+	private func validateRangeAsync(_ contentRange: ContentRange, isolation: isolated (any Actor)) async {
 		let validation = await self.configuration.provider.async(contentRange)
 
-		completePrimaryValidation(of: contentRange, with: validation)
+        completePrimaryValidation(of: contentRange, with: validation, isolation: isolation)
 	}
 }
