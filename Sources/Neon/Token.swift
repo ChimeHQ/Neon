@@ -62,4 +62,16 @@ extension TokenProvider {
 			}
 		)
 	}
+
+	/// A TokenProvider that returns an empty set of tokens for all async requests, but fails to resolve tokens synchronously.
+	public static var asyncOnlyNone: TokenProvider {
+		.init(
+			syncValue: { _ in
+				return nil
+			},
+			asyncValue: { _, _ in
+				return .noChange
+			}
+		)
+	}
 }

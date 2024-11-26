@@ -31,7 +31,7 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	public let configuration: Configuration
 	public var validationHandler: (NSRange) -> Void = { _ in }
 
-    public init(configuration: Configuration, isolation: isolated (any Actor) = MainActor.shared) {
+	public init(configuration: Configuration, isolation: isolated (any Actor)) {
 		self.configuration = configuration
 		self.primaryValidator = RangeValidator<Content>(content: configuration.versionedContent)
 
@@ -40,10 +40,26 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 		self.continuation = continuation
 
 		Task { [weak self] in
-            _ = isolation
-            
+			_ = isolation
+
 			for await versionedRange in stream {
-                await self?.validateRangeAsync(versionedRange, isolation: isolation)
+				await self?.validateRangeAsync(versionedRange, isolation: isolation)
+			}
+		}
+	}
+
+	@MainActor
+	public init(configuration: Configuration) {
+		self.configuration = configuration
+		self.primaryValidator = RangeValidator<Content>(content: configuration.versionedContent)
+
+		let (stream, continuation) = Sequence.makeStream()
+
+		self.continuation = continuation
+
+		Task { [weak self] in
+			for await versionedRange in stream {
+				await self?.validateRangeAsync(versionedRange, isolation: MainActor.shared)
 			}
 		}
 	}
@@ -62,11 +78,11 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	}
 
 	@discardableResult
-    public func validate(
-        _ target: RangeTarget,
-        prioritizing set: IndexSet? = nil,
-        isolation: isolated (any Actor) = MainActor.shared
-    ) -> RangeValidator<Content>.Action {
+	public func validate(
+		_ target: RangeTarget,
+		prioritizing set: IndexSet? = nil,
+		isolation: isolated (any Actor)
+	) -> RangeValidator<Content>.Action {
 		// capture this first, because we're about to start one
 		let outstanding = primaryValidator.hasOutstandingValidations
 
@@ -88,10 +104,19 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 				return action
 			}
 
-            completePrimaryValidation(of: contentRange, with: validation, isolation: isolation)
+			completePrimaryValidation(of: contentRange, with: validation, isolation: isolation)
 
 			return .none
 		}
+	}
+
+	@MainActor
+	@discardableResult
+	public func validate(
+		_ target: RangeTarget,
+		prioritizing set: IndexSet? = nil
+	) -> RangeValidator<Content>.Action {
+		validate(target, prioritizing: set, isolation: MainActor.shared)
 	}
 
 	private func completePrimaryValidation(of contentRange: ContentRange, with validation: Validation, isolation: isolated (any Actor)) {
@@ -99,19 +124,19 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 
 		switch validation {
 		case .stale:
-            Task {
-                _ = isolation
-                
-                if contentRange.version == self.version {
-                    print("version unchanged after stale results, stopping validation")
-                    return
-                }
-                
-                let prioritySet = self.configuration.prioritySetProvider?() ?? IndexSet(contentRange.value)
+			Task {
+				_ = isolation
 
-                self.validate(.set(prioritySet), isolation: isolation)
+				if contentRange.version == self.version {
+					print("version unchanged after stale results, stopping validation")
+					return
+				}
 
-            }
+				let prioritySet = self.configuration.prioritySetProvider?() ?? IndexSet(contentRange.value)
+
+				self.validate(.set(prioritySet), isolation: isolation)
+
+			}
 		case let .success(range):
 			validationHandler(range)
 		}
@@ -141,6 +166,6 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	private func validateRangeAsync(_ contentRange: ContentRange, isolation: isolated (any Actor)) async {
 		let validation = await self.configuration.provider.async(contentRange)
 
-        completePrimaryValidation(of: contentRange, with: validation, isolation: isolation)
+		completePrimaryValidation(of: contentRange, with: validation, isolation: isolation)
 	}
 }

@@ -35,6 +35,7 @@ extension TextView {
 /// A class that can connect `NSTextView`/`UITextView` to `TreeSitterClient`
 ///
 /// This class is a minimal implementation that can help perform highlighting for a TextView. It is compatible with both TextKit 1 and 2 views, and uses single-phase pass with tree-sitter. The created instance will become the delegate of the view's `NSTextStorage`.
+@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 @MainActor
 public final class TextViewHighlighter {
 	private typealias Styler = TextSystemStyler<TextViewSystemInterface>
@@ -87,11 +88,11 @@ public final class TextViewHighlighter {
 			configuration: .init(
 				languageProvider: configuration.languageProvider,
 				contentProvider: { [interface] in interface.languageLayerContent(with: $0) },
+				contentSnapshopProvider: { [interface] in interface.languageLayerContentSnapshot(with: $0) },
 				lengthProvider: { [interface] in interface.content.currentLength },
 				invalidationHandler: { [buffer] in buffer.invalidate(.set($0)) },
 				locationTransformer: configuration.locationTransformer
-			),
-            isolation: MainActor.shared
+			)
 		)
 
 		// this level of indirection is necessary so when the TextProvider is accessed it always uses the current version of the content
@@ -132,7 +133,7 @@ public final class TextViewHighlighter {
 
 		try textView.getTextStorage().delegate = storageDelegate
 
-        observeEnclosingScrollView()
+		observeEnclosingScrollView()
 
 		invalidate(.all)
 	}
@@ -148,6 +149,7 @@ public final class TextViewHighlighter {
 	}
 }
 
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension TextViewHighlighter {
 	/// Begin monitoring for containing scroll view changes.
 	///
@@ -158,7 +160,7 @@ extension TextViewHighlighter {
 			print("warning: there is no enclosing scroll view")
 			return
 		}
-
+		
 		NotificationCenter.default.addObserver(
 			self,
 			selector: #selector(visibleContentChanged(_:)),

@@ -11,18 +11,14 @@ final class TextViewController: NSUIViewController {
 	private let highlighter: TextViewHighlighter
 
 	init() {
-		if #available(iOS 16.0, *) {
-			self.textView = NSUITextView(usingTextLayoutManager: false)
-		} else {
-			self.textView = NSUITextView()
-		}
+		self.textView = NSUITextView(usingTextLayoutManager: false)
 
 		self.highlighter = try! Self.makeHighlighter(for: textView)
 
 		super.init(nibName: nil, bundle: nil)
 
 		// enable non-continguous layout for TextKit 1
-        if #available(macOS 12.0, iOS 16.0, tvOS 15.0, *), textView.textLayoutManager == nil {
+		if textView.textLayoutManager == nil {
 			textView.nsuiLayoutManager?.allowsNonContiguousLayout = true
 		}
 	}
@@ -119,17 +115,17 @@ final class TextViewController: NSUIViewController {
 		// it wasn't that way on creation
 		highlighter.observeEnclosingScrollView()
 
-		regularTest()
+		regularTestWithSwiftCode()
 	}
 
-	func regularTest() {
+	func regularTestWithSwiftCode() {
 		let url = Bundle.main.url(forResource: "test", withExtension: "code")!
 		let content = try! String(contentsOf: url)
 
 		textView.text = content
 	}
 
-	func doBigTest() {
+	func doBigMarkdownTest() {
 		let url = Bundle.main.url(forResource: "big_test", withExtension: "md")!
 		let content = try! String(contentsOf: url)
 
