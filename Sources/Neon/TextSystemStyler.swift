@@ -29,7 +29,8 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 				versionedContent: textSystem.content,
 				provider: tokenValidator.validationProvider,
 				prioritySetProvider: { textSystem.visibleSet }
-			)
+			),
+            isolation: MainActor.shared
 		)
 	}
 
@@ -57,7 +58,7 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 	public func visibleContentDidChange() {
 		let prioritySet = textSystem.visibleSet
 
-		validator.validate(.set(prioritySet), prioritizing: prioritySet)
+        validator.validate(.set(prioritySet), prioritizing: prioritySet, isolation: MainActor.shared)
 	}
 
 
@@ -68,12 +69,12 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 	public func validate(_ target: RangeTarget) {
 		let prioritySet = textSystem.visibleSet
 
-		validator.validate(target, prioritizing: prioritySet)
+		validator.validate(target, prioritizing: prioritySet, isolation: MainActor.shared)
 	}
 
 	public func validate() {
 		let prioritySet = textSystem.visibleSet
 
-		validator.validate(.set(prioritySet), prioritizing: prioritySet)
+		validator.validate(.set(prioritySet), prioritizing: prioritySet, isolation: MainActor.shared)
 	}
 }

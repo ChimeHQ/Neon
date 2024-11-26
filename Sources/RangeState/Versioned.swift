@@ -1,5 +1,6 @@
 import Foundation
 
+/// Represents a value with changes that can be tracked over time.
 public struct Versioned<Version, Value> {
 	public var value: Value
 	public var version: Version
@@ -20,26 +21,26 @@ public typealias VersionedRange<Version> = Versioned<Version, NSRange>
 ///
 /// This can be used to model text storage. If your backing store supports versioning, this can be used to improve efficiency.
 public protocol VersionedContent<Version> {
-    associatedtype Version: Equatable & Sendable
+	associatedtype Version: Equatable & Sendable
 
-    var currentVersion: Version { get }
-    func length(for version: Version) -> Int?
+	var currentVersion: Version { get }
+	func length(for version: Version) -> Int?
 }
 
 extension VersionedContent {
-    public var currentVersionedLength: Versioned<Version, Int> {
-        let vers = currentVersion
+	public var currentVersionedLength: Versioned<Version, Int> {
+		let vers = currentVersion
 
-        guard let value = length(for: vers) else {
-            preconditionFailure("length of current version must always be available")
-        }
+		guard let value = length(for: vers) else {
+			preconditionFailure("length of current version must always be available")
+		}
 
-        return .init(value, version: vers)
-    }
+		return .init(value, version: vers)
+	}
 
-    public var currentLength: Int {
-        currentVersionedLength.value
-    }
+	public var currentLength: Int {
+		currentVersionedLength.value
+	}
 }
 
 /// Content where only the current version is valid.

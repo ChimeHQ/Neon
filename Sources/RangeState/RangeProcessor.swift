@@ -18,7 +18,6 @@ public enum RangeFillMode: Sendable, Hashable {
 }
 
 /// A type that can perform on-demand processing of range-based data.
-@MainActor
 public final class RangeProcessor {
 	private typealias Continuation = CheckedContinuation<(), Never>
 	private typealias VersionedMutation = Versioned<Int, RangeMutation>
@@ -31,7 +30,7 @@ public final class RangeProcessor {
 	/// Function to apply changes.
 	///
 	/// These mutations can come from the content being modified or from operations that require lazy processing. The parameter's postApplyLimit property defines the maximum read location and needs to be respected to preserve the lazy access semantics.
-	public typealias ChangeHandler = (RangeMutation, @MainActor @escaping () -> Void) -> Void
+	public typealias ChangeHandler = (RangeMutation, @escaping () -> Void) -> Void
 	public typealias LengthProvider = () -> Int
 
 	public struct Configuration {
@@ -109,7 +108,7 @@ extension RangeProcessor {
 	/// - Returns: true if the location has been processed
 
 	@discardableResult
-	public func processLocation(_ location: Int, mode: RangeFillMode = .required) -> Bool {
+	public func processLocation(isolation: isolated (any Actor)? = #isolation, _ location: Int, mode: RangeFillMode = .required) -> Bool {
 		switch mode {
 		case .none:
 			break
@@ -117,14 +116,14 @@ extension RangeProcessor {
 			// update our target
 			self.targetProcessingLocation = max(location, targetProcessingLocation)
 			
-			scheduleFilling()
+			scheduleFilling(in: isolation)
 		case .required:
 			if hasPendingChanges {
 				break
 			}
 
 			if let mutation = fillMutationNeeded(for: location, mode: mode) {
-				processMutation(mutation)
+				processMutation(mutation, in: isolation)
 			}
 		}
 
@@ -158,7 +157,7 @@ extension RangeProcessor {
 		}
 	}
 
-    public func processingCompleted() async {
+    public func processingCompleted(isolation: isolated (any Actor)? = #isolation) async {
 		if hasPendingChanges == false {
 			return
 		}
@@ -186,7 +185,7 @@ extension RangeProcessor {
 		didChangeContent(in: mutation.range, delta: mutation.delta)
 	}
 
-	public func didChangeContent(in range: NSRange, delta: Int) {
+	public func didChangeContent(isolation: isolated (any Actor)? = #isolation, in range: NSRange, delta: Int) {
 		if processed(range.location) == false {
 			return
 		}
@@ -216,21 +215,24 @@ extension RangeProcessor {
 
 		let mutation = RangeMutation(range: visibleRange, delta: visibleDelta, limit: effectiveLimit)
 
-		processMutation(mutation)
+		processMutation(mutation, in: isolation)
 	}
 
-	private func processMutation(_ mutation: RangeMutation) {
+	private func processMutation(_ mutation: RangeMutation, in isolation: isolated (any Actor)?) {
 		self.pendingEvents.append(.change(VersionedMutation(mutation, version: version)))
 		self.version += 1
 
-		// at this point, it is possible that the target location is no longer meaningful. But that's ok, because it will be clamped and possibly overwritten anyways
+		// this requires a very strange workaround to get the correct isolation inheritance from this changeHandler arrangement. I believe this is a bug.
+		// https://github.com/swiftlang/swift/issues/77067
+		func _completeContentChanged() {
+			self.completeContentChanged(mutation, in: isolation)
+		}
 
-		configuration.changeHandler(mutation, {
-			self.completeContentChanged(mutation)
-		})
+		// at this point, it is possible that the target location is no longer meaningful. But that's ok, because it will be clamped and possibly overwritten anyways
+		configuration.changeHandler(mutation, _completeContentChanged)
 	}
 
-	private func completeContentChanged(_ mutation: RangeMutation) {
+	private func completeContentChanged(_ mutation: RangeMutation, in isolation: isolated (any Actor)?) {
 		self.processedVersion += 1
 
 		resumeLeadingContinuations()
@@ -249,10 +251,10 @@ extension RangeProcessor {
 
 		updateProcessedLocation(by: mutation.delta)
 
-		scheduleFilling()
+		scheduleFilling(in: isolation)
 	}
 
-	public func continueFillingIfNeeded() {
+	public func continueFillingIfNeeded(isolation: isolated (any Actor)? = #isolation) {
 		if hasPendingChanges {
 			return
 		}
@@ -262,12 +264,12 @@ extension RangeProcessor {
 
 		guard let mutation else { return }
 
-		processMutation(mutation)
+		processMutation(mutation, in: isolation)
 	}
 
-	private func scheduleFilling() {
-		DispatchQueue.main.async {
-			self.continueFillingIfNeeded()
+	private func scheduleFilling(in isolation: isolated (any Actor)?) {
+		Task {
+			self.continueFillingIfNeeded(isolation: isolation)
 		}
 	}
 }

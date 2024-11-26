@@ -51,7 +51,7 @@ Neon is made up of three parts: the core library, `RangeState` and `TreeSitterCl
 
 Neon's lowest-level component is called RangeState. This module contains the core building blocks used for the rest of the system. RangeState is built around the idea of hybrid synchronous/asynchronous execution. Making everything async is a lot easier, but that makes it impossible to provide a low-latency path for small documents. It is content-independent.
 
-- `Hybrid(Throwing)ValueProvider`: a fundamental type that defines work in terms of both synchronous and asynchronous functions
+- `HybridSyncAsyncValueProvider`: a fundamental type that defines work in terms of both synchronous and asynchronous functions
 - `RangeProcessor`: performs on-demand processing of range-based content (think parsing)
 - `RangeValidator`: building block for managing the validation of range-based content
 - `RangeInvalidationBuffer`: buffer and consolidate invalidations so they can be applied at the optimal time
@@ -59,8 +59,6 @@ Neon's lowest-level component is called RangeState. This module contains the cor
 - `ThreePhaseRangeValidator`: performs validation with primary, fallback, and secondary data sources (three-phase highlighting)
 
 Many of these support versionable content. If you are working with a backing store structure that supports efficient versioning, like a [piece table](https://en.wikipedia.org/wiki/Piece_table), expressing this to RangeState can improve its efficiency.
-
-It might be surprising to see that many of the types in RangeState are marked `@MainActor`. Right now, I have found no way to both support the hybrid sync/async functionality while also not being tied to a global actor. I think this is the most resonable trade-off, but I would very much like to lift this restriction. However, I believe it will require [language changes](https://forums.swift.org/t/isolation-assumptions/69514/47).
 
 ### Neon
 
@@ -84,7 +82,9 @@ I have not yet figured out a way to do this with TextKit 2, and it may not be po
 
 #### Performance
 
-Neon's performance is highly dependant on the text system integration. Every aspect is important as there are performance cliffs all around. But, priority range calcations (the visible set for most text views) are of particular importance. This is surprisingly challenging to do correctly with TextKit 1, and extremely hard with TextKit 2.
+Neon's performance is highly dependant on the text system integration. Every aspect is important as there are performance cliffs all around. But, priority range calculations (the visible set for most text views) are of particular importance. This is surprisingly challenging to do correctly with TextKit 1, and extremely hard with TextKit 2.
+
+Bottom line: Neon is extremely efficient. The bottlenecks will probably be your parsing system and text view. It can do a decent job of hiding parsing performance issues too. However, that doesn't mean it's perfect. There's always room for improvement and if you suspect a problem please do file an issue.
 
 ### TreeSitterClient
 
@@ -106,11 +106,15 @@ Neon was designed to accept and overlay token data from multiple sources simulta
 - Second pass: [tree-sitter](https://tree-sitter.github.io/tree-sitter/), which has good quality and **could** be low-latency
 - Third pass: [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)'s [semantic tokens](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens), which can augment existing highlighting, but is high-latency
 
+An example of a first-pass system you might be interested in is [Lowlight](https://github.com/ChimeHQ/Lowlight).
+
 ### Theming
 
 A highlighting theme is really just a mapping from semantic labels to styles. Token data sources apply the semantic labels and the `TextSystemInterface` uses those labels to look up styling.
 
 This separation makes it very easy for you to do this look-up in a way that makes the most sense for whatever theming formats you'd like to support. This is also a convenient spot to adapt/modify the semantic labels coming from your data sources into a normalized form.
+
+If you are looking for some help here, check out [ThemePark](https://github.com/ChimeHQ/ThemePark).
 
 ## Usage
 
@@ -139,16 +143,15 @@ let clientConfig = TreeSitterClient.Configuration(
         // `languageConfigurationChanged(for:)`
         return nil
     },
-    contentProvider: { [textView] length in
-        // given a maximum needed length, produce a `Content` structure
-        // that will be used to access the text data
+    contentSnapshotProvider: { [textView] length in
+        // given a maximum needed length, produce a `ContentSnapshot` structure
+        // that will be used to access immutable text data
 
         // this can work for any system that efficiently produce a `String`
         return .init(string: textView.string)
     },
     lengthProvider: { [textView] in
         textView.string.utf16.count
-
     },
     invalidationHandler: { set in
         // take action on invalidated regions of the text

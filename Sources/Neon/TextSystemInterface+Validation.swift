@@ -44,7 +44,10 @@ extension TextSystemInterface {
 				return validation(for: application, in: contentRange)
 			},
 			mainActorAsyncValue: { contentRange in
-				return await asyncValidate(contentRange, provider: provider.mainActorAsync)
+				await asyncValidate(
+					contentRange,
+					provider: { range in await provider.async(range) }
+				)
 			}
 		)
 	}
@@ -69,6 +72,10 @@ extension TextSystemInterface {
 	func validatorSecondaryHandler(
 		with provider: @escaping Styler.SecondaryValidationProvider
 	) -> SecondaryValidationProvider {
-		{ await asyncValidate($0, provider: provider) }
+		{ range in
+			await asyncValidate(range, provider: {
+				await provider($0)
+			})
+		}
 	}
 }

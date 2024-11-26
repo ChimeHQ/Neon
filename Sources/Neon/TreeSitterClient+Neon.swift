@@ -15,8 +15,19 @@ extension TokenApplication {
 
 		self.init(tokens: tokens, range: range)
 	}
+
+	public init(namedRanges: [NamedRange], range: NSRange) {
+		let tokens = namedRanges.map {
+			let name = $0.name
+
+			return Token(name: name, range: $0.range)
+		}
+
+		self.init(tokens: tokens, range: range)
+	}
 }
 
+@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension TreeSitterClient {
 	@MainActor
 	public func tokenProvider(with provider: @escaping TextProvider, nameMap: [String : String] = [:]) -> TokenProvider {
@@ -36,7 +47,7 @@ extension TreeSitterClient {
 			mainActorAsyncValue: { [highlightsProvider] range in
 				do {
 					let params = TreeSitterClient.ClientQueryParams(range: range, textProvider: provider)
-					let namedRanges = try await highlightsProvider.mainActorAsync(params)
+					let namedRanges = try await highlightsProvider.async(params)
 
 					return TokenApplication(namedRanges: namedRanges, nameMap: nameMap, range: range)
 				} catch {
@@ -47,26 +58,18 @@ extension TreeSitterClient {
 	}
 }
 
-extension LanguageLayer.Content {
-	/// this should probably move into SwiftTreeSitterLayer
-	init(string: String, limit: Int) {
-		let read = Parser.readFunction(for: string, limit: limit)
-
-		self.init(
-			readHandler: read,
-			textProvider: string.predicateTextProvider
-		)
-	}
-}
-
 #if os(macOS) || os(iOS) || os(visionOS)
 extension TextViewSystemInterface {
 	func languageLayerContent(with limit: Int) -> LanguageLayer.Content {
 		LanguageLayer.Content(string: textStorage.string, limit: limit)
 	}
+
+	func languageLayerContentSnapshot(with limit: Int) -> LanguageLayer.ContentSnapshot {
+		LanguageLayer.ContentSnapshot(string: textStorage.string, limit: limit)
+	}
 }
 
-@available(macOS 12.0, macCatalyst 15.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension TreeSitterClient {
 	/// Highlight an input string.
 	public static func highlight(
@@ -75,14 +78,14 @@ extension TreeSitterClient {
 		rootLanguageConfig: LanguageConfiguration,
 		languageProvider: @escaping LanguageLayer.LanguageProvider
 	) async throws -> AttributedString {
-		let content = LanguageLayer.Content(string: string)
+		let content = LanguageLayer.ContentSnapshot(string: string)
 		let length = string.utf16.count
 
 		let client = try TreeSitterClient(
 			rootLanguageConfig: rootLanguageConfig,
 			configuration: Configuration(
 				languageProvider: languageProvider,
-				contentProvider: { _ in content },
+				contentSnapshopProvider: { _ in content },
 				lengthProvider: { length },
 				invalidationHandler: { _ in },
 				locationTransformer: { _ in nil }

@@ -1,63 +1,37 @@
 import Foundation
 
-extension HybridValueProvider {
-	/// Construct a `HybridValueProvider` that will first attempt to process a location using a `RangeProcessor`.
-	@MainActor
+extension HybridSyncAsyncValueProvider {
+	/// Construct a `HybridSyncAsyncValueProvider` that will first attempt to process a location using a `RangeProcessor`.
 	public init(
+		isolation: isolated (any Actor)? = #isolation,
 		rangeProcessor: RangeProcessor,
 		inputTransformer: @escaping (Input) -> (Int, RangeFillMode),
 		syncValue: @escaping SyncValueProvider,
-		asyncValue: @escaping @MainActor (Input) async -> Output
+		asyncValue: @escaping (Input) async throws(Failure) -> sending Output
 	) {
-		self.init(
-			syncValue: { input in
-				let (location, fill) = inputTransformer(input)
+		// bizarre local-function workaround https://github.com/swiftlang/swift/issues/77067
+		func _syncVersion(input: Input) throws(Failure) -> Output? {
+			let (location, fill) = inputTransformer(input)
 
-				if rangeProcessor.processLocation(location, mode: fill) {
-					return syncValue(input)
-				}
-
-				return nil
-			},
-			asyncValue: { input, actor in
-				let (location, fill) = inputTransformer(input)
-
-				await rangeProcessor.processLocation(location, mode: fill)
-				await rangeProcessor.processingCompleted()
-
-				return await asyncValue(input)
+			if rangeProcessor.processLocation(isolation: isolation, location, mode: fill) {
+				return try syncValue(input)
 			}
-		)
-	}
-}
 
-extension HybridThrowingValueProvider {
-	/// Construct a `HybridThrowingValueProvider` that will first attempt to process a location using a `RangeProcessor`.
-	@MainActor
-	public init(
-		rangeProcessor: RangeProcessor,
-		inputTransformer: @escaping (Input) -> (Int, RangeFillMode),
-		syncValue: @escaping SyncValueProvider,
-		asyncValue: @escaping @MainActor (Input) async throws -> Output
-	) {
+			return nil
+		}
+
+		func _asyncVersion(isolation: isolated(any Actor)?, input: sending Input) async throws(Failure) -> sending Output {
+			let (location, fill) = inputTransformer(input)
+
+			rangeProcessor.processLocation(isolation: isolation, location, mode: fill)
+			await rangeProcessor.processingCompleted()
+
+			return try await asyncValue(input)
+		}
+
 		self.init(
-			syncValue: { input in
-				let (location, fill) = inputTransformer(input)
-
-				if rangeProcessor.processLocation(location, mode: fill) {
-					return try syncValue(input)
-				}
-
-				return nil
-			},
-			asyncValue: { input, actor in
-				let (location, fill) = inputTransformer(input)
-
-				await rangeProcessor.processLocation(location, mode: fill)
-				await rangeProcessor.processingCompleted()
-
-				return try await asyncValue(input)
-			}
+			syncValue: _syncVersion,
+			asyncValue: _asyncVersion
 		)
 	}
 }

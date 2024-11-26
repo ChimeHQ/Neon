@@ -31,7 +31,8 @@ public final class ThreePhaseTextSystemStyler<Interface: TextSystemInterface> {
 				secondaryProvider: textSystem.validatorSecondaryHandler(with: secondaryValidationProvider),
 				secondaryValidationDelay: 3.0,
 				prioritySetProvider: { textSystem.visibleSet }
-			)
+			),
+			isolation: MainActor.shared
 		)
 	}
 
@@ -46,12 +47,12 @@ public final class ThreePhaseTextSystemStyler<Interface: TextSystemInterface> {
 	public func validate(_ target: RangeTarget) {
 		let prioritySet = textSystem.visibleSet
 
-		validator.validate(target, prioritizing: prioritySet)
+		validator.validate(target, prioritizing: prioritySet, isolation: MainActor.shared)
 	}
 
 	public func validate() {
 		let prioritySet = textSystem.visibleSet
 
-		validator.validate(.set(prioritySet), prioritizing: prioritySet)
+		validator.validate(.set(prioritySet), prioritizing: prioritySet, isolation: MainActor.shared)
 	}
 }

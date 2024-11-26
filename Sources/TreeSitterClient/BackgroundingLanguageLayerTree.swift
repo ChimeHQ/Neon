@@ -8,7 +8,7 @@ enum BackgroundingLanguageLayerTreeError: Error {
 	case unableToSnapshot
 }
 
-@MainActor
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 final class BackgroundingLanguageLayerTree {
 	public static let synchronousLengthThreshold = 2048
 	public static let synchronousDocumentSize = 2048*512
@@ -33,86 +33,74 @@ final class BackgroundingLanguageLayerTree {
 		}
 	}
 
-	private let queue = DispatchQueue(label: "com.chimehq.QueuedLanguageLayerTree")
+	private let queue = DispatchQueue(label: "com.chimehq.BackgroundingLanguageLayerTree")
 	private var currentVersion = 0
 	private var committedVersion = 0
 	private var pendingOldPoint: Point?
-	private let rootLayer: LanguageLayer
 	private let configuration: Configuration
+	private let backgroundProcessor: BackgroundProcessor<LanguageLayer>
 
 	public init(rootLanguageConfig: LanguageConfiguration, configuration: Configuration) throws {
 		self.configuration = configuration
-		self.rootLayer = try LanguageLayer(languageConfig: rootLanguageConfig, configuration: configuration.layerConfiguration)
+		let rootLayer = try LanguageLayer(languageConfig: rootLanguageConfig, configuration: configuration.layerConfiguration)
+
+		self.backgroundProcessor = BackgroundProcessor(value: rootLayer)
 	}
 
 	private func accessTreeSynchronously(version: Int) -> LanguageLayer? {
-		guard version == committedVersion else { return nil }
-
-		return rootLayer
-	}
-
-	private func accessTree<T>(
-		version: Int,
-		preferSynchronous: Bool,
-		operation: @escaping (LanguageLayer) throws -> T,
-		completion: @escaping @MainActor (Result<T, Error>) -> Void
-	) {
-		if preferSynchronous, let tree = accessTreeSynchronously(version: version) {
-			let result = Result(catching: { try operation(tree) })
-			completion(result)
-			return
-		}
-
-		// this must be unsafe because LanguageLayerTree is not Sendable. However access is gated through the main actor/queue.
-		queue.backport.asyncUnsafe { [rootLayer] in
-			let result = Result(catching: { try operation(rootLayer) })
-
-			DispatchQueue.main.async {
-				completion(result)
-			}
-		}
+		backgroundProcessor.accessValueSynchronously()
 	}
 
 	public func willChangeContent(in range: NSRange) {
 		self.pendingOldPoint = configuration.locationTransformer(range.max)
 	}
 
-	public func didChangeContent(_ content: LanguageLayer.Content, in range: NSRange, delta: Int, completion: @escaping @MainActor (IndexSet) -> Void) {
+	public func didChangeContent(
+		_ snapshot: LanguageLayer.ContentSnapshot,
+		in range: NSRange,
+		delta: Int,
+		isolation: isolated (any Actor),
+		completion: @escaping (IndexSet) -> Void
+	) {
 		let transformer = configuration.locationTransformer
 
-		let upToDate = currentVersion == committedVersion
 		let smallChange = delta < Self.synchronousLengthThreshold && range.length < Self.synchronousLengthThreshold
 		let smallDoc = range.max < Self.synchronousDocumentSize
-		let sync = upToDate && smallChange && smallDoc
-
-		let version = currentVersion
-		self.currentVersion += 1
+		let sync = smallChange && smallDoc
 
 		let oldEndPoint = pendingOldPoint ?? transformer(range.max) ?? .zero
 		let edit = InputEdit(range: range, delta: delta, oldEndPoint: oldEndPoint, transformer: transformer)
 
-		accessTree(version: version, preferSynchronous: sync) { tree in
-			tree.didChangeContent(content, using: edit, resolveSublayers: false)
-		} completion: { result in
-			self.committedVersion += 1
-
-			do {
-				completion(try result.get())
-			} catch {
-				preconditionFailure("didChangeContent should not be able to fail: \(error)")
+		backgroundProcessor.accessValue(
+			isolation: isolation,
+			preferSynchronous: sync,
+			operation: { $0.didChangeContent(snapshot.content, using: edit, resolveSublayers: false) },
+			completion: { result in
+				do {
+					completion(try result.get())
+				} catch {
+					preconditionFailure("didChangeContent should not be able to fail: \(error)")
+				}
 			}
-		}
+		)
 	}
 
-	public func languageConfigurationChanged(for name: String, content: LanguageLayer.Content, completion: @escaping @MainActor (Result<IndexSet, Error>) -> Void) {
-		accessTree(version: currentVersion, preferSynchronous: true) { tree in
-			try tree.languageConfigurationChanged(for: name, content: content)
-		} completion: {
-			completion($0)
-		}
+	public func languageConfigurationChanged(
+		for name: String,
+		content snapshot: LanguageLayer.ContentSnapshot,
+		isolation: isolated (any Actor),
+		completion: @escaping (Result<IndexSet, Error>) -> Void
+	) {
+		backgroundProcessor.accessValue(
+			isolation: isolation,
+			preferSynchronous: true,
+			operation: { try $0.languageConfigurationChanged(for: name, content: snapshot.content) },
+			completion: { result in completion(result) }
+		)
 	}
 }
 
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension BackgroundingLanguageLayerTree {
 	public func executeQuery(_ queryDef: Query.Definition, in set: IndexSet) throws -> LanguageTreeQueryCursor {
 		guard let tree = accessTreeSynchronously(version: currentVersion) else {
@@ -122,32 +110,27 @@ extension BackgroundingLanguageLayerTree {
 		return try tree.executeQuery(queryDef, in: set)
 	}
 
-	public func executeQuery(_ queryDef: Query.Definition, in set: IndexSet) async throws -> [QueryMatch] {
-		try await withCheckedThrowingContinuation { continuation in
-			accessTree(version: currentVersion, preferSynchronous: false) { tree in
-				guard let snapshot = tree.snapshot(in: set) else {
-					throw BackgroundingLanguageLayerTreeError.unableToSnapshot
-				}
-
-				return snapshot
-			} completion: { result in
-				DispatchQueue.global().backport.asyncUnsafe {
-					let cursorResult = result.flatMap { snapshot in
-						Result(catching: {
-							let cursor = try snapshot.executeQuery(queryDef, in: set)
-
-							// this prefetches results in the background
-							return cursor.map { $0 }
-						})
-					}
-
-					continuation.resume(with: cursorResult)
-				}
+	public func executeQuery(_ queryDef: Query.Definition, in set: IndexSet, isolation: isolated (any Actor)) async throws -> [QueryMatch] {
+		let snapshot = try await backgroundProcessor.accessValue(isolation: isolation) { layer in
+			guard let snapshot = layer.snapshot(in: set) else {
+				throw BackgroundingLanguageLayerTreeError.unableToSnapshot
 			}
+
+			return snapshot
 		}
+		
+		return try await Self.processSnapshot(queryDef, in: set, snapshot: snapshot)
+	}
+
+	private nonisolated static func processSnapshot(_ queryDef: Query.Definition, in set: IndexSet, snapshot: LanguageLayerTreeSnapshot) async throws -> sending [QueryMatch] {
+		let cursor = try snapshot.executeQuery(queryDef, in: set)
+
+		// this prefetches results in the background
+		return cursor.map { $0 }
 	}
 }
 
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension BackgroundingLanguageLayerTree {
 	public func resolveSublayers(with content: LanguageLayer.Content, in set: IndexSet) throws -> IndexSet {
 		guard let tree = accessTreeSynchronously(version: currentVersion) else {
@@ -157,13 +140,9 @@ extension BackgroundingLanguageLayerTree {
 		return try tree.resolveSublayers(with: content, in: set)
 	}
 
-	public func resolveSublayers(with content: LanguageLayer.Content, in set: IndexSet) async throws -> IndexSet {
-		try await withCheckedThrowingContinuation { continuation in
-			accessTree(version: currentVersion, preferSynchronous: false) { tree in
-				try tree.resolveSublayers(with: content, in: set)
-			} completion: { result in
-				continuation.resume(with: result)
-			}
+	public func resolveSublayers(with snapshot: LanguageLayer.ContentSnapshot, in set: IndexSet, isolation: isolated (any Actor)) async throws -> IndexSet {
+		try await backgroundProcessor.accessValue(isolation: isolation) { layer in
+			try layer.resolveSublayers(with: snapshot.content, in: set)
 		}
 	}
 }

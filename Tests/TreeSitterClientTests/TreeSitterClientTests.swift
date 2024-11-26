@@ -5,6 +5,7 @@ import SwiftTreeSitter
 import TreeSitterClient
 import NeonTestsTreeSitterSwift
 
+@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 final class TreeSitterClientTests: XCTestCase {
 	@MainActor
 	func testSynchronousQuery() throws {
@@ -23,13 +24,13 @@ final class TreeSitterClientTests: XCTestCase {
 
 		let source = """
 func main() {
-	print("hello!")
+ print("hello!")
 }
 """
 
 		let clientConfig = TreeSitterClient.Configuration(
 			languageProvider: { _ in nil },
-			contentProvider: { _ in .init(string: source) },
+			contentSnapshopProvider: { _ in .init(string: source) },
 			lengthProvider: { source.utf16.count },
 			invalidationHandler: { _ in },
 			locationTransformer: { _ in nil }
@@ -142,7 +143,7 @@ func main() {
 //let content = """
 //func main() { print("hello" }
 //"""
-//		
+//
 //		let queryText = """
 //("func" @keyword.function)
 //"""
@@ -164,7 +165,7 @@ func main() {
 //		client.didChangeContent(to: content, in: .zero, delta: content.utf16.count, limit: content.utf16.count)
 //
 //		wait(for: [queryExpectation], timeout: 2.0)
-//		
+//
 //		switch result {
 //		case .failure(.staleContent):
 //			break

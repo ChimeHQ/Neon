@@ -16,7 +16,7 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 
 				return .success($0.value)
 			},
-			asyncValue: { contentRange, _ in
+			asyncValue: { _, contentRange in
 				return .success(contentRange.value)
 			})
 
@@ -46,7 +46,7 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 
 				return .success($0.value)
 			},
-			asyncValue: { contentRange, _ in
+			asyncValue: { _, contentRange in
 				return .success(contentRange.value)
 			})
 
@@ -76,7 +76,7 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 				
 				return .success($0.value)
 			},
-			asyncValue: { contentRange, _ in
+			asyncValue: { _, contentRange in
 				return .success(contentRange.value)
 			}
 		)
@@ -94,5 +94,35 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 
 		content.string = "ab"
 		validator.contentChanged(in: NSRange(2..<3), delta: -1)
+	}
+    
+	@MainActor
+	func testContentAddedAtEndAsync() async {
+		let validationExp = expectation(description: "validation")
+
+		let content = StringContent(string: "abc")
+		let provider = StringValidator.Provider(
+			syncValue: { _ in
+				return nil
+			},
+			asyncValue: { _, contentRange in
+				validationExp.fulfill()
+
+				return .success(contentRange.value)
+			})
+
+		let validator = StringValidator(
+			configuration: .init(
+				versionedContent: content,
+				provider: provider
+			)
+		)
+
+		validator.validate(.all)
+
+		await fulfillment(of: [validationExp], timeout: 1.0)
+
+		content.string = "abcd"
+		validator.contentChanged(in: NSRange(3..<3), delta: 1)
 	}
 }

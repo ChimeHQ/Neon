@@ -1,12 +1,13 @@
 {
+  "originHash" : "a818c4732d60e59901e640cf8c5de3900e8ec0ffaa1daa0a631b8676b0b17c4b",
   "pins" : [
     {
       "identity" : "rearrange",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/Rearrange",
       "state" : {
-        "revision" : "5ff7f3363f7a08f77e0d761e38e6add31c2136e1",
-        "version" : "1.8.1"
+        "revision" : "f1d74e1642956f0300756ad8d1d64e9034857bc3",
+        "version" : "2.0.0"
       }
     },
     {
@@ -14,8 +15,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/SwiftTreeSitter",
       "state" : {
-        "revision" : "36aa61d1b531f744f35229f010efba9c6d6cbbdd",
-        "version" : "0.9.0"
+        "revision" : "55f2c2fdaf859f86e4ea8513b9934badc7894019"
       }
     },
     {
@@ -28,5 +28,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

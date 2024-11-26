@@ -1,4 +1,4 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 6.0
 
 import PackageDescription
 
@@ -15,8 +15,8 @@ let package = Package(
 		.library(name: "Neon", targets: ["Neon"]),
 	],
 	dependencies: [
-		.package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.9.0"),
-		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "1.8.1"),
+		.package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", revision: "55f2c2fdaf859f86e4ea8513b9934badc7894019"),
+		.package(url: "https://github.com/ChimeHQ/Rearrange", from: "2.0.0"),
 	],
 	targets: [
 		.target(name: "RangeState", dependencies: ["Rearrange"]),
@@ -24,11 +24,11 @@ let package = Package(
 		.target(
 			name: "Neon",
 			dependencies: [
-                "RangeState",
-                "Rearrange",
-                "TreeSitterClient",
-                .product(name: "SwiftTreeSitterLayer", package: "SwiftTreeSitter"),
-            ]
+				"RangeState",
+				"Rearrange",
+				"TreeSitterClient",
+				.product(name: "SwiftTreeSitterLayer", package: "SwiftTreeSitter"),
+			]
 		),
 		.target(
 			name: "TreeSitterClient",
@@ -36,7 +36,7 @@ let package = Package(
 				"RangeState",
 				"Rearrange",
 				"SwiftTreeSitter",
-                .product(name: "SwiftTreeSitterLayer", package: "SwiftTreeSitter"),
+				.product(name: "SwiftTreeSitterLayer", package: "SwiftTreeSitter"),
 			]
 		),
 		.target(
@@ -50,13 +50,3 @@ let package = Package(
 		.testTarget(name: "TreeSitterClientTests", dependencies: ["TreeSitterClient", "NeonTestsTreeSitterSwift"])
 	]
 )
-
-let swiftSettings: [SwiftSetting] = [
-    .enableExperimentalFeature("StrictConcurrency")
-]
-
-for target in package.targets {
-    var settings = target.swiftSettings ?? []
-    settings.append(contentsOf: swiftSettings)
-    target.swiftSettings = settings
-}
