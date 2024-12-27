@@ -225,4 +225,28 @@ final class RangeProcessorTests: XCTestCase {
 
 		XCTAssertEqual(handler.mutations, expected)
 	}
+
+	@MainActor
+	func testWaitForDelayedProcessing() async throws {
+		let content = StringContent(string: "abcdefghij")
+
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { content.currentLength },
+				changeHandler: { _, completion in
+					// I *think* that a single runloop turn will be enough
+					DispatchQueue.main.async() {
+						completion()
+					}
+				}
+			)
+		)
+
+		// process everything, so there is no more filling needed when complete
+		XCTAssertFalse(processor.processLocation(10, mode: .required))
+
+		await processor.processingCompleted(isolation: MainActor.shared)
+
+		XCTAssertTrue(processor.processed(10))
+	}
 }

@@ -192,7 +192,9 @@ extension TextViewHighlighter {
 	}
 
 	@objc private func visibleContentChanged(_ notification: NSNotification) {
-		styler.visibleContentDidChange()
+		let visibleRange = textView.visibleTextRange
+
+		styler.validate(.range(visibleRange))
 	}
 }
 

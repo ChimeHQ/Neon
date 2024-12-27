@@ -6,7 +6,7 @@ import RangeState
 ///
 /// This is the main component that coordinates the styling and invalidation of text. It interfaces with the text system via `TextSystemInterface`. Actual token information is provided from a `TokenProvider`.
 ///
-/// The `TextSystemInterface` is what to update, but it is up to you to tell it when that updating is needed. This is done via the `invalidate(_:)` call, as well as `visibleContentDidChange()`. It will be also be done automatically when the content changes.
+/// The `TextSystemInterface` is what to update, but it is up to you to tell it when that updating is needed. This is done via the `invalidate(_:)` call, as well as `validate(_:)`. It will be also be done automatically when the content changes.
 ///
 /// > Note: A `TextSystemStyler` must be informed of all text content changes made using `didChangeContent(in:, delta:)`.
 @MainActor
@@ -27,10 +27,8 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 		self.validator = SinglePhaseRangeValidator(
 			configuration: .init(
 				versionedContent: textSystem.content,
-				provider: tokenValidator.validationProvider,
-				prioritySetProvider: { textSystem.visibleSet }
-			),
-            isolation: MainActor.shared
+				provider: tokenValidator.validationProvider
+			)
 		)
 	}
 
@@ -52,29 +50,11 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 		validator.contentChanged(in: range, delta: delta)
 	}
 
-	/// Calculates any newly-visible text that is invalid
-	///
-	/// You should invoke this method when the visible text in your system changes.
-	public func visibleContentDidChange() {
-		let prioritySet = textSystem.visibleSet
-
-        validator.validate(.set(prioritySet), prioritizing: prioritySet, isolation: MainActor.shared)
-	}
-
-
 	public func invalidate(_ target: RangeTarget) {
 		validator.invalidate(target)
 	}
 
-	public func validate(_ target: RangeTarget) {
-		let prioritySet = textSystem.visibleSet
-
-		validator.validate(target, prioritizing: prioritySet, isolation: MainActor.shared)
-	}
-
-	public func validate() {
-		let prioritySet = textSystem.visibleSet
-
-		validator.validate(.set(prioritySet), prioritizing: prioritySet, isolation: MainActor.shared)
+	public func validate(_ target: RangeTarget = .all) {
+		validator.validate(target)
 	}
 }

@@ -3,7 +3,7 @@ import Foundation
 extension HybridSyncAsyncValueProvider {
 	/// Construct a `HybridSyncAsyncValueProvider` that will first attempt to process a location using a `RangeProcessor`.
 	public init(
-		isolation: isolated (any Actor)? = #isolation,
+		isolation: isolated (any Actor),
 		rangeProcessor: RangeProcessor,
 		inputTransformer: @escaping (Input) -> (Int, RangeFillMode),
 		syncValue: @escaping SyncValueProvider,
@@ -20,11 +20,13 @@ extension HybridSyncAsyncValueProvider {
 			return nil
 		}
 
-		func _asyncVersion(isolation: isolated(any Actor)?, input: sending Input) async throws(Failure) -> sending Output {
+		func _asyncVersion(isolation: isolated (any Actor), input: sending Input) async throws(Failure) -> sending Output {
 			let (location, fill) = inputTransformer(input)
 
 			rangeProcessor.processLocation(isolation: isolation, location, mode: fill)
-			await rangeProcessor.processingCompleted()
+			print("start", input)
+			await rangeProcessor.processingCompleted(isolation: isolation)
+			print("end", input)
 
 			return try await asyncValue(input)
 		}

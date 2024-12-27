@@ -8,7 +8,7 @@ public struct HybridSyncAsyncLanguageLayer<Input, Output, Failure: Error> {
 
 extension HybridSyncAsyncValueProvider {
 	func access<Success>(
-		isolation: isolated (any Actor)? = #isolation,
+		isolation: isolated (any Actor),
 		input: sending Input,
 		operation: @escaping (Bool, Output) throws -> sending Success,
 		completion: @escaping (Result<Success, Error>) -> Void
@@ -29,7 +29,7 @@ extension HybridSyncAsyncValueProvider {
 			_ = isolation
 
 			do {
-				let output = try await self.async(input)
+				let output = try await self.async(isolation: isolation, input)
 
 				let result = Result { try operation(false, output) }
 

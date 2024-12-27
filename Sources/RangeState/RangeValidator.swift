@@ -51,10 +51,10 @@ public final class RangeValidator<Content: VersionedContent> {
 	/// Begin a validation pass.
 	///
 	/// This must ultimately be paired with a matching call to `completeValidation(of:with:)`.
-	public func beginValidation(of target: RangeTarget, prioritizing set: IndexSet? = nil) -> Action {
+	public func beginValidation(of target: RangeTarget) -> Action {
 		let set = target.indexSet(with: length)
 
-		guard let neededRange = nextNeededRange(in: set, prioritizing: set) else { return .none }
+		guard let neededRange = nextNeededRange(in: set) else { return .none }
 
 		self.pendingSet.insert(range: neededRange)
 		self.pendingRequests += 1
@@ -139,19 +139,15 @@ extension RangeValidator {
 
 extension RangeValidator {
 	/// Computes the next contiguous invalid range
-	private func nextNeededRange(in set: IndexSet, prioritizing prioritySet: IndexSet?) -> NSRange? {
-		let prioritySet = prioritySet ?? fullSet
-
+	private func nextNeededRange(in set: IndexSet) -> NSRange? {
 		// the candidate set is:
 		// - invalid
-		// - within our priority (or everything if we have none)
 		// - not already pending
-		let workingInvalidSet = invalidSet
+		return invalidSet
 			.intersection(set)
-			.intersection(prioritySet)
 			.subtracting(pendingSet)
-
-		return workingInvalidSet.nsRangeView.first
+			.nsRangeView
+			.first
 	}
 }
 

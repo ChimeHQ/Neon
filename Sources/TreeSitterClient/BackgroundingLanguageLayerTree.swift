@@ -39,9 +39,11 @@ final class BackgroundingLanguageLayerTree {
 	private var pendingOldPoint: Point?
 	private let configuration: Configuration
 	private let backgroundProcessor: BackgroundProcessor<LanguageLayer>
+	public var rootLanguageConfiguration: LanguageConfiguration
 
 	public init(rootLanguageConfig: LanguageConfiguration, configuration: Configuration) throws {
 		self.configuration = configuration
+		self.rootLanguageConfiguration = rootLanguageConfig
 		let rootLayer = try LanguageLayer(languageConfig: rootLanguageConfig, configuration: configuration.layerConfiguration)
 
 		self.backgroundProcessor = BackgroundProcessor(value: rootLayer)

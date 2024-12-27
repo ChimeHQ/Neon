@@ -19,13 +19,7 @@ public enum RangeFillMode: Sendable, Hashable {
 
 /// A type that can perform on-demand processing of range-based data.
 public final class RangeProcessor {
-	private typealias Continuation = CheckedContinuation<(), Never>
 	private typealias VersionedMutation = Versioned<Int, RangeMutation>
-
-	private enum Event {
-		case change(VersionedMutation)
-		case waiter(Continuation)
-	}
 
 	/// Function to apply changes.
 	///
@@ -52,7 +46,7 @@ public final class RangeProcessor {
 		}
 	}
 
-	private var pendingEvents = [Event]()
+	private var pendingEventQueue = AwaitableQueue<VersionedMutation>()
 
     public let configuration: Configuration
 
@@ -147,38 +141,18 @@ extension RangeProcessor {
 	}
 
 	public var hasPendingChanges: Bool {
-		pendingEvents.contains { event in
-			switch event {
-			case .change:
-				true
-			case .waiter:
-				false
-			}
-		}
+		pendingEventQueue.hasPendingEvents
 	}
 
-    public func processingCompleted(isolation: isolated (any Actor)? = #isolation) async {
-		if hasPendingChanges == false {
-			return
-		}
-
-        await withCheckedContinuation { continuation in
-			self.pendingEvents.append(.waiter(continuation))
-        }
+    public func processingCompleted(isolation: isolated (any Actor)) async {
+		await pendingEventQueue.processingCompleted(isolation: isolation)
     }
 
 	/// Array of any mutations that are scheduled to be applied.
 	///
 	/// You can use this property to transform Range, IndexSet, and RangeTarget values to match the current content.
 	public var pendingMutations: [RangeMutation] {
-		pendingEvents.compactMap {
-			switch $0 {
-			case let .change(mutation):
-				mutation.value
-			case .waiter:
-				nil
-			}
-		}
+		pendingEventQueue.pendingElements.map { $0.value }
 	}
 
 	public func didChangeContent(_ mutation: RangeMutation) {
@@ -219,7 +193,7 @@ extension RangeProcessor {
 	}
 
 	private func processMutation(_ mutation: RangeMutation, in isolation: isolated (any Actor)?) {
-		self.pendingEvents.append(.change(VersionedMutation(mutation, version: version)))
+		pendingEventQueue.enqueue(VersionedMutation(mutation, version: version))
 		self.version += 1
 
 		// this requires a very strange workaround to get the correct isolation inheritance from this changeHandler arrangement. I believe this is a bug.
@@ -235,19 +209,12 @@ extension RangeProcessor {
 	private func completeContentChanged(_ mutation: RangeMutation, in isolation: isolated (any Actor)?) {
 		self.processedVersion += 1
 
-		resumeLeadingContinuations()
-
-		guard case let .change(first) = pendingEvents.first else {
+		guard let first = pendingEventQueue.next() else {
 			preconditionFailure()
 		}
 
 		precondition(first.version == processedVersion, "changes must always be completed in order")
 		precondition(first.value == mutation, "completed mutation does not match the expected value")
-
-		self.pendingEvents.removeFirst()
-
-		// do this again, just in case there are any
-		resumeLeadingContinuations()
 
 		updateProcessedLocation(by: mutation.delta)
 
@@ -262,7 +229,9 @@ extension RangeProcessor {
 		self.targetProcessingLocation = min(targetProcessingLocation, contentLength)
 		let mutation = fillMutationNeeded(for: targetProcessingLocation, mode: .optional)
 
-		guard let mutation else { return }
+		guard let mutation else {
+			return
+		}
 
 		processMutation(mutation, in: isolation)
 	}
@@ -270,6 +239,10 @@ extension RangeProcessor {
 	private func scheduleFilling(in isolation: isolated (any Actor)?) {
 		Task {
 			self.continueFillingIfNeeded(isolation: isolation)
+
+			// it is very important to double check here, in case
+			// any waiters stuck in and we have no more work to do
+			self.pendingEventQueue.handlePendingWaiters()
 		}
 	}
 }
@@ -283,14 +256,5 @@ extension RangeProcessor {
 		precondition(newMax >= 0)
 
 		self.maximumProcessedLocation = newMax
-	}
-
-	private func resumeLeadingContinuations() {
-		while let event = pendingEvents.first {
-			guard case let .waiter(continuation) = event else { break }
-
-			continuation.resume()
-			pendingEvents.removeFirst()
-		}
 	}
 }

@@ -47,7 +47,7 @@ extension TreeSitterClient {
 			mainActorAsyncValue: { [highlightsProvider] range in
 				do {
 					let params = TreeSitterClient.ClientQueryParams(range: range, textProvider: provider)
-					let namedRanges = try await highlightsProvider.async(params)
+					let namedRanges = try await highlightsProvider.async(isolation: MainActor.shared, params)
 
 					return TokenApplication(namedRanges: namedRanges, nameMap: nameMap, range: range)
 				} catch {

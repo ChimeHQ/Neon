@@ -46,7 +46,7 @@ extension TextSystemInterface {
 			mainActorAsyncValue: { contentRange in
 				await asyncValidate(
 					contentRange,
-					provider: { range in await provider.async(range) }
+					provider: { range in await provider.async(isolation: MainActor.shared, range) }
 				)
 			}
 		)

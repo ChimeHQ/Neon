@@ -18,7 +18,8 @@ enum TreeSitterClientError: Error {
 ///
 /// Tree-sitter ultimately resolves to a single semantic view of the text, and is considered a single phase. However, it may require numerous validation/invalidation passes before fully resolving a document's content.
 ///
-/// Today, compiler limitations mean that this type must be
+/// Today, compiler limitations mean that this type must be MainActor. But I'm hoping that one can I can figure out how to lift that limitation.
+@preconcurrency
 @MainActor
 @available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 public final class TreeSitterClient {
@@ -96,16 +97,22 @@ public final class TreeSitterClient {
 			changeHandler: { [unowned self] in self.didChange($0, completion: $1) }
 		)
 	)
-	private lazy var sublayerValidator = SublayerValidator(
-		configuration: .init(
-			versionedContent: versionedContent,
-			provider: validatorProvider
-		),
-		isolation: MainActor.shared
-	)
+	private lazy var sublayerValidator: SublayerValidator = {
+		let validator = SublayerValidator(
+			configuration: .init(
+				versionedContent: versionedContent,
+				provider: validatorProvider
+			)
+		)
+
+		let rootName = self.rootLanguageConfiguration.name
+
+		validator.name = "\(rootName)-sublayers"
+
+		return validator
+	}()
 
 	private let layerTree: BackgroundingLanguageLayerTree
-	private let queue = DispatchQueue(label: "com.chimehq.HybridTreeSitterClient")
 
 	public init(rootLanguageConfig: LanguageConfiguration, configuration: Configuration) throws {
 		self.configuration = configuration
@@ -118,6 +125,10 @@ public final class TreeSitterClient {
 				maximumLanguageDepth: configuration.maximumLanguageDepth
 			)
 		)
+	}
+
+	public var rootLanguageConfiguration: LanguageConfiguration {
+		layerTree.rootLanguageConfiguration
 	}
 
 	/// Prepare for a content change.
@@ -245,9 +256,11 @@ extension TreeSitterClient {
 
 	private var validatorProvider: SublayerValidator.Provider {
 		.init(
+			isolation: MainActor.shared,
 			rangeProcessor: rangeProcessor,
 			inputTransformer: { ($0.value.max, .optional) },
 			syncValue: { versioned in
+				print("validatorProvider sync")
 				guard versioned.version == self.versionedContent.currentVersion else {
 					return .stale
 				}
@@ -260,6 +273,7 @@ extension TreeSitterClient {
 
 			},
 			asyncValue: { versioned in
+				print("validatorProvider async")
 				guard versioned.version == self.versionedContent.currentVersion else {
 					return .stale
 				}
@@ -279,6 +293,7 @@ extension TreeSitterClient {
 
 @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension TreeSitterClient {
+	@preconcurrency
 	@MainActor
 	public struct ClientQueryParams {
 		public let indexSet: IndexSet
@@ -302,6 +317,7 @@ extension TreeSitterClient {
 		}
 	}
 
+	@preconcurrency
 	@MainActor
 	public struct ClientQuery {
 		public let query: Query.Definition
@@ -329,7 +345,7 @@ extension TreeSitterClient {
 	private func executeQuery(_ clientQuery: ClientQuery) async throws -> some Sequence<QueryMatch> {
 		rangeProcessor.processLocation(clientQuery.params.maxLocation, mode: clientQuery.params.mode)
 
-		await rangeProcessor.processingCompleted()
+		await rangeProcessor.processingCompleted(isolation: MainActor.shared)
 
 		validateSublayers(in: clientQuery.params.indexSet)
 
@@ -340,12 +356,13 @@ extension TreeSitterClient {
 
 	public var highlightsProvider: HighlightsProvider {
 		.init(
+			isolation: MainActor.shared,
 			rangeProcessor: rangeProcessor,
 			inputTransformer: { ($0.maxLocation, $0.mode) },
 			syncValue: { input in
 				let set = input.indexSet
 
-				guard self.canAttemptSynchronousAccess(in: .set(set)) else { return [] }
+				guard self.canAttemptSynchronousAccess(in: .set(set)) else { return nil }
 
 				self.validateSublayers(in: set)
 
@@ -363,7 +380,7 @@ extension TreeSitterClient {
 extension TreeSitterClient {
 	/// Execute a standard highlights.scm query.
 	public func highlights(in set: IndexSet, provider: @escaping TextProvider, mode: RangeFillMode = .required) async throws -> [NamedRange] {
-		try await highlightsProvider.async(.init(indexSet: set, textProvider: provider, mode: mode))
+		try await highlightsProvider.async(isolation: MainActor.shared, .init(indexSet: set, textProvider: provider, mode: mode))
 	}
 
 	/// Execute a standard highlights.scm query.
@@ -373,6 +390,6 @@ extension TreeSitterClient {
 
 	/// Execute a standard highlights.scm query.
 	public func highlights(in range: NSRange, provider: @escaping TextProvider, mode: RangeFillMode = .required) async throws -> [NamedRange] {
-		try await highlightsProvider.async(.init(range: range, textProvider: provider, mode: mode))
+		try await highlightsProvider.async(isolation: MainActor.shared, .init(range: range, textProvider: provider, mode: mode))
 	}
 }

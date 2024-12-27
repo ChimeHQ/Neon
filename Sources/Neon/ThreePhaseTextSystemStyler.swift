@@ -29,8 +29,7 @@ public final class ThreePhaseTextSystemStyler<Interface: TextSystemInterface> {
 				provider: tokenValidator.validationProvider,
 				fallbackHandler: textSystem.validatorFallbackHandler(with: fallbackHandler),
 				secondaryProvider: textSystem.validatorSecondaryHandler(with: secondaryValidationProvider),
-				secondaryValidationDelay: 3.0,
-				prioritySetProvider: { textSystem.visibleSet }
+				secondaryValidationDelay: 3.0
 			),
 			isolation: MainActor.shared
 		)
@@ -44,15 +43,12 @@ public final class ThreePhaseTextSystemStyler<Interface: TextSystemInterface> {
 		validator.invalidate(target)
 	}
 
-	public func validate(_ target: RangeTarget) {
-		let prioritySet = textSystem.visibleSet
-
-		validator.validate(target, prioritizing: prioritySet, isolation: MainActor.shared)
+	public func validate(_ target: RangeTarget = .all) {
+		validator.validate(target, isolation: MainActor.shared)
 	}
 
-	public func validate() {
-		let prioritySet = textSystem.visibleSet
-
-		validator.validate(.set(prioritySet), prioritizing: prioritySet, isolation: MainActor.shared)
+	public var name: String? {
+		get { validator.name }
+		set { validator.name = newValue }
 	}
 }

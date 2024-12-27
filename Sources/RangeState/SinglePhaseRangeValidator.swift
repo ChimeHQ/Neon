@@ -5,67 +5,36 @@ import Rearrange
 public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	public typealias ContentRange = RangeValidator<Content>.ContentRange
 	public typealias Provider = HybridSyncAsyncValueProvider<ContentRange, Validation, Never>
-	public typealias PrioritySetProvider = () -> IndexSet
 
-	private typealias Sequence = AsyncStream<ContentRange>
+	private struct ValidationOperation {
+		let contentRange: ContentRange
+		let target: RangeTarget
+	}
 
 	public struct Configuration {
 		public let versionedContent: Content
 		public let provider: Provider
-		public let prioritySetProvider: PrioritySetProvider?
 
 		public init(
 			versionedContent: Content,
-			provider: Provider,
-			prioritySetProvider: PrioritySetProvider? = nil
+			provider: Provider
 		) {
 			self.versionedContent = versionedContent
 			self.provider = provider
-			self.prioritySetProvider = prioritySetProvider
 		}
 	}
 
-	private let continuation: Sequence.Continuation
 	private let primaryValidator: RangeValidator<Content>
+	private var eventQueue: AwaitableQueue<ValidationOperation>
 
 	public let configuration: Configuration
-	public var validationHandler: (NSRange) -> Void = { _ in }
+	public var validationHandler: (NSRange, Bool) -> Void = { _, _ in }
+	public var name: String?
 
-	public init(configuration: Configuration, isolation: isolated (any Actor)) {
-		self.configuration = configuration
-		self.primaryValidator = RangeValidator<Content>(content: configuration.versionedContent)
-
-		let (stream, continuation) = Sequence.makeStream()
-
-		self.continuation = continuation
-
-		Task { [weak self] in
-			_ = isolation
-
-			for await versionedRange in stream {
-				await self?.validateRangeAsync(versionedRange, isolation: isolation)
-			}
-		}
-	}
-
-	@MainActor
 	public init(configuration: Configuration) {
 		self.configuration = configuration
 		self.primaryValidator = RangeValidator<Content>(content: configuration.versionedContent)
-
-		let (stream, continuation) = Sequence.makeStream()
-
-		self.continuation = continuation
-
-		Task { [weak self] in
-			for await versionedRange in stream {
-				await self?.validateRangeAsync(versionedRange, isolation: MainActor.shared)
-			}
-		}
-	}
-
-	deinit {
-		continuation.finish()
+		self.eventQueue = AwaitableQueue()
 	}
 
 	private var version: Content.Version {
@@ -80,31 +49,32 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	@discardableResult
 	public func validate(
 		_ target: RangeTarget,
-		prioritizing set: IndexSet? = nil,
 		isolation: isolated (any Actor)
 	) -> RangeValidator<Content>.Action {
 		// capture this first, because we're about to start one
 		let outstanding = primaryValidator.hasOutstandingValidations
 
-		let action = primaryValidator.beginValidation(of: target, prioritizing: set)
+		let action = primaryValidator.beginValidation(of: target)
 
 		switch action {
 		case .none:
+			eventQueue.handlePendingWaiters()
 			return .none
 		case let .needed(contentRange):
+			let operation = ValidationOperation(contentRange: contentRange, target: target)
+
 			// if we have an outstanding async operation going, force this to be async too
 			if outstanding {
-				enqueueValidation(for: contentRange)
+				enqueueValidation(operation, isolation: isolation)
 				return action
 			}
 
 			guard let validation = configuration.provider.sync(contentRange) else {
-				enqueueValidation(for: contentRange)
-
+				enqueueValidation(operation, isolation: isolation)
 				return action
 			}
 
-			completePrimaryValidation(of: contentRange, with: validation, isolation: isolation)
+			completePrimaryValidation(of: operation, with: validation, isolation: isolation)
 
 			return .none
 		}
@@ -113,32 +83,38 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	@MainActor
 	@discardableResult
 	public func validate(
-		_ target: RangeTarget,
-		prioritizing set: IndexSet? = nil
+		_ target: RangeTarget
 	) -> RangeValidator<Content>.Action {
-		validate(target, prioritizing: set, isolation: MainActor.shared)
+		validate(target, isolation: MainActor.shared)
 	}
 
-	private func completePrimaryValidation(of contentRange: ContentRange, with validation: Validation, isolation: isolated (any Actor)) {
-		primaryValidator.completeValidation(of: contentRange, with: validation)
+	private func completePrimaryValidation(of operation: ValidationOperation, with validation: Validation, isolation: isolated (any Actor)) {
+		primaryValidator.completeValidation(of: operation.contentRange, with: validation)
 
 		switch validation {
 		case .stale:
-			Task {
-				_ = isolation
-
-				if contentRange.version == self.version {
+			Task<Void, Never> {
+				if operation.contentRange.version == self.version {
 					print("version unchanged after stale results, stopping validation")
 					return
 				}
 
-				let prioritySet = self.configuration.prioritySetProvider?() ?? IndexSet(contentRange.value)
-
-				self.validate(.set(prioritySet), isolation: isolation)
-
+				validate(operation.target, isolation: isolation)
 			}
 		case let .success(range):
-			validationHandler(range)
+			let complete = primaryValidator.isValid(operation.target)
+
+			validationHandler(range, complete)
+
+			// this only makes sense if the content has remained unchanged
+			if complete {
+				eventQueue.handlePendingWaiters()
+				return
+			}
+
+			Task<Void, Never> {
+				validate(operation.target, isolation: isolation)
+			}
 		}
 	}
 
@@ -159,13 +135,30 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 		primaryValidator.contentChanged(in: range, delta: delta)
 	}
 
-	private func enqueueValidation(for contentRange: ContentRange) {
-		continuation.yield(contentRange)
+	private func enqueueValidation(_ operation: ValidationOperation, isolation: isolated any Actor) {
+		eventQueue.enqueue(operation)
+
+		Task<Void, Never> {
+			await self.validateRangeAsync(isolation: isolation)
+		}
 	}
 
-	private func validateRangeAsync(_ contentRange: ContentRange, isolation: isolated (any Actor)) async {
-		let validation = await self.configuration.provider.async(contentRange)
+	private func validateRangeAsync(isolation: isolated any Actor) async {
+		let name = name ?? "<unnamed>"
+		
+		print("A name:", name)
+		guard let operation = eventQueue.next() else {
+			preconditionFailure("There must always be a next operation to process")
+		}
 
-		completePrimaryValidation(of: contentRange, with: validation, isolation: isolation)
+		print("B name:", name)
+		let validation = await self.configuration.provider.async(isolation: isolation, operation.contentRange)
+
+		print("C name:", name)
+		completePrimaryValidation(of: operation, with: validation, isolation: isolation)
+	}
+
+	public func validationCompleted(isolation: isolated any Actor) async {
+		await eventQueue.processingCompleted(isolation: isolation)
 	}
 }

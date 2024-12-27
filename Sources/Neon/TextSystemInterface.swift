@@ -9,9 +9,6 @@ public protocol TextSystemInterface {
     func applyStyles(for application: TokenApplication)
 
     @MainActor
-    var visibleSet: IndexSet { get }
-
-    @MainActor
     var content: Content { get }
 }
 
