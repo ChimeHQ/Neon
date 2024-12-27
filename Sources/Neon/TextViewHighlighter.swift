@@ -184,7 +184,7 @@ extension TextViewHighlighter {
 				DispatchQueue.main.async {
 					guard self.textView.visibleTextRange == self.lastVisibleRange else { return }
 
-					self.styler.visibleContentDidChange()
+					self.styler.validate(.range(self.lastVisibleRange))
 				}
 			}
 		}
