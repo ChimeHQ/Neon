@@ -260,7 +260,6 @@ extension TreeSitterClient {
 			rangeProcessor: rangeProcessor,
 			inputTransformer: { ($0.value.max, .optional) },
 			syncValue: { versioned in
-				print("validatorProvider sync")
 				guard versioned.version == self.versionedContent.currentVersion else {
 					return .stale
 				}
@@ -273,7 +272,6 @@ extension TreeSitterClient {
 
 			},
 			asyncValue: { versioned in
-				print("validatorProvider async")
 				guard versioned.version == self.versionedContent.currentVersion else {
 					return .stale
 				}

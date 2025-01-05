@@ -144,17 +144,12 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	}
 
 	private func validateRangeAsync(isolation: isolated any Actor) async {
-		let name = name ?? "<unnamed>"
-		
-		print("A name:", name)
 		guard let operation = eventQueue.next() else {
 			preconditionFailure("There must always be a next operation to process")
 		}
 
-		print("B name:", name)
 		let validation = await self.configuration.provider.async(isolation: isolation, operation.contentRange)
 
-		print("C name:", name)
 		completePrimaryValidation(of: operation, with: validation, isolation: isolation)
 	}
 
