@@ -1,19 +1,26 @@
-import XCTest
+import Foundation
+import Testing
 
 import RangeState
 
-final class RangeTargetTests: XCTestCase {
-	func testUnion() {
+struct RangeTargetTests {
+	@Test func union() {
 		let range = RangeTarget(NSRange(0..<10))
 		let set = RangeTarget(IndexSet(integersIn: 10..<20))
 
-		XCTAssertEqual(RangeTarget.all.union(.all), .all)
-		XCTAssertEqual(RangeTarget.all.union(range), .all)
-		XCTAssertEqual(RangeTarget.all.union(set), .all)
-		XCTAssertEqual(range.union(.all), .all)
-		XCTAssertEqual(set.union(.all), .all)
+		#expect(RangeTarget.all.union(.all) == .all)
+		#expect(RangeTarget.all.union(range) == .all)
+		#expect(RangeTarget.all.union(set) == .all)
+		#expect(range.union(.all) == .all)
+		#expect(set.union(.all) == .all)
 
-		XCTAssertEqual(range.union(set), .set(IndexSet(integersIn: 0..<20)))
-		XCTAssertEqual(set.union(range), .set(IndexSet(integersIn: 0..<20)))
+		#expect(range.union(set) == .set(IndexSet(integersIn: 0..<20)))
+		#expect(set.union(range) == .set(IndexSet(integersIn: 0..<20)))
+	}
+	
+	@Test func insertingEmptyRange() {
+		let target = RangeTarget(NSRange(10..<10))
+		
+		#expect(target.indexSet(with: 20) == IndexSet())
 	}
 }
