@@ -35,3 +35,23 @@ extension HybridSyncAsyncValueProvider {
 		)
 	}
 }
+
+extension HybridSyncAsyncValueProvider {
+	/// Construct a `HybridSyncAsyncValueProvider` that will first attempt to process a location using a `RangeProcessor`.
+	public init(
+		isolation: isolated (any Actor),
+		rangeProcessor: RangeProcessor,
+		inputTransformer: @escaping (Input) -> (Int, RangeFillMode),
+		syncValue: @escaping (Input) throws(Failure) -> sending Output
+	) {
+		self.init(
+			isolation: isolation,
+			rangeProcessor: rangeProcessor,
+			inputTransformer: inputTransformer,
+			syncValue: syncValue,
+			asyncValue: { (input) throws(Failure) -> sending Output in
+				try syncValue(input)
+			}
+		)
+	}
+}
