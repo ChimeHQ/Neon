@@ -50,8 +50,10 @@ public final class RangeProcessor {
 
     public let configuration: Configuration
 
-	// when starting, we have not even processed zero yet
-	public private(set) var maximumProcessedLocation: Int?
+	/// The upper bound that has been processed.
+	///
+	/// This value is one greater than the maximum valid location.
+	public private(set) var processedUpperBound: Int = 0
 	private var targetProcessingLocation: Int = -1
 	private var version = 0
 	private var processedVersion = -1
@@ -80,19 +82,24 @@ extension RangeProcessor {
 
 		precondition(location <= length)
 
-		let start = max(maximumProcessedLocation ?? 0, 0)
-		let realDelta = location - start
+		let processedLocation = processedUpperBound - 1
+		let realDelta = location - processedLocation
 
 		if realDelta <= 0 {
 			return nil
 		}
 
+		let start = processedUpperBound
 		let maxDelta = length - start
 		let deltaRange = deltaRange(for: mode)
 		let adjustedDelta = min(max(realDelta, deltaRange.lowerBound), deltaRange.upperBound)
 		let delta = min(adjustedDelta, maxDelta)
-
+		
 		let range = NSRange(start..<start)
+		
+		if range.length == 0 && delta == 0 {
+			return nil
+		}
 
 		return RangeMutation(range: range, delta: delta)
 	}
@@ -131,9 +138,7 @@ extension RangeProcessor {
 	public func processed(_ location: Int) -> Bool {
 		precondition(location >= 0)
 
-		guard let maximumProcessedLocation else { return false }
-
-		return maximumProcessedLocation >= location
+		return processedUpperBound > location
 	}
 
 	public func processed(_ range: NSRange) -> Bool {
@@ -159,19 +164,19 @@ extension RangeProcessor {
 		didChangeContent(in: mutation.range, delta: mutation.delta)
 	}
 
+	/// Process content changes.
+	///
+	/// This function will not cause processing to occur unless the change is within the region already processed.
 	public func didChangeContent(isolation: isolated (any Actor)? = #isolation, in range: NSRange, delta: Int) {
 		if processed(range.location) == false {
 			return
 		}
 
-		guard let limit = maximumProcessedLocation else {
-			return
-		}
+		let limit = processedUpperBound
 
 		precondition(limit >= 0)
 
 		let visibleRange = range.clamped(to: limit)
-		let effectiveLimit = limit
 		let clampLength = range.upperBound - visibleRange.upperBound
 
 		precondition(clampLength >= 0)
@@ -187,7 +192,7 @@ extension RangeProcessor {
 			visibleDelta = 0
 		}
 
-		let mutation = RangeMutation(range: visibleRange, delta: visibleDelta, limit: effectiveLimit)
+		let mutation = RangeMutation(range: visibleRange, delta: visibleDelta, limit: limit)
 
 		processMutation(mutation, in: isolation)
 	}
@@ -249,12 +254,14 @@ extension RangeProcessor {
 
 extension RangeProcessor {
 	private func updateProcessedLocation(by delta: Int) {
-		var newMax = maximumProcessedLocation ?? 0
+		precondition(processedUpperBound >= 0)
+		
+		var newMax = processedUpperBound
 
 		newMax += delta
 
 		precondition(newMax >= 0)
 
-		self.maximumProcessedLocation = newMax
+		self.processedUpperBound = newMax
 	}
 }

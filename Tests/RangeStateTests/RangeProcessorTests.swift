@@ -3,53 +3,52 @@ import XCTest
 import RangeState
 import Rearrange
 
-@MainActor
 final class MockChangeHandler {
 	var mutations = [RangeMutation]()
 
-	var changeCompleted: @MainActor () -> Void = { }
+	var changeCompleted: (RangeMutation) -> Void = { _ in }
 
 	func handleChange(_ mutation: RangeMutation, completion: @escaping () -> Void) {
 		mutations.append(mutation)
 
-		changeCompleted()
+		changeCompleted(mutation)
 		completion()
 	}
 }
 
-final class RangeProcessorTests: XCTestCase {
-	@MainActor
-	func testSynchronousFill() {
-		let exp = expectation(description: "mutation")
+import Testing
 
+struct RangeProcessorTests {
+	@Test func synchronousFill() async {
+		var changedEvent: CheckedContinuation<RangeMutation, Never>?
+		
 		let changeHandler: RangeProcessor.ChangeHandler = { mutation, completion in
-			XCTAssertEqual(mutation, RangeMutation(range: NSRange(0..<0), delta: 10))
+			completion()
+			changedEvent!.resume(returning: mutation)
+		}
+
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { 100 },
+				changeHandler: changeHandler
+			)
+		)
+
+		let mutation = await withCheckedContinuation { continuation in
+			changedEvent = continuation
 			
-			exp.fulfill()
-			completion()
+			#expect(processor.processLocation(10, mode: .required))
 		}
-
-		let processor = RangeProcessor(
-			configuration: .init(
-				lengthProvider: { 100 },
-				changeHandler: changeHandler
-			)
-		)
-
-		XCTAssertTrue(processor.processLocation(10, mode: .required))
-
-		wait(for: [exp], enforceOrder: true)
+		
+		#expect(mutation == RangeMutation(range: NSRange(0..<0), delta: 11))
 	}
-
-	@MainActor
-	func testOptionalFill() {
-		let exp = expectation(description: "mutation")
+	
+	@Test func optionalFill() async {
+		var changedEvent: CheckedContinuation<RangeMutation, Never>?
 
 		let changeHandler: RangeProcessor.ChangeHandler = { mutation, completion in
-			XCTAssertEqual(mutation, RangeMutation(range: NSRange(0..<0), delta: 10))
-
-			exp.fulfill()
 			completion()
+			changedEvent!.resume(returning: mutation)
 		}
 
 		let processor = RangeProcessor(
@@ -59,126 +58,30 @@ final class RangeProcessorTests: XCTestCase {
 			)
 		)
 
-		XCTAssertFalse(processor.processLocation(10, mode: .optional))
-
-		wait(for: [exp], enforceOrder: true)
-
-		XCTAssert(processor.processed(10))
-	}
-
-	@MainActor
-	func testInsertWithEverythingProcessed() {
-		let exp = expectation(description: "mutation")
-		exp.expectedFulfillmentCount = 2
-
-		let handler = MockChangeHandler()
-
-		handler.changeCompleted = {
-			exp.fulfill()
+		let mutation = await withCheckedContinuation { continuation in
+			changedEvent = continuation
+			
+			#expect(processor.processLocation(10, mode: .optional) == false)
 		}
-
-		let content = StringContent(string: "abcde")
-
+		
+		#expect(mutation == RangeMutation(range: NSRange(0..<0), delta: 11))
+		#expect(processor.processed(10))
+	}
+	
+	@Test func processSingleCharacterString() async throws {
+		let content = StringContent(string: "a")
+		
 		let processor = RangeProcessor(
 			configuration: .init(
 				lengthProvider: { content.currentLength },
-				changeHandler: handler.handleChange
+				changeHandler: { $1() }
 			)
 		)
 
-		XCTAssertTrue(processor.processLocation(5, mode: .required))
-		XCTAssertTrue(processor.processed(5))
-
-		// insert a character
-		content.string = "abcdef"
-		processor.didChangeContent(in: NSRange(5..<5), delta: 1)
-
-		wait(for: [exp], enforceOrder: true)
-
-		let expected = [
-			RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil),
-			RangeMutation(range: NSRange(5..<5), delta: 1, limit: 5),
-		]
-
-		XCTAssertEqual(handler.mutations, expected)
+		#expect(processor.processLocation(0, mode: .required))
 	}
-
-	@MainActor
-	func testDeleteWithEverythingProcessed() {
-		let exp = expectation(description: "mutation")
-		exp.expectedFulfillmentCount = 2
-
-		let handler = MockChangeHandler()
-
-		handler.changeCompleted = {
-			exp.fulfill()
-		}
-
-		let content = StringContent(string: "abcde")
-
-		let processor = RangeProcessor(
-			configuration: .init(
-				lengthProvider: { content.currentLength },
-				changeHandler: handler.handleChange
-			)
-		)
-
-		XCTAssertTrue(processor.processLocation(5, mode: .required))
-		XCTAssertTrue(processor.processed(5))
-
-		// insert a character
-		content.string = "abcd"
-		processor.didChangeContent(in: NSRange(4..<5), delta: -1)
-
-		wait(for: [exp], enforceOrder: true)
-
-		let expected = [
-			RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil),
-			RangeMutation(range: NSRange(4..<5), delta: -1, limit: 5),
-		]
-
-		XCTAssertEqual(handler.mutations, expected)
-	}
-
-	@MainActor
-	func testDeleteEverythingAfterProcessing() {
-		let exp = expectation(description: "mutation")
-		exp.expectedFulfillmentCount = 2
-
-		let handler = MockChangeHandler()
-
-		handler.changeCompleted = {
-			exp.fulfill()
-		}
-
-		let content = StringContent(string: "abcde")
-
-		let processor = RangeProcessor(
-			configuration: .init(
-				lengthProvider: { content.currentLength },
-				changeHandler: handler.handleChange
-			)
-		)
-
-		XCTAssertTrue(processor.processLocation(5, mode: .required))
-		XCTAssertTrue(processor.processed(5))
-
-		// insert a character
-		content.string = ""
-		processor.didChangeContent(in: NSRange(0..<5), delta: -5)
-
-		wait(for: [exp], enforceOrder: true)
-
-		let expected = [
-			RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil),
-			RangeMutation(range: NSRange(0..<5), delta: -5, limit: 5),
-		]
-
-		XCTAssertEqual(handler.mutations, expected)
-	}
-
-	@MainActor
-	func testInsertWithNothingProcessed() {
+	
+	@Test func insertWithNothingProcessed() {
 		let processor = RangeProcessor(
 			configuration: .init(
 				lengthProvider: { 10 },
@@ -188,20 +91,23 @@ final class RangeProcessorTests: XCTestCase {
 
 		processor.didChangeContent(in: NSRange(0..<10), delta: 10)
 	}
+	
+	@Test func processWithEmptyContent() {
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { 0 },
+				changeHandler: { _, _ in fatalError() }
+			)
+		)
 
-	@MainActor
-	func testChangeThatOverlapsUnprocessedRegion() {
-		let exp = expectation(description: "mutation")
-		exp.expectedFulfillmentCount = 2
+		#expect(processor.processLocation(0, mode: .required) == false)
+		#expect(processor.processed(0) == false)
+	}
 
+	@Test func insertWithEverythingProcessed() async {
+		let content = StringContent(string: "abcde")
 		let handler = MockChangeHandler()
-
-		handler.changeCompleted = {
-			exp.fulfill()
-		}
-
-		let content = StringContent(string: "abcdefghij")
-
+		
 		let processor = RangeProcessor(
 			configuration: .init(
 				lengthProvider: { content.currentLength },
@@ -209,25 +115,144 @@ final class RangeProcessorTests: XCTestCase {
 			)
 		)
 
-		// process half
-		XCTAssertTrue(processor.processLocation(5, mode: .required))
-		XCTAssertTrue(processor.processed(5))
+		let mutation1 = await withCheckedContinuation { continuation in
+			handler.changeCompleted = {
+				continuation.resume(returning: $0)
+			}
+			
+			#expect(processor.processLocation(4, mode: .required))
+			#expect(processor.processed(4))
+		}
+		
+		#expect(mutation1 == RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil))
+		
+		// insert a character
+		let mutation2 = await withCheckedContinuation { continuation in
+			handler.changeCompleted = {
+				continuation.resume(returning: $0)
+			}
+			
+			content.string = "abcdef"
+			processor.didChangeContent(in: NSRange(5..<5), delta: 1)
+			
+			// and now actually ask for the new position
+			#expect(processor.processLocation(5, mode: .required))
+		}
+		
+		#expect(mutation2 == RangeMutation(range: NSRange(5..<5), delta: 1, limit: nil))
+	}
+	
+	@Test func deleteWithEverythingProcessed() async {
+		let content = StringContent(string: "abcde")
+		let handler = MockChangeHandler()
+		
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { content.currentLength },
+				changeHandler: handler.handleChange
+			)
+		)
 
-		// change everything
-		processor.didChangeContent(in: NSRange(0..<10), delta: 0)
+		let mutation1 = await withCheckedContinuation { continuation in
+			handler.changeCompleted = {
+				continuation.resume(returning: $0)
+			}
+			
+			#expect(processor.processLocation(4, mode: .required))
+			#expect(processor.processed(4))
+		}
+		
+		#expect(mutation1 == RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil))
 
-		wait(for: [exp], enforceOrder: true)
+		// remove a character
+		let mutation2 = await withCheckedContinuation { continuation in
+			handler.changeCompleted = {
+				continuation.resume(returning: $0)
+			}
+			
+			content.string = "abcd"
+			processor.didChangeContent(in: NSRange(4..<5), delta: -1)
+			
+			// already processed so should happen automatically
+		}
+		
+		#expect(mutation2 == RangeMutation(range: NSRange(4..<5), delta: -1, limit: 5))
+	}
+	
+	@Test func deleteEverythingAfterProcessing() async {
+		let content = StringContent(string: "abcde")
+		let handler = MockChangeHandler()
+		
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { content.currentLength },
+				changeHandler: handler.handleChange
+			)
+		)
 
-		let expected = [
-			RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil),
-			RangeMutation(range: NSRange(0..<5), delta: 0, limit: 5),
-		]
+		let mutation1 = await withCheckedContinuation { continuation in
+			handler.changeCompleted = {
+				continuation.resume(returning: $0)
+			}
+			
+			#expect(processor.processLocation(4, mode: .required))
+			#expect(processor.processed(4))
+		}
+		
+		#expect(mutation1 == RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil))
 
-		XCTAssertEqual(handler.mutations, expected)
+		// remove all content
+		let mutation2 = await withCheckedContinuation { continuation in
+			handler.changeCompleted = {
+				continuation.resume(returning: $0)
+			}
+			
+			content.string = ""
+			processor.didChangeContent(in: NSRange(0..<5), delta: -5)
+
+		}
+		
+		#expect(mutation2 == RangeMutation(range: NSRange(0..<5), delta: -5, limit: 5))
 	}
 
+	@Test func changeThatOverlapsUnprocessedRegion() async {
+		let content = StringContent(string: "abcdefghij")
+		let handler = MockChangeHandler()
+		
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { content.currentLength },
+				changeHandler: handler.handleChange
+			)
+		)
+
+		let mutation1 = await withCheckedContinuation { continuation in
+			handler.changeCompleted = {
+				continuation.resume(returning: $0)
+			}
+			
+			// process half
+			#expect(processor.processLocation(4, mode: .required))
+			#expect(processor.processed(4))
+		}
+		
+		#expect(mutation1 == RangeMutation(range: NSRange(0..<0), delta: 5, limit: nil))
+
+
+		// change everything
+		let mutation2 = await withCheckedContinuation { continuation in
+			handler.changeCompleted = {
+				continuation.resume(returning: $0)
+			}
+			
+			processor.didChangeContent(in: NSRange(0..<10), delta: 0)
+		}
+
+		#expect(mutation2 == RangeMutation(range: NSRange(0..<5), delta: 0, limit: 5))
+	}
+	
 	@MainActor
-	func testWaitForDelayedProcessing() async throws {
+	@Test func waitForDelayedProcessing() async throws {
 		let content = StringContent(string: "abcdefghij")
 
 		let processor = RangeProcessor(
@@ -243,10 +268,10 @@ final class RangeProcessorTests: XCTestCase {
 		)
 
 		// process everything, so there is no more filling needed when complete
-		XCTAssertFalse(processor.processLocation(10, mode: .required))
+		#expect(processor.processLocation(9, mode: .required) == false)
 
 		await processor.processingCompleted(isolation: MainActor.shared)
 
-		XCTAssertTrue(processor.processed(10))
+		#expect(processor.processed(9))
 	}
 }

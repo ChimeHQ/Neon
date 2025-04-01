@@ -168,7 +168,7 @@ public final class TreeSitterClient {
 	}
 
 	private var maximumProcessedContent: LanguageLayer.Content {
-		if let content = configuration.contentProvider?(rangeProcessor.maximumProcessedLocation ?? 0) {
+		if let content = configuration.contentProvider?(rangeProcessor.processedUpperBound) {
 			return content
 		}
 
@@ -176,7 +176,7 @@ public final class TreeSitterClient {
 	}
 
 	private var maximumProcessedContentSnapshot: LanguageLayer.ContentSnapshot {
-		configuration.contentSnapshotProvider(rangeProcessor.maximumProcessedLocation ?? 0)
+		configuration.contentSnapshotProvider(rangeProcessor.processedUpperBound)
 	}
 }
 
