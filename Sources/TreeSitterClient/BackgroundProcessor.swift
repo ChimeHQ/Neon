@@ -5,9 +5,16 @@ fileprivate struct UnsafeContainer<T>: @unchecked Sendable {
 }
 
 final class BackgroundProcessor<Value> {
+	enum AccessMode {
+		case synchronous
+		case synchronousPreferred
+		case asynchronous
+	}
+	
 	private let valueContainer: UnsafeContainer<Value>
 	private let queue = DispatchQueue(label: "com.chimehq.Neon.BackgroundProcessor")
 	private var pendingCount = 0
+	private var pendingTask: Task<Void, Never>?
 
 	public init(value: Value) {
 		self.valueContainer = UnsafeContainer(value: value)
@@ -25,50 +32,63 @@ final class BackgroundProcessor<Value> {
 	private func endBackgroundWork() {
 		pendingCount -= 1
 		precondition(pendingCount >= 0)
+		
+		pendingTask = nil
 	}
 
-	public func accessValueSynchronously() -> Value? {
-		if hasPendingWork == false {
-			return valueContainer.value
+	public func accessValueSynchronously<T>(
+		operation: (Value?) throws -> T
+	) throws -> T {
+		if hasPendingWork {
+			return try operation(nil)
 		}
-
-		return nil
+		
+		let value = try queue.sync {
+			try operation(valueContainer.value)
+		}
+		
+		precondition(hasPendingWork == false)
+		
+		return value
 	}
-
-	// I would like to downgrade T: Sendable to sending but that seems to not work
+		
 	public func accessValue<T: Sendable>(
 		isolation: isolated (any Actor),
 		preferSynchronous: Bool,
 		operation: @escaping @Sendable (Value) throws -> sending T,
 		completion: @escaping (Result<T, Error>) -> Void
 	) {
-		if preferSynchronous, let v = accessValueSynchronously() {
-			precondition(hasPendingWork == false)
-
-			let result = Result { try operation(v) }
+		if preferSynchronous && hasPendingWork == false {
+			let result = Result {
+				try queue.sync {
+					try operation(valueContainer.value)
+				}
+			}
+			
 			completion(result)
-
-			precondition(hasPendingWork == false)
 
 			return
 		}
-
-
-		self.beginBackgroundWork()
-
+		
+		beginBackgroundWork()
+		
+		nonisolated(unsafe) let unsafeValue = self.valueContainer.value
+		
 		Task {
 			_ = isolation
-
-			let result = await runOperation(operation: operation)
-
-			self.endBackgroundWork()
-
+			
+			let result = await withCheckedContinuation { continuation in
+				queue.async {
+					let result = Result { try operation(unsafeValue) }
+					
+					continuation.resume(returning: result)
+				}
+			}
+			
+			endBackgroundWork()
+			
 			completion(result)
 		}
-	}
-
-	private nonisolated func runOperation<T: Sendable>(operation: @escaping @Sendable (Value) throws -> sending T) async -> sending Result<T, Error> {
-		Result { try operation(valueContainer.value) }
 	}
 
 	public func accessValue<T: Sendable>(

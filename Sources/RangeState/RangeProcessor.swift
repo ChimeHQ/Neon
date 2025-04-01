@@ -107,9 +107,8 @@ extension RangeProcessor {
 	/// Ensure that a location has been processed
 	///
 	/// - Returns: true if the location has been processed
-
 	@discardableResult
-	public func processLocation(isolation: isolated (any Actor)? = #isolation, _ location: Int, mode: RangeFillMode = .required) -> Bool {
+	public func processLocation(_ location: Int, mode: RangeFillMode = .required, isolation: isolated (any Actor)) -> Bool {
 		switch mode {
 		case .none:
 			break
@@ -130,6 +129,12 @@ extension RangeProcessor {
 
 		// could have been done synchronously, so check here for convenience
 		return processed(location)
+	}
+	
+	@MainActor
+	@discardableResult
+	public func processLocation(_ location: Int, mode: RangeFillMode = .required) -> Bool {
+		processLocation(location, mode: mode, isolation: MainActor.shared)
 	}
 
 	/// Check for the processed state of a location.
@@ -157,9 +162,17 @@ extension RangeProcessor {
 	///
 	/// You can use this property to transform Range, IndexSet, and RangeTarget values to match the current content.
 	public var pendingMutations: [RangeMutation] {
-		pendingEventQueue.pendingElements.map { $0.value }
+		pendingEventQueue.pendingElements.map {
+			// strip out "limit" here because that value is meaningless for transformations
+			RangeMutation(range: $0.value.range, delta: $0.value.delta)
+		}
 	}
 
+	public func didChangeContent(_ mutation: RangeMutation, isolation: isolated (any Actor)) {
+		didChangeContent(in: mutation.range, delta: mutation.delta, isolation: isolation)
+	}
+	
+	@MainActor
 	public func didChangeContent(_ mutation: RangeMutation) {
 		didChangeContent(in: mutation.range, delta: mutation.delta)
 	}
@@ -167,7 +180,7 @@ extension RangeProcessor {
 	/// Process content changes.
 	///
 	/// This function will not cause processing to occur unless the change is within the region already processed.
-	public func didChangeContent(isolation: isolated (any Actor)? = #isolation, in range: NSRange, delta: Int) {
+	public func didChangeContent(in range: NSRange, delta: Int, isolation: isolated (any Actor)) {
 		if processed(range.location) == false {
 			return
 		}
@@ -196,8 +209,20 @@ extension RangeProcessor {
 
 		processMutation(mutation, in: isolation)
 	}
+	
+	/// Process content changes.
+	///
+	/// This function will not cause processing to occur unless the change is within the region already processed.
+	@MainActor
+	public func didChangeContent(in range: NSRange, delta: Int) {
+		didChangeContent(in: range, delta: delta, isolation: MainActor.shared)
+	}
 
-	private func processMutation(_ mutation: RangeMutation, in isolation: isolated (any Actor)?) {
+	private func processMutation(_ mutation: RangeMutation, in isolation: isolated (any Actor)) {
+//		if mutation.delta < 0 {
+//			print("negative")
+//		}
+		
 		pendingEventQueue.enqueue(VersionedMutation(mutation, version: version))
 		self.version += 1
 
@@ -211,7 +236,7 @@ extension RangeProcessor {
 		configuration.changeHandler(mutation, _completeContentChanged)
 	}
 
-	private func completeContentChanged(_ mutation: RangeMutation, in isolation: isolated (any Actor)?) {
+	private func completeContentChanged(_ mutation: RangeMutation, in isolation: isolated (any Actor)) {
 		self.processedVersion += 1
 
 		guard let first = pendingEventQueue.next() else {
@@ -226,7 +251,7 @@ extension RangeProcessor {
 		scheduleFilling(in: isolation)
 	}
 
-	public func continueFillingIfNeeded(isolation: isolated (any Actor)? = #isolation) {
+	public func continueFillingIfNeeded(isolation: isolated (any Actor)) {
 		if hasPendingChanges {
 			return
 		}
@@ -240,8 +265,13 @@ extension RangeProcessor {
 
 		processMutation(mutation, in: isolation)
 	}
+	
+	@MainActor
+	public func continueFillingIfNeeded() {
+		continueFillingIfNeeded(isolation: MainActor.shared)
+	}
 
-	private func scheduleFilling(in isolation: isolated (any Actor)?) {
+	private func scheduleFilling(in isolation: isolated (any Actor)) {
 		Task {
 			self.continueFillingIfNeeded(isolation: isolation)
 

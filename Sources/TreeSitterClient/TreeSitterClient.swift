@@ -147,7 +147,7 @@ public final class TreeSitterClient {
 	/// - Parameter range: the range that was affected by the edit
 	/// - Parameter delta: the change in length of the content
 	public func didChangeContent(in range: NSRange, delta: Int) {
-		rangeProcessor.didChangeContent(in: range, delta: delta)
+		rangeProcessor.didChangeContent(in: range, delta: delta, isolation: MainActor.shared)
 		sublayerValidator.contentChanged(in: range, delta: delta)
 		versionedContent.contentChanged()
 	}
@@ -341,7 +341,7 @@ extension TreeSitterClient {
 	}
 
 	private func executeQuery(_ clientQuery: ClientQuery) async throws -> some Sequence<QueryMatch> {
-		rangeProcessor.processLocation(clientQuery.params.maxLocation, mode: clientQuery.params.mode)
+		rangeProcessor.processLocation(clientQuery.params.maxLocation, mode: clientQuery.params.mode, isolation: MainActor.shared)
 
 		await rangeProcessor.processingCompleted(isolation: MainActor.shared)
 

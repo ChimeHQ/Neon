@@ -19,6 +19,7 @@ final class MockChangeHandler {
 import Testing
 
 struct RangeProcessorTests {
+	@MainActor
 	@Test func synchronousFill() async {
 		var changedEvent: CheckedContinuation<RangeMutation, Never>?
 		
@@ -43,6 +44,7 @@ struct RangeProcessorTests {
 		#expect(mutation == RangeMutation(range: NSRange(0..<0), delta: 11))
 	}
 	
+	@MainActor
 	@Test func optionalFill() async {
 		var changedEvent: CheckedContinuation<RangeMutation, Never>?
 
@@ -68,6 +70,7 @@ struct RangeProcessorTests {
 		#expect(processor.processed(10))
 	}
 	
+	@MainActor
 	@Test func processSingleCharacterString() async throws {
 		let content = StringContent(string: "a")
 		
@@ -81,6 +84,7 @@ struct RangeProcessorTests {
 		#expect(processor.processLocation(0, mode: .required))
 	}
 	
+	@MainActor
 	@Test func insertWithNothingProcessed() {
 		let processor = RangeProcessor(
 			configuration: .init(
@@ -92,6 +96,7 @@ struct RangeProcessorTests {
 		processor.didChangeContent(in: NSRange(0..<10), delta: 10)
 	}
 	
+	@MainActor
 	@Test func processWithEmptyContent() {
 		let processor = RangeProcessor(
 			configuration: .init(
@@ -104,6 +109,7 @@ struct RangeProcessorTests {
 		#expect(processor.processed(0) == false)
 	}
 
+	@MainActor
 	@Test func insertWithEverythingProcessed() async {
 		let content = StringContent(string: "abcde")
 		let handler = MockChangeHandler()
@@ -142,6 +148,7 @@ struct RangeProcessorTests {
 		#expect(mutation2 == RangeMutation(range: NSRange(5..<5), delta: 1, limit: nil))
 	}
 	
+	@MainActor
 	@Test func deleteWithEverythingProcessed() async {
 		let content = StringContent(string: "abcde")
 		let handler = MockChangeHandler()
@@ -179,6 +186,7 @@ struct RangeProcessorTests {
 		#expect(mutation2 == RangeMutation(range: NSRange(4..<5), delta: -1, limit: 5))
 	}
 	
+	@MainActor
 	@Test func deleteEverythingAfterProcessing() async {
 		let content = StringContent(string: "abcde")
 		let handler = MockChangeHandler()
@@ -215,6 +223,7 @@ struct RangeProcessorTests {
 		#expect(mutation2 == RangeMutation(range: NSRange(0..<5), delta: -5, limit: 5))
 	}
 
+	@MainActor
 	@Test func changeThatOverlapsUnprocessedRegion() async {
 		let content = StringContent(string: "abcdefghij")
 		let handler = MockChangeHandler()
@@ -273,5 +282,40 @@ struct RangeProcessorTests {
 		await processor.processingCompleted(isolation: MainActor.shared)
 
 		#expect(processor.processed(9))
+	}
+	
+	@MainActor
+	@Test func rapidSuccessiveInsertsFollowedByDelete() async {
+		let content = StringContent(string: "")
+		
+		let processor = RangeProcessor(
+			configuration: .init(
+				lengthProvider: { content.currentLength },
+				changeHandler: { _, completion in
+					completion()
+				}
+			)
+		)
+		
+		for _ in 0..<1000 {
+			DispatchQueue.main.async {
+				let length = content.currentLength
+				
+				content.string += "abc"
+				processor.didChangeContent(in: NSRange(length..<length), delta: 3)
+				processor.processLocation(content.currentLength)
+			}
+		}
+		
+		await withCheckedContinuation { continuation in
+			DispatchQueue.main.async {
+				let length = content.currentLength
+				
+				content.string = ""
+				processor.didChangeContent(in: NSRange(0..<length), delta: -length)
+				
+				continuation.resume()
+			}
+		}
 	}
 }

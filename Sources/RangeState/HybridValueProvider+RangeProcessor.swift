@@ -13,7 +13,7 @@ extension HybridSyncAsyncValueProvider {
 		func _syncVersion(input: Input) throws(Failure) -> Output? {
 			let (location, fill) = inputTransformer(input)
 
-			if rangeProcessor.processLocation(isolation: isolation, location, mode: fill) {
+			if rangeProcessor.processLocation(location, mode: fill, isolation: isolation) {
 				return try syncValue(input)
 			}
 
@@ -23,7 +23,7 @@ extension HybridSyncAsyncValueProvider {
 		func _asyncVersion(isolation: isolated (any Actor), input: sending Input) async throws(Failure) -> sending Output {
 			let (location, fill) = inputTransformer(input)
 
-			rangeProcessor.processLocation(isolation: isolation, location, mode: fill)
+			rangeProcessor.processLocation(location, mode: fill, isolation: isolation)
 			await rangeProcessor.processingCompleted(isolation: isolation)
 
 			return try await asyncValue(input)
