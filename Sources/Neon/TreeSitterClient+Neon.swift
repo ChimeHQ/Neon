@@ -27,7 +27,6 @@ extension TokenApplication {
 	}
 }
 
-@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension TreeSitterClient {
 	@MainActor
 	public func tokenProvider(with provider: @escaping TextProvider, nameMap: [String : String] = [:]) -> TokenProvider {

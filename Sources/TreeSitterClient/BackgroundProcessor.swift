@@ -92,8 +92,15 @@ final class BackgroundProcessor<Value> {
 		isolation: isolated (any Actor),
 		operation: @escaping @Sendable (Value) throws -> sending T
 	) async throws -> T {
-		try await withCheckedThrowingContinuation(isolation: isolation) { continuation in
-			accessValue(isolation: isolation, preferSynchronous: false, operation: operation, completion: { result in
+		// older compilers believe this is unsafe
+#if compiler(<6.1)
+		nonisolated(unsafe) let localSelf = self
+#else
+		let localSelf = self
+#endif
+
+		return try await withCheckedThrowingContinuation(isolation: isolation) { continuation in
+			localSelf.accessValue(isolation: isolation, preferSynchronous: false, operation: operation, completion: { result in
 				continuation.resume(with: result)
 			})
 		}

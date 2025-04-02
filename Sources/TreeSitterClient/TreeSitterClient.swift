@@ -21,7 +21,6 @@ enum TreeSitterClientError: Error {
 /// Today, compiler limitations mean that this type must be MainActor. But I'm hoping that one can I can figure out how to lift that limitation.
 @preconcurrency
 @MainActor
-@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 public final class TreeSitterClient {
 	public typealias TextProvider = SwiftTreeSitter.Predicate.TextProvider
 	/// Produces synchronously-accessible content that covers the range of `0..<Argument`.
@@ -180,7 +179,6 @@ public final class TreeSitterClient {
 	}
 }
 
-@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension TreeSitterClient {
 	private var hasPendingChanges: Bool {
 		rangeProcessor.hasPendingChanges
@@ -212,7 +210,6 @@ extension TreeSitterClient {
 	}
 }
 
-@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension TreeSitterClient {
 	private func resolveSublayers(in range: NSRange) -> Bool {
 		guard self.canAttemptSynchronousAccess(in: .range(range)) else {
@@ -289,7 +286,6 @@ extension TreeSitterClient {
 	}
 }
 
-@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension TreeSitterClient {
 	@preconcurrency
 	@MainActor
@@ -374,7 +370,6 @@ extension TreeSitterClient {
 	}
 }
 
-@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension TreeSitterClient {
 	/// Execute a standard highlights.scm query.
 	public func highlights(in set: IndexSet, provider: @escaping TextProvider, mode: RangeFillMode = .required) async throws -> [NamedRange] {
