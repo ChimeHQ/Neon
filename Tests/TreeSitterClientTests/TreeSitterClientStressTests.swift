@@ -62,11 +62,10 @@ func main() {
 			}
 			
 			// and then delete everything
-			// not quite ready for this
-//			let length = source.utf16.count
-//			source = ""
-//			let range = NSRange(0..<length)
-//			client.didChangeContent(in: range, delta: -length)
+			let length = source.utf16.count
+			source = ""
+			let range = NSRange(0..<length)
+			client.didChangeContent(in: range, delta: -length)
 		}
 		
 		let queryTask = Task {

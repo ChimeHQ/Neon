@@ -53,6 +53,8 @@ public final class RangeProcessor {
 	/// The upper bound that has been processed.
 	///
 	/// This value is one greater than the maximum valid location.
+	///
+	/// > Warning: Be careful with this value. If there are pending changes (`hasPendingChanges == true`), this value might not refect the current state of the content.
 	public private(set) var processedUpperBound: Int = 0
 	private var targetProcessingLocation: Int = -1
 	private var version = 0
@@ -81,8 +83,6 @@ extension RangeProcessor {
 		let length = contentLength
 		let location = min(location, length - 1)
 
-		precondition(processedUpperBound <= length)
-		
 		let processedLocation = processedUpperBound - 1
 		let realDelta = location - processedLocation
 
@@ -220,10 +220,6 @@ extension RangeProcessor {
 	}
 
 	private func processMutation(_ mutation: RangeMutation, in isolation: isolated (any Actor)) {
-//		if mutation.delta < 0 {
-//			print("negative")
-//		}
-		
 		pendingEventQueue.enqueue(VersionedMutation(mutation, version: version))
 		self.version += 1
 
