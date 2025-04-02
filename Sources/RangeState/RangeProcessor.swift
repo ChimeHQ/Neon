@@ -133,6 +133,7 @@ extension RangeProcessor {
 	}
 	
 	@MainActor
+	@preconcurrency
 	@discardableResult
 	public func processLocation(_ location: Int, mode: RangeFillMode = .required) -> Bool {
 		processLocation(location, mode: mode, isolation: MainActor.shared)
@@ -174,6 +175,7 @@ extension RangeProcessor {
 	}
 	
 	@MainActor
+	@preconcurrency
 	public func didChangeContent(_ mutation: RangeMutation) {
 		didChangeContent(in: mutation.range, delta: mutation.delta)
 	}
@@ -215,6 +217,7 @@ extension RangeProcessor {
 	///
 	/// This function will not cause processing to occur unless the change is within the region already processed.
 	@MainActor
+	@preconcurrency
 	public func didChangeContent(in range: NSRange, delta: Int) {
 		didChangeContent(in: range, delta: delta, isolation: MainActor.shared)
 	}
@@ -264,6 +267,7 @@ extension RangeProcessor {
 	}
 	
 	@MainActor
+	@preconcurrency
 	public func continueFillingIfNeeded() {
 		continueFillingIfNeeded(isolation: MainActor.shared)
 	}

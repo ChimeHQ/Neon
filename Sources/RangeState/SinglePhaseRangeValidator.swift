@@ -81,6 +81,7 @@ public final class SinglePhaseRangeValidator<Content: VersionedContent> {
 	}
 
 	@MainActor
+	@preconcurrency
 	@discardableResult
 	public func validate(
 		_ target: RangeTarget

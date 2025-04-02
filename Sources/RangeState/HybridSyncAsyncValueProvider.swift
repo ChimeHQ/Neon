@@ -21,6 +21,7 @@ public struct HybridSyncAsyncValueProvider<Input, Output, Failure: Error> {
 	}
 
 	@MainActor
+	@preconcurrency
 	public func async(_ input: sending Input) async throws(Failure) -> sending Output {
 		try await asyncValueProvider(MainActor.shared, input)
 	}
@@ -32,6 +33,7 @@ public struct HybridSyncAsyncValueProvider<Input, Output, Failure: Error> {
 
 extension HybridSyncAsyncValueProvider {
 	/// Create an instance that can statically prove to the compiler that asyncValueProvider is isolated to the MainActor.
+	@preconcurrency
 	public init(
 		syncValue: @escaping SyncValueProvider = { _ in nil },
 		mainActorAsyncValue: @escaping @MainActor (Input) async throws(Failure) -> sending Output

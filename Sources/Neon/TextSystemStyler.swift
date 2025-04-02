@@ -10,6 +10,7 @@ import RangeState
 ///
 /// > Note: A `TextSystemStyler` must be informed of all text content changes made using `didChangeContent(in:, delta:)`.
 @MainActor
+@preconcurrency
 public final class TextSystemStyler<Interface: TextSystemInterface> {
 	private let textSystem: Interface
 	private let tokenProvider: TokenProvider

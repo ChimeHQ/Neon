@@ -16,6 +16,7 @@ import Rearrange
 ///
 /// > Note: Consider checking out ``LayoutManagerSystemInterface``, ``TextLayoutManagerSystemInterface``, or ``TextStorageSystemInterface``. These is recommended if you know what behavior you'd like. Alternatively, you can always create your own ``TextSystemInterface`` for complete control.
 @MainActor
+@preconcurrency
 public struct TextViewSystemInterface {
 	public let textView: TextView
 	public let attributeProvider: TokenAttributeProvider
@@ -95,6 +96,7 @@ extension TextViewSystemInterface: TextSystemInterface {
 #if os(macOS)
 /// A concrete ``TextSystemInterface`` that uses `NSLayoutManager` temporary attributes.
 @MainActor
+@preconcurrency
 public struct LayoutManagerSystemInterface {
 	public let layoutManager: NSLayoutManager
 	public let attributeProvider: TokenAttributeProvider
@@ -138,8 +140,9 @@ extension LayoutManagerSystemInterface: TextSystemInterface {
 
 #if os(macOS) || os(iOS) || os(visionOS)
 /// A concrete ``TextSystemInterface`` that uses `NSTextLayoutManager` rendering attributes.
-@available(macOS 12.0, iOS 16.0, tvOS 16.0, *)
 @MainActor
+@preconcurrency
+@available(macOS 12.0, iOS 16.0, tvOS 16.0, *)
 public struct TextLayoutManagerSystemInterface {
 	public let textLayoutManager: NSTextLayoutManager
 	public let attributeProvider: TokenAttributeProvider
@@ -194,6 +197,7 @@ extension TextLayoutManagerSystemInterface: TextSystemInterface {
 
 /// A concrete `TextSystemInterface` that modifies `NSTextStorage` text attributes.
 @MainActor
+@preconcurrency
 public struct TextStorageSystemInterface {
 	private let textStorage: NSTextStorage
 	public let attributeProvider: TokenAttributeProvider

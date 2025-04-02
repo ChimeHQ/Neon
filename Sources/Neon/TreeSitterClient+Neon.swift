@@ -29,6 +29,7 @@ extension TokenApplication {
 
 extension TreeSitterClient {
 	@MainActor
+	@preconcurrency
 	public func tokenProvider(with provider: @escaping TextProvider, nameMap: [String : String] = [:]) -> TokenProvider {
 		TokenProvider(
 			syncValue: { [highlightsProvider] range in
@@ -68,7 +69,7 @@ extension TextViewSystemInterface {
 	}
 }
 
-@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
+@available(macOS 12, macCatalyst 15, iOS 15, tvOS 15, watchOS 8, *)
 extension TreeSitterClient {
 	/// Highlight an input string.
 	public static func highlight(

@@ -6,9 +6,11 @@ public protocol TextSystemInterface {
     associatedtype Content: VersionedContent
 
     @MainActor
+	@preconcurrency
     func applyStyles(for application: TokenApplication)
 
     @MainActor
+	@preconcurrency
     var content: Content { get }
 }
 

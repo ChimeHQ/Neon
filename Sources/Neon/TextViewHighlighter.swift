@@ -35,8 +35,8 @@ extension TextView {
 /// A class that can connect `NSTextView`/`UITextView` to `TreeSitterClient`
 ///
 /// This class is a minimal implementation that can help perform highlighting for a TextView. It is compatible with both TextKit 1 and 2 views, and uses single-phase pass with tree-sitter. The created instance will become the delegate of the view's `NSTextStorage`.
-@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 @MainActor
+@preconcurrency
 public final class TextViewHighlighter {
 	private typealias Styler = TextSystemStyler<TextViewSystemInterface>
 
@@ -149,7 +149,6 @@ public final class TextViewHighlighter {
 	}
 }
 
-@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 extension TextViewHighlighter {
 	/// Begin monitoring for containing scroll view changes.
 	///

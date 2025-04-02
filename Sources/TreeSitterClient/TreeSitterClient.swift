@@ -19,8 +19,8 @@ enum TreeSitterClientError: Error {
 /// Tree-sitter ultimately resolves to a single semantic view of the text, and is considered a single phase. However, it may require numerous validation/invalidation passes before fully resolving a document's content.
 ///
 /// Today, compiler limitations mean that this type must be MainActor. But I'm hoping that one can I can figure out how to lift that limitation.
-@preconcurrency
 @MainActor
+@preconcurrency
 public final class TreeSitterClient {
 	public typealias TextProvider = SwiftTreeSitter.Predicate.TextProvider
 	/// Produces synchronously-accessible content that covers the range of `0..<Argument`.
@@ -287,8 +287,8 @@ extension TreeSitterClient {
 }
 
 extension TreeSitterClient {
-	@preconcurrency
 	@MainActor
+	@preconcurrency
 	public struct ClientQueryParams {
 		public let indexSet: IndexSet
 		public let textProvider: TextProvider
@@ -311,8 +311,8 @@ extension TreeSitterClient {
 		}
 	}
 
-	@preconcurrency
 	@MainActor
+	@preconcurrency
 	public struct ClientQuery {
 		public let query: Query.Definition
 		public let params: ClientQueryParams

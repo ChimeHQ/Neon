@@ -3,6 +3,7 @@ import Foundation
 import RangeState
 
 @MainActor
+@preconcurrency
 public final class ThreePhaseTextSystemStyler<Interface: TextSystemInterface> {
 	public typealias FallbackTokenProvider = (NSRange) -> TokenApplication
 	public typealias SecondaryValidationProvider = (NSRange) async -> TokenApplication

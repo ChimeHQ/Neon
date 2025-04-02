@@ -64,6 +64,7 @@ public final class ThreePhaseRangeValidator<Content: VersionedContent> {
 	}
 
 	@MainActor
+	@preconcurrency
 	public convenience init(configuration: Configuration) {
 		self.init(configuration: configuration, isolation: MainActor.shared)
 	}
@@ -91,6 +92,7 @@ public final class ThreePhaseRangeValidator<Content: VersionedContent> {
 	}
 
 	@MainActor
+	@preconcurrency
 	public func validate(_ target: RangeTarget) {
 		validate(target, isolation: MainActor.shared)
 	}
