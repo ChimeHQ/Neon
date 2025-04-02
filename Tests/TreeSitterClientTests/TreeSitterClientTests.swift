@@ -1,14 +1,14 @@
-import XCTest
+import Foundation
+import Testing
 
 import Rearrange
 import SwiftTreeSitter
 import TreeSitterClient
 import NeonTestsTreeSitterSwift
 
-@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
-final class TreeSitterClientTests: XCTestCase {
+struct TreeSitterClientTests {
 	@MainActor
-	func testSynchronousQuery() throws {
+	@Test func synchronousQuery() throws {
 		let language = Language(tree_sitter_swift())
 
 		let queryText = """
@@ -48,7 +48,7 @@ func main() {
 			NamedRange(name: "a", range: NSRange(0..<4), pointRange: Point(row: 0, column: 0)..<Point(row: 0, column: 8))
 		]
 
-		XCTAssertEqual(highlights, expected)
+		#expect(highlights == expected)
 	}
 }
 
@@ -174,3 +174,4 @@ func main() {
 //		}
 //	}
 //}
+
