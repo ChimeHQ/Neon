@@ -85,6 +85,27 @@ struct RangeProcessorTests {
 	}
 	
 	@MainActor
+	@Test func processingPastContentLength() async throws {
+		let content = StringContent(string: "abc")
+		
+		let mutation = await withCheckedContinuation { continuation in
+			let processor = RangeProcessor(
+				configuration: .init(
+					lengthProvider: { content.currentLength },
+					changeHandler: { mutation, completion in
+						continuation.resume(returning: mutation)
+						
+						completion()
+					}
+				)
+			)
+			#expect(processor.processLocation(10, mode: .required) == false)
+		}
+		
+		#expect(mutation == RangeMutation(range: NSRange(0..<0), delta: 3))
+	}
+	
+	@MainActor
 	@Test func insertWithNothingProcessed() {
 		let processor = RangeProcessor(
 			configuration: .init(

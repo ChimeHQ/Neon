@@ -79,9 +79,10 @@ extension RangeProcessor {
 
 	private func fillMutationNeeded(for location: Int, mode: RangeFillMode) -> RangeMutation? {
 		let length = contentLength
+		let location = min(location, length - 1)
 
-		precondition(location <= length)
-
+		precondition(processedUpperBound <= length)
+		
 		let processedLocation = processedUpperBound - 1
 		let realDelta = location - processedLocation
 
