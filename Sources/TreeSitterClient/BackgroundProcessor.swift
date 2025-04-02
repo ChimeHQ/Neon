@@ -1,9 +1,5 @@
 import Dispatch
 
-fileprivate struct UnsafeContainer<T>: @unchecked Sendable {
-	let value: T
-}
-
 final class BackgroundProcessor<Value> {
 	enum AccessMode {
 		case synchronous
@@ -11,13 +7,13 @@ final class BackgroundProcessor<Value> {
 		case asynchronous
 	}
 	
-	private let valueContainer: UnsafeContainer<Value>
+	private let value: Value
 	private let queue = DispatchQueue(label: "com.chimehq.Neon.BackgroundProcessor")
 	private var pendingCount = 0
 	private var pendingTask: Task<Void, Never>?
 
 	public init(value: Value) {
-		self.valueContainer = UnsafeContainer(value: value)
+		self.value = value
 	}
 
 	public var hasPendingWork: Bool {
@@ -43,25 +39,26 @@ final class BackgroundProcessor<Value> {
 			return try operation(nil)
 		}
 		
-		let value = try queue.sync {
-			try operation(valueContainer.value)
+		let opResult = try queue.sync {
+			try operation(value)
 		}
 		
 		precondition(hasPendingWork == false)
 		
-		return value
+		return opResult
 	}
 		
-	public func accessValue<T: Sendable>(
+	public func accessValue<T>(
 		isolation: isolated (any Actor),
 		preferSynchronous: Bool,
 		operation: @escaping @Sendable (Value) throws -> sending T,
-		completion: @escaping (Result<T, Error>) -> Void
+		completion: @escaping (sending Result<T, Error>) -> Void
 	) {
 		if preferSynchronous && hasPendingWork == false {
-			let result = Result {
+			// this is necessary because queue.sync does not return a sending value. However, because operation's return is sending, this must be safe.
+			nonisolated(unsafe) let result = Result {
 				try queue.sync {
-					try operation(valueContainer.value)
+					try operation(value)
 				}
 			}
 			
@@ -72,7 +69,7 @@ final class BackgroundProcessor<Value> {
 		
 		beginBackgroundWork()
 		
-		nonisolated(unsafe) let unsafeValue = self.valueContainer.value
+		nonisolated(unsafe) let unsafeValue = value
 		
 		Task {
 			_ = isolation
@@ -91,7 +88,7 @@ final class BackgroundProcessor<Value> {
 		}
 	}
 
-	public func accessValue<T: Sendable>(
+	public func accessValue<T>(
 		isolation: isolated (any Actor),
 		operation: @escaping @Sendable (Value) throws -> sending T
 	) async throws -> T {
