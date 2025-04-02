@@ -6,6 +6,7 @@ import TreeSitterClient
 import NeonTestsTreeSitterSwift
 
 struct TreeSitterClientStressTests {
+	@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 	@MainActor
 	@Test func asyncQueriesWhileRapidlyInserting() async throws {
 		let language = Language(tree_sitter_swift())
