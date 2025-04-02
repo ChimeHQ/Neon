@@ -1,4 +1,5 @@
-import XCTest
+import Foundation
+import Testing
 
 import RangeState
 import Rearrange
@@ -14,30 +15,41 @@ final class MockChangeHandler {
 		changeCompleted(mutation)
 		completion()
 	}
+	
+	func setChangeContinuation(_ continuation: CheckedContinuation<RangeMutation, Never>) {
+		self.changeCompleted = { continuation.resume(returning: $0) }
+	}
 }
 
-import Testing
+extension RangeProcessor.Configuration {
+	public init(
+		deltaRange: Range<Int> = 1..<Int.max,
+		lengthProvider: @escaping RangeProcessor.LengthProvider,
+		continuation: CheckedContinuation<RangeMutation, Never>
+	) {
+		self.init(
+			deltaRange: deltaRange,
+			lengthProvider: lengthProvider,
+			changeHandler: { mutation, completion in
+				continuation.resume(returning: mutation)
+				
+				completion()
+			}
+		)
+	}
+}
 
 struct RangeProcessorTests {
 	@MainActor
 	@Test func synchronousFill() async {
-		var changedEvent: CheckedContinuation<RangeMutation, Never>?
-		
-		let changeHandler: RangeProcessor.ChangeHandler = { mutation, completion in
-			completion()
-			changedEvent!.resume(returning: mutation)
-		}
-
-		let processor = RangeProcessor(
-			configuration: .init(
-				lengthProvider: { 100 },
-				changeHandler: changeHandler
-			)
-		)
-
 		let mutation = await withCheckedContinuation { continuation in
-			changedEvent = continuation
-			
+			let processor = RangeProcessor(
+				configuration: .init(
+					lengthProvider: { 100 },
+					continuation: continuation
+				)
+			)
+
 			#expect(processor.processLocation(10, mode: .required))
 		}
 		
@@ -92,11 +104,7 @@ struct RangeProcessorTests {
 			let processor = RangeProcessor(
 				configuration: .init(
 					lengthProvider: { content.currentLength },
-					changeHandler: { mutation, completion in
-						continuation.resume(returning: mutation)
-						
-						completion()
-					}
+					continuation: continuation
 				)
 			)
 			#expect(processor.processLocation(10, mode: .required) == false)
