@@ -49,12 +49,12 @@ Neon is made up of three parts: the core library, `RangeState` and `TreeSitterCl
 
 ### RangeState
 
-Neon's lowest-level component is called RangeState. This module contains the core building blocks used for the rest of the system. RangeState is built around the idea of hybrid synchronous/asynchronous execution. Making everything async is a lot easier, but that makes it impossible to provide a low-latency path for small documents. It is content-independent.
+Neon's lowest-level component is called RangeState. This module contains the core building blocks used for the rest of the system. RangeState is built around the idea of hybrid synchronous/asynchronous execution. Making everything async would be a lot easier, but would make it impossible to provide a low-latency path for small documents. RangeState is content-independent.
 
 - `HybridSyncAsyncValueProvider`: a fundamental type that defines work in terms of both synchronous and asynchronous functions
 - `RangeProcessor`: performs on-demand processing of range-based content (think parsing)
 - `RangeValidator`: building block for managing the validation of range-based content
-- `RangeInvalidationBuffer`: buffer and consolidate invalidations so they can be applied at the optimal time
+- `RangeInvalidationBuffer`: buffers and consolidates invalidations so they can be applied at the optimal time
 - `SinglePhaseRangeValidator`: performs validation with a single data source (single-phase highlighting)
 - `ThreePhaseRangeValidator`: performs validation with primary, fallback, and secondary data sources (three-phase highlighting)
 
@@ -199,7 +199,7 @@ let highlightedSource = try await TreeSitterClient.highlight(
 )
 ```
 
-## Contributing and Collaboration
+## Contribution and Collaboration
 
 I would love to hear from you! Issues or pull requests work great. A [Discord server][discord] is also available for live help, but I have a strong bias towards answering in the form of documentation.
 
