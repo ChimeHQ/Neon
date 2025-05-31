@@ -1,5 +1,5 @@
 {
-  "originHash" : "88a29eea1c1b10215ec2071d3cc04cae5d3b2418319c7e017e284ba383823031",
+  "originHash" : "2de98472194b8e6dcd7467bb03cc243a4087294e5f04ad1708742bab9010c55a",
   "pins" : [
     {
       "identity" : "nsui",
@@ -23,7 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/SwiftTreeSitter",
       "state" : {
-        "revision" : "55f2c2fdaf859f86e4ea8513b9934badc7894019"
+        "branch" : "main",
+        "revision" : "f0ac935f7da8ccb659f511ddd6453c9483f4e7bc"
       }
     },
     {
