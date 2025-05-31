@@ -59,4 +59,3 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 		validator.validate(target)
 	}
 }
-
