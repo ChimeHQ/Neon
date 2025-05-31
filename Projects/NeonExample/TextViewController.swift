@@ -78,6 +78,8 @@ final class TextViewController: NSUIViewController {
 				switch name {
 				case "swift":
 					return swiftConfig
+				case "markdown":
+					return markdownConfig
 				case "markdown_inline":
 					return markdownInlineConfig
 				default:
