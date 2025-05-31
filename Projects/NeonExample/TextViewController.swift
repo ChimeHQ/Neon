@@ -10,6 +10,8 @@ final class TextViewController: NSUIViewController {
 	private let textView: NSUITextView
 	private let highlighter: TextViewHighlighter
 
+	private static var defaultSyntaxColors: [String:NSUIColor] = [:]
+
 	init() {
 		self.textView = NSUITextView(usingTextLayoutManager: false)
 
@@ -44,11 +46,21 @@ final class TextViewController: NSUIViewController {
 		]
 
 		let provider: TokenAttributeProvider = { token in
-			return switch token.name {
-			case let keyword where keyword.hasPrefix("keyword"): [.foregroundColor: NSUIColor.red, .font: boldFont]
-			case "comment", "spell": [.foregroundColor: NSUIColor.green, .font: italicFont]
+			switch token.name {
+			case let keyword where keyword.hasPrefix("keyword"): return [.foregroundColor: NSUIColor.red, .font: boldFont]
+			case "comment", "spell": return [.foregroundColor: NSUIColor.green, .font: italicFont]
 			// Note: Default is not actually applied to unstyled/untokenized text.
-			default: [.foregroundColor: NSUIColor.blue, .font: regularFont]
+			default:
+					// Everything else, assign a random color
+					let color: NSUIColor
+					if let cachedColor = self.defaultSyntaxColors[token.name] {
+						color = cachedColor
+					}
+					else {
+						color = NSUIColor(calibratedRed: .random(in: 0..<1.0), green: .random(in: 0..<1.0), blue: .random(in: 0..<1.0), alpha: 1.0)
+						self.defaultSyntaxColors[token.name] = color
+					}
+					return [.foregroundColor: color, .font: regularFont]
 			}
 		}
 
@@ -78,6 +90,8 @@ final class TextViewController: NSUIViewController {
 				switch name {
 				case "swift":
 					return swiftConfig
+				case "markdown":
+					return markdownConfig
 				case "markdown_inline":
 					return markdownInlineConfig
 				default:
