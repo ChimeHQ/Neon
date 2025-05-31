@@ -99,7 +99,7 @@ extension RangeProcessor {
 		// this is simulating an insert starting at `start` of length `delta`
 		let range = NSRange(start..<start)
 
-		if range.length == 0 && delta == 0 {
+		if delta == 0 {
 			return nil
 		}
 
