@@ -133,7 +133,7 @@ public final class TextViewHighlighter {
 
 		try textView.getTextStorage().delegate = storageDelegate
 
-		observeEnclosingScrollView()
+		observeEnclosingScrollView(expectingScrollView: false)
 
 		invalidate(.all)
 	}
@@ -152,11 +152,13 @@ public final class TextViewHighlighter {
 extension TextViewHighlighter {
 	/// Begin monitoring for containing scroll view changes.
 	///
-	/// This method sets up all the necessary monitoring so the highlighter can react to scrolling. It should be called only once the view heirarchy is fully established.
-	public func observeEnclosingScrollView() {
+	/// This method sets up all the necessary monitoring so the highlighter can react to scrolling. It should be called only once the view hierarchy is fully established.
+	public func observeEnclosingScrollView(expectingScrollView: Bool = true) {
 #if os(macOS) && !targetEnvironment(macCatalyst)
 		guard let scrollView = textView.enclosingScrollView else {
-			print("warning: there is no enclosing scroll view")
+			if expectingScrollView {
+				assertionFailure("Tried to start observing the scroll view before the view hierarchy is fully established")
+			}
 			return
 		}
 		
