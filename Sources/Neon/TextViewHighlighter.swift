@@ -157,7 +157,7 @@ extension TextViewHighlighter {
 #if os(macOS) && !targetEnvironment(macCatalyst)
 		guard let scrollView = textView.enclosingScrollView else {
 			if expectingScrollView {
-				assertionFailure("Tried to start obseving the scroll view before the view hierarchy is fully established")
+				assertionFailure("Tried to start observing the scroll view before the view hierarchy is fully established")
 			}
 			return
 		}
