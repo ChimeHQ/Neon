@@ -95,9 +95,10 @@ extension RangeProcessor {
 		let deltaRange = deltaRange(for: mode)
 		let adjustedDelta = min(max(realDelta, deltaRange.lowerBound), deltaRange.upperBound)
 		let delta = min(adjustedDelta, maxDelta)
-		
+
+		// this is simulating an insert starting at `start` of length `delta`
 		let range = NSRange(start..<start)
-		
+
 		if range.length == 0 && delta == 0 {
 			return nil
 		}
