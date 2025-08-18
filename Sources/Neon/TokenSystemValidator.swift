@@ -17,7 +17,7 @@ final class TokenSystemValidator<Interface: TextSystemInterface> {
 	var validationProvider: HybridSyncAsyncValueProvider<Validator.ContentRange, Validation, Never> {
 		.init(
 			syncValue: { self.validate($0) },
-			asyncValue: { _, range in await self.validate(range)}
+			asyncValue: { [self] _, range in await self.validate(range) }
 		)
 	}
 
