@@ -14,14 +14,13 @@ import RangeState
 public final class TextSystemStyler<Interface: TextSystemInterface> {
 	private let textSystem: Interface
 	private let tokenProvider: TokenProvider
-	private let tokenValidator: TokenSystemValidator<Interface>
 	private let validator: SinglePhaseRangeValidator<Interface.Content>
 
 	public init(textSystem: Interface, tokenProvider: TokenProvider) {
 		self.textSystem = textSystem
 		self.tokenProvider = tokenProvider
 
-		self.tokenValidator = TokenSystemValidator(
+		let tokenValidator = TokenSystemValidator(
 			textSystem: textSystem,
 			tokenProvider: tokenProvider
 		)
@@ -29,7 +28,7 @@ public final class TextSystemStyler<Interface: TextSystemInterface> {
 		self.validator = SinglePhaseRangeValidator(
 			configuration: .init(
 				versionedContent: textSystem.content,
-				provider: self.tokenValidator.validationProvider
+				provider: tokenValidator.validationProvider
 			)
 		)
 	}
