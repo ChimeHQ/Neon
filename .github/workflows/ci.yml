@@ -22,7 +22,7 @@ jobs:
     name: Test
     runs-on: macos-15
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.2.app
+      DEVELOPER_DIR: /Applications/Xcode_16.3.app
     strategy:
       matrix:
         destination:
