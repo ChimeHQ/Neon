@@ -232,10 +232,17 @@ extension TextStorageSystemInterface: TextSystemInterface {
 	}
 
 	public func applyStyles(for application: TokenApplication) {
-		textStorage.beginEditing()
+		// be careful to only access the default attributes *before* beginning
+		// the edit
 
 		if let range = application.range {
-			setAttributes(defaultAttributesProvider(), in: range)
+			let defaultAttributes = defaultAttributesProvider()
+
+			textStorage.beginEditing()
+
+			setAttributes(defaultAttributes, in: range)
+		} else {
+			textStorage.beginEditing()
 		}
 
 		for token in application.tokens {
