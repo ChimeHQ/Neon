@@ -57,7 +57,12 @@ final class TextViewController: NSUIViewController {
 						color = cachedColor
 					}
 					else {
-						color = NSUIColor(calibratedRed: .random(in: 0..<1.0), green: .random(in: 0..<1.0), blue: .random(in: 0..<1.0), alpha: 1.0)
+						color = NSUIColor(
+							red: .random(in: 0..<1.0),
+							green: .random(in: 0..<1.0),
+							blue: .random(in: 0..<1.0),
+							alpha: 1.0
+						)
 						self.defaultSyntaxColors[token.name] = color
 					}
 					return [.foregroundColor: color, .font: regularFont]
