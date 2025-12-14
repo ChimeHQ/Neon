@@ -10,15 +10,19 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 		let validationExp = expectation(description: "validation")
 
 		let content = StringContent(string: "abc")
-		let provider = StringValidator.Provider(
-			syncValue: {
-				validationExp.fulfill()
+		// this is working around a compiler bug with the inline closure (https://github.com/swiftlang/swift/issues/86032)
+		let syncValue: (StringValidator.ContentRange) -> Validation = { range in
+			validationExp.fulfill()
 
-				return .success($0.value)
-			},
+			return .success(range.value)
+		}
+
+		let provider = StringValidator.Provider(
+			syncValue: syncValue,
 			asyncValue: { _, contentRange in
 				return .success(contentRange.value)
-			})
+			}
+		)
 
 		let validator = StringValidator(
 			configuration: .init(
@@ -40,12 +44,13 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 		let validationExp = expectation(description: "validation")
 
 		let content = StringContent(string: "abc")
-		let provider = StringValidator.Provider(
-			syncValue: {
-				validationExp.fulfill()
+		let syncValue: (StringValidator.ContentRange) -> Validation = { range in
+			validationExp.fulfill()
 
-				return .success($0.value)
-			},
+			return .success(range.value)
+		}
+		let provider = StringValidator.Provider(
+			syncValue: syncValue,
 			asyncValue: { _, contentRange in
 				return .success(contentRange.value)
 			})
@@ -70,12 +75,13 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 		let validationExp = expectation(description: "validation")
 
 		let content = StringContent(string: "abc")
+		let syncValue: (StringValidator.ContentRange) -> Validation = { range in
+			validationExp.fulfill()
+
+			return .success(range.value)
+		}
 		let provider = StringValidator.Provider(
-			syncValue: {
-				validationExp.fulfill()
-				
-				return .success($0.value)
-			},
+			syncValue: syncValue,
 			asyncValue: { _, contentRange in
 				return .success(contentRange.value)
 			}
@@ -134,10 +140,8 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 
 		let content = StringContent(string: "aaabbbccc")
 		let provider = StringValidator.Provider(
-			syncValue: { _ in
-				return nil
-			},
-			asyncValue: { _, contentRange in
+			syncValue: { _ in nil },
+			mainActorAsyncValue: { contentRange in
 				validationExp.fulfill()
 				validatedRanges.append(contentRange.value)
 
@@ -169,10 +173,8 @@ final class SinglePhaseRangeValidatorTests: XCTestCase {
 
 		let content = StringContent(string: "aaabbbccc")
 		let provider = StringValidator.Provider(
-			syncValue: { _ in
-				return nil
-			},
-			asyncValue: { _, contentRange in
+			syncValue: { _ in nil },
+			mainActorAsyncValue: { contentRange in
 				validatedRanges.append(contentRange.value)
 
 				return .success(contentRange.value)
