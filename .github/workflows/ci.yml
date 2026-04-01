@@ -20,9 +20,10 @@ concurrency:
 jobs:
   test:
     name: Test
-    runs-on: macos-15
+    runs-on: macos-26
+    timeout-minutes: 30
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.0.app
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app
     strategy:
       matrix:
         destination:
@@ -31,7 +32,7 @@ jobs:
           - "platform=iOS Simulator,name=iPhone 16e"
           - "platform=tvOS Simulator,name=Apple TV,OS=26.0"
           - "platform=watchOS Simulator,name=Apple Watch Series 11 (42mm),OS=26.0"
-          - "platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0"
+          - "platform=visionOS Simulator,name=Apple Vision Pro"
     steps:
       - uses: actions/checkout@v4
         with:
