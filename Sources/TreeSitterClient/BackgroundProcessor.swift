@@ -76,8 +76,9 @@ final class BackgroundProcessor<Value> {
 			
 			let result = await withCheckedContinuation { continuation in
 				queue.async {
-					let result = Result { try operation(unsafeValue) }
-					
+					// this should not be necessary https://github.com/swiftlang/swift/issues/88233
+					nonisolated(unsafe) let result = Result { try operation(unsafeValue) }
+
 					continuation.resume(returning: result)
 				}
 			}
