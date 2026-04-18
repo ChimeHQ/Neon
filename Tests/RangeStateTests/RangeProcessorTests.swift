@@ -134,8 +134,8 @@ struct RangeProcessorTests {
 			)
 		)
 
-		#expect(processor.processLocation(0, mode: .required) == false)
-		#expect(processor.processed(0) == false)
+		#expect(processor.processLocation(0, mode: .required) == true)
+		#expect(processor.processed(0) == true)
 	}
 
 	@MainActor

@@ -146,7 +146,15 @@ extension RangeProcessor {
 	public func processed(_ location: Int) -> Bool {
 		precondition(location >= 0)
 
-		return processedUpperBound > location
+		// if we are past the location, we've definitely processed it
+		if processedUpperBound > location {
+			return true
+		}
+
+		// It is reasonable to special-case zero-length content here, because
+		// while there is no content to process, there is also no way to query
+		// successfully otherwise.
+		return location == 0 && contentLength == 0
 	}
 
 	public func processed(_ range: NSRange) -> Bool {
