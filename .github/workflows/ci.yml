@@ -23,7 +23,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.3.app
+      DEVELOPER_DIR: /Applications/Xcode_26.4.app
     strategy:
       matrix:
         destination:
@@ -34,7 +34,7 @@ jobs:
           - "platform=watchOS Simulator,name=Apple Watch Series 11 (42mm),OS=26.0"
           - "platform=visionOS Simulator,name=Apple Vision Pro"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Test platform ${{ matrix.destination }}
